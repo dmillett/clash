@@ -17,16 +17,16 @@
    (is (str-contains? "foo" "o"))
    (is (not (str-contains? "foo" "|"))) )
 
-(deftest test-jsystem-cmd-prefix
-  (is (= 3 (count (jsystem-cmd-prefix "foo|bar"))))
-  (is (= 6 (count (jsystem-cmd-prefix "foobar")))) )
+(deftest test-prefix-command
+  (is (= 3 (count (prefix-command "foo|bar"))))
+  (is (= 6 (count (prefix-command "foobar")))) )
 
-(def file1 (str tresource "/file1.txt"))
+(def file1 (str tresource "/input1.txt"))
 (def output1 (str tresource "/output1.txt"))
-(def command1 (str "grep ORB " file1 " | logdecode"))
+(def command1 (str "grep message " file1))
  
-(deftest test-jsystem-cmd
+(deftest test-jprocess-and-write
   (let [t1 (System/nanoTime)]
-    (is (nil? (jsystem-cmd command1 output1)))
-    (println "clojure + grep + decoded (output3.txt) Time(ms):" (milis t1))) )
+    (is (nil? (jprocess-and-write command1 output1 "\n")))
+    (println "clojure + grep + decoded (" output1 ") Time(ms):" (milis t1))) )
 
