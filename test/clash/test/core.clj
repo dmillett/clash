@@ -2,7 +2,7 @@
   (:use [clash.core])
   (:use [clojure.test]))
 
-(use '[clojure.java.io :only(reader)])
+(use '[clojure.java.io :only(reader delete-file)])
 
 ;; Test tools
 ;; todo: build macro for performance execution wrapping
@@ -40,5 +40,7 @@
   (let [t1 (System/nanoTime)]
     (is (nil? (jprocess-and-write command1 output1 "\n")))
     (println "clojure + grep + decoded (" output1 ") Time(ms):" (milis t1)))
-  (is (= 3 (count-file-lines output1))) )
+  (is (= 3 (count-file-lines output1)))
+  ; cleanup
+  (delete-file output1) )
 
