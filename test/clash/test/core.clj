@@ -5,17 +5,31 @@
 (use '[clojure.java.io :only(reader delete-file)])
 
 ;; Test tools
-;; todo: build macro for performance execution wrapping
-(defn milis
-  [start]
-  (* (- (System/nanoTime) start) (Math/pow 10.0 -6.0)))
+(defn nano-to-millis
+  [nt]
+  (/ nt 1000000.0))
 
-(defn count-file-lines
+(defn elapsed
+  [nt]
+  (- (System/nanoTime) nt))
+
+(defmacro nperf
+  "Dump a message with the execution time in nano seconds."
+  [exe, message]
+  `(let [t# (System/nanoTime)
+         result# ~exe]
+     (println ~message "time(ns):" (elapsed t#))
+     ; execute 'exe' here
+     result#) )
+
+(defn count-lines
+  "How many lines in a file?"
   [file]
   (with-open [rdr (reader file)]
     (count (line-seq  rdr))) )
 
 (def tresource
+  "Define the current test directory."
   (str (System/getProperty "user.dir") "/test/clash/test"))
 
 ;; Tests
@@ -34,13 +48,13 @@
 (def input1 (str tresource "/input1.txt"))
 (def output1 (str tresource "/output1.txt"))
 (def command1 (str "grep message " input1))
- 
+
+;; Using (nperf) instead of (time)
 (deftest test-jprocess-and-write
-  (is (= 4 (count-file-lines input1)))
-  (let [t1 (System/nanoTime)]
-    (is (nil? (jprocess-and-write command1 output1 "\n")))
-    (println "clojure + grep + decoded (" output1 ") Time(ms):" (milis t1)))
-  (is (= 3 (count-file-lines output1)))
+  (is (= 4 (count-lines input1)))
+  (nperf (jprocess-and-write command1 output1 "\n") "Small file 'cl + grep' and dump")
+  (is (= 3 (count-lines output1)))
   ; cleanup
   (delete-file output1) )
 
+  
