@@ -57,10 +57,13 @@
 (def output1 (str tresource "/output1.txt"))
 (def command1 (str "grep message " input1))
 
+(deftest test-jproc-dump
+  (mperf (jproc-dump command1 "") "console (dump) test"))
+
 ;; Using (nperf) instead of (time)
-(deftest test-jprocess-and-write
+(deftest test-jproc-write
   (is (= 4 (count-lines input1)))
-  (mperf (jprocess-and-write command1 output1 "\n") "Small file 'cl + grep' and dump")
+  (mperf (jproc-write command1 output1 "\n") "Small file 'cl + grep' and dump")
   (is (= 3 (count-lines output1)))
   ; cleanup
   (delete-file output1) )

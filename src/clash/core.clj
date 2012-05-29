@@ -51,10 +51,20 @@
     (reader (jproc-instream command))) )
 
 
-;; It's pretty slow dumping to the console, but useful for testing.
+;; todo: make this into one method with writer or console dump??
 
-
-(defn jprocess-and-write
+; It's pretty slow dumping to the console, but useful for testing.
+(defn jproc-and-dump
+  "Execution a shell system command, via java process, and
+  dump result to the console (slow). This is handled via
+  clojure reader to a line-seq. "
+  [command, delim]
+  (let [proc (jproc command)]
+    (with-open [rdr (jproc-reader command)]
+      (doseq [line (line-seq rdr)]
+        (println (str line delim))))) )
+  
+(defn jproc-and-write
   "Execute a System command, via java Process, and capture
   the InputStream via clojure reader into a sequenc.e
   Write the resulting output to a file (useful for grep)."
