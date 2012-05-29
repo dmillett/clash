@@ -1,0 +1,4 @@
+123|abcd|hhhhhh|this,is,a,message
+456|efgh|iiiiii|this,is,another message
+789|ijkl|jjjjjj|the last message, hopefully
+000|mnop|kkkkkk|something else entirely, perhaps satire

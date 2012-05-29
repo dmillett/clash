@@ -22,6 +22,14 @@
      ; execute 'exe' here
      result#) )
 
+(defmacro mperf
+  "Dump a message with execution in milliseconds."
+  [exe, message]
+  `(let [t# (System/nanoTime)
+         result# ~exe]
+     (println ~message "time(ms):" (nano-to-millis (elapsed t#)))
+     result#) )
+
 (defn count-lines
   "How many lines in a file?"
   [file]
@@ -52,7 +60,7 @@
 ;; Using (nperf) instead of (time)
 (deftest test-jprocess-and-write
   (is (= 4 (count-lines input1)))
-  (nperf (jprocess-and-write command1 output1 "\n") "Small file 'cl + grep' and dump")
+  (mperf (jprocess-and-write command1 output1 "\n") "Small file 'cl + grep' and dump")
   (is (= 3 (count-lines output1)))
   ; cleanup
   (delete-file output1) )

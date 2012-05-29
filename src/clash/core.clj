@@ -51,6 +51,9 @@
     (reader (jproc-instream command))) )
 
 
+;; It's pretty slow dumping to the console, but useful for testing.
+
+
 (defn jprocess-and-write
   "Execute a System command, via java Process, and capture
   the InputStream via clojure reader into a sequenc.e
