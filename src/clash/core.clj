@@ -54,7 +54,7 @@
 ;; todo: make this into one method with writer or console dump??
 
 ; It's pretty slow dumping to the console, but useful for testing.
-(defn jproc-and-dump
+(defn jproc-dump
   "Execution a shell system command, via java process, and
   dump result to the console (slow). This is handled via
   clojure reader to a line-seq. "
@@ -64,7 +64,7 @@
       (doseq [line (line-seq rdr)]
         (println (str line delim))))) )
   
-(defn jproc-and-write
+(defn jproc-write
   "Execute a System command, via java Process, and capture
   the InputStream via clojure reader into a sequenc.e
   Write the resulting output to a file (useful for grep)."

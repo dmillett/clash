@@ -5,30 +5,53 @@
 (use '[clojure.java.io :only(reader delete-file)])
 
 ;; Test tools
-(defn nano-to-millis
+(defn millis
+  "Convert nano seconds to milliseconds."
   [nt]
   (/ nt 1000000.0))
 
-(defn elapsed
+(defn seconds
+  "Turn nano seconds into seconds."
   [nt]
-  (- (System/nanoTime) nt))
+  (/ (double nt) 1000000000))
 
-(defmacro nperf
-  "Dump a message with the execution time in nano seconds."
-  [exe, message]
-  `(let [t# (System/nanoTime)
-         result# ~exe]
-     (println ~message "time(ns):" (elapsed t#))
-     ; execute 'exe' here
-     result#) )
+(defn nano-time
+  "How many nano seconds from 'start'."
+  [start]
+  (- (System/nanoTime) start))
 
-(defmacro mperf
-  "Dump a message with execution in milliseconds."
-  [exe, message]
-  `(let [t# (System/nanoTime)
+(defn formatf
+  "Format a number to scale. Ex: (formatf 1 3) --> 1.000"
+  [number scale]
+  (format (str "%." scale "f") (double number)) )
+
+  (deftest test-formatf
+    (is (= "2.00" (formatf 2 2)))
+    (is (= "2.30" (formatf 2.3 2)))
+    (is (= "1.5000" (formatf 1.5 4))) )
+  
+(defn elapsed
+  "An text message with adjusted execution time (ns, ms, or s)."
+  ([time message] (elapsed time message 4))
+  ([time message digits]
+    (cond
+      (< time 99999) (str message " Time(ns):" time)
+      (< time 99999999) (str message " Time(ms):" (formatf (millis time) 3))
+      :else (str message " Time(s):" (formatf (seconds time) 3)))) )
+
+(deftest test-elapsed
+  (is (= "t1 Time(ns):100" (elapsed 100 "t1" 0)))
+  (is (= "t2 Time(ms):1.000" (elapsed 1000000 "t2" 4)))
+  (is (= "t3 Time(s):1.000" (elapsed 1000000000 "t3" 4))) )
+
+(defmacro perf
+  "Determine function execution time in nano seconds. Display is
+  in nanos or millis or seconds (see elapsed())."
+  [exe message]
+  `(let [time# (System/nanoTime)
          result# ~exe]
-     (println ~message "time(ms):" (nano-to-millis (elapsed t#)))
-     result#) )
+     (println (elapsed (nano-time time#) ~message))
+     result#))
 
 (defn count-lines
   "How many lines in a file?"
@@ -58,12 +81,12 @@
 (def command1 (str "grep message " input1))
 
 (deftest test-jproc-dump
-  (mperf (jproc-dump command1 "") "console (dump) test"))
+  (perf (jproc-dump command1 "") "console (dump) test"))
 
 ;; Using (nperf) instead of (time)
 (deftest test-jproc-write
   (is (= 4 (count-lines input1)))
-  (mperf (jproc-write command1 output1 "\n") "Small file 'cl + grep' and dump")
+  (perf (jproc-write command1 output1 "\n") "Small file 'cl + grep' and dump")
   (is (= 3 (count-lines output1)))
   ; cleanup
   (delete-file output1) )
