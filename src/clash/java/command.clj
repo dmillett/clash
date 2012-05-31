@@ -20,21 +20,6 @@ etc piped together on larger files."}
 ;; Mac
 ;; Windows: throw exception
 
-(comment
-(defn stb
-  "Sh*t the bed message."
-  [message]
-   (throw (RuntimeException. (str message))) )
-
-; Move to tools.clj
-(defn str-contains?
-  "Does a string contain a given text." 
-  [text, chars]
-  (if-not (or (empty? text) (empty? chars))
-          (. text contains chars)) )  
-)
-
-
 (defn pipe
   "Build a command array for linux, prefixing with the following
   system commands: \"/bin/sh\", \"-c\", 'command'. This will
@@ -93,7 +78,11 @@ etc piped together on larger files."}
 ;; Explore using multiple functions with @
 (defmacro with-jproc
   "A macro to combine clojure functions with a result
-  from a shell command. For example"
+  from a shell command.
+
+  Usage:
+   (with-jproc command \":\" output last)
+"
   [command delim output function]
   `(with-open [rdr# (jproc-reader ~command)
                wrt# (writer ~output)]
@@ -108,7 +97,7 @@ etc piped together on larger files."}
   of a grep to 'last': (last (grep bar \"foobar\")) --> 'r'
 
   Usage:
-  
+   (with-jproc-dump command2 \":\" last)
 "
   [command delim function]
   `(with-open [rdr# (jproc-reader ~command)]
