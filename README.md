@@ -6,10 +6,10 @@ shell command are OS specific (non MS Windows), but offer better
 performance than pure clojure/java grep/cut implementations.
 
 #### notes
-* requires "/bin/sh" functionality
-* built with leiningen (thanks technomancy)
-* clojure 1.3
-* first clojure foray
+1. requires "/bin/sh" functionality
+2. built with leiningen (thanks technomancy)
+3. clojure 1.3
+4. first clojure foray
 
 ## Usage
 
