@@ -11,8 +11,9 @@
   (:use [clojure.test]))
 
 (use '[clojure.java.io :only(reader delete-file)])
+(use '[clash.java.tools])
 
-;; Test tools
+(comment
 (defn millis
   "Convert nano seconds to milliseconds."
   [nt]
@@ -67,40 +68,43 @@
   (with-open [rdr (reader file)]
     (count (line-seq rdr))) )
 
-(def tresource
-  "Define the current test directory."
-  (str (System/getProperty "user.dir") "/test/clash/java/test"))
-
-;; Tests
 (deftest test-str-contains
    (is (not (str-contains? nil "o")))
    (is (not (str-contains? "foo" nil)))
    (is (not (str-contains? "foo" "g")))
    (is (str-contains? "foo" "o"))
    (is (not (str-contains? "foo" "|"))) )
+)
+
+
+(def tresource
+  "Define the current test directory."
+  (str (System/getProperty "user.dir") "/test/clash/java/test"))
 
 (deftest test-pipe
   (is (= 3 (count (pipe "foo|bar"))))
   (is (= 6 (count (pipe "foobar"))))
   )
 
-;; Test simple grep
+; Test simple grep
 (def input1 (str tresource "/input1.txt"))
 (def output1 (str tresource "/output1.txt"))
 (def command1 (str "grep message " input1))
 
-;; Commented out to reduce console spam
+; Commented out to reduce console spam
 (comment 
 (deftest test-jproc-dump
-  (perf (jproc-dump command1 "") "console (dump) test"))
+  (perf (jproc-dump command1 "") "console (dump) test")
+  )
 )
 
-;; Using (perf) instead of (time)
+; Using (perf) instead of (time)
 (deftest test-jproc-write
   (is (= 4 (count-lines input1)))
   (perf (jproc-write command1 output1 "\n") "'cl + grep' results to file")
   (is (= 3 (count-lines output1)))
-  (delete-file output1) )
+  (delete-file output1)
+  )
 
 (def command2 (str "grep message " input1 " | cut -d\",\" -f2 " input1))
 (def output2 (str tresource "/output2.txt"))
@@ -113,7 +117,6 @@
   (delete-file output2)
   )
 
-
 (def command3 (str "grep hopefully " input1))
 (def output3 (str tresource "/output3.txt"))
 
@@ -125,8 +128,9 @@
   (delete-file output3)
   )
 
-;; Commented out to reduce console spam
+; Commented out to reduce console spam
 (comment
 (deftest test-with-jproc-dump
-  (with-jproc-dump command2 ":" last))
+  (with-jproc-dump command2 ":" last)
+  )
 )

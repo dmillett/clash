@@ -14,12 +14,13 @@ etc piped together on larger files."}
 
 (use '[clojure.java.io :only(reader writer)])
 (use '[clojure.string :only(split)])
+(use '[clash.java.tools])
 
 ;; Linux/Unix "/bin/sh", "-c"
 ;; Mac
 ;; Windows: throw exception
 
-; Move to tools.clj
+(comment
 (defn stb
   "Sh*t the bed message."
   [message]
@@ -31,8 +32,9 @@ etc piped together on larger files."}
   [text, chars]
   (if-not (or (empty? text) (empty? chars))
           (. text contains chars)) )  
+)
 
-;; todo: macro?
+
 (defn pipe
   "Build a command array for linux, prefixing with the following
   system commands: \"/bin/sh\", \"-c\", 'command'. This will
