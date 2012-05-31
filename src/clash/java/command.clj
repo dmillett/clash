@@ -10,7 +10,7 @@
     ^{:author "David Millett"
       :doc "Use performant shell commands like 'grep', 'cut',
 etc piped together on larger files."}
-    clash.command)
+    clash.java.command)
 
 (use '[clojure.java.io :only(reader writer)])
 (use '[clojure.string :only(split)])

@@ -6,8 +6,8 @@
 ;   the terms of this license.
 ;   You must not remove this notice, or any other, from this software.
 
-(ns clash.test.command
-  (:use [clash.command])
+(ns clash.java.test.command
+  (:use [clash.java.command])
   (:use [clojure.test]))
 
 (use '[clojure.java.io :only(reader delete-file)])
@@ -69,7 +69,7 @@
 
 (def tresource
   "Define the current test directory."
-  (str (System/getProperty "user.dir") "/test/clash/test"))
+  (str (System/getProperty "user.dir") "/test/clash/java/test"))
 
 ;; Tests
 (deftest test-str-contains
