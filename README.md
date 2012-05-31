@@ -5,33 +5,39 @@ individually or piped together. The results of unpiped/piped
 shell command are OS specific (non MS Windows), but offer better 
 performance than pure clojure/java grep/cut implementations.
 
+#### notes
+* requires "/bin/sh" functionality
+* built with leiningen (thanks technomancy)
+* clojure 1.3
+* first clojure foray
+
 ## Usage
 
-#### example 1
-(def input1 (str tresource "/input1.txt"))
-(def output1 (str tresource "/output1.txt"))
-(def command1 (str "grep message " input1))
+### example 1
 
-; Writes result to output1 (see test/command.clj)
-(jproc-write command1 output1 "\n")
+    (def input1 (str tresource "/input1.txt"))
+    (def output1 (str tresource "/output1.txt"))
+    (def command1 (str "grep message " input1))
 
-#### example 2
-(def command2 (str "grep message " input1 " | cut -d\",\" -f2 " input1))
-(def output2 (str tresource "/output2.txt"))
+    ; Writes result to output1 (see test/command.clj)
+    (jproc-write command1 output1 "\n")
 
-; Writes result to output2 (see test/command.clj)
-(jproc-write command2 output2 ":")
+### example 2
+    (def command2 (str "grep message " input1 " | cut -d\",\" -f2 " input1))
+    (def output2 (str tresource "/output2.txt"))
 
-#### performance
+    ; Writes result to output2 (see test/command.clj)
+    (jproc-write command2 output2 ":")
+
+### performance
 A performance macro that will adjust the time unit for
 better readability and context. It will print out elapsed time
 in nano seconds (ns), milliseconds (ms) or seconds(s). 
 
-(perf expr message)
+    (perf expr message)
 
-(def message2 "'cl + grep + cut'
-(perf (jproc-write command2 output2 ":") message) --> 'cl + grep + cut' Time(ms):18.450
- 
+    (def message2 "'cl + grep + cut'
+    (perf (jproc-write command2 output2 ":") message) --> 'cl + grep + cut' Time(ms):18.450
 
 
 ## License
