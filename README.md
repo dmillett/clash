@@ -5,12 +5,6 @@ individually or piped together. The results of unpiped/piped
 shell command are OS specific (non MS Windows), but offer better 
 performance than pure clojure/java grep/cut implementations.
 
-#### notes
-1. requires "/bin/sh" functionality
-2. built with leiningen (thanks technomancy)
-3. clojure 1.3
-4. first clojure foray
-
 ## Usage
 
 ### example 1
@@ -39,6 +33,11 @@ in nano seconds (ns), milliseconds (ms) or seconds(s).
     (def message2 "'cl + grep + cut'
     (perf (jproc-write command2 output2 ":") message) --> 'cl + grep + cut' Time(ms):18.450
 
+### notes
+* requires "/bin/sh" functionality
+* built with leiningen (thanks technomancy)
+* clojure 1.3
+* first clojure foray
 
 ## License
 Copyright (c) David Millett 2012. All rights reserved.
