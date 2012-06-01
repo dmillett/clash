@@ -24,6 +24,10 @@ performance than pure clojure/java grep/cut implementations.
     (jproc-write command2 output2 ":")
 
 ### performance
+A simple performance test comparing '(re-split (re-find))' vs
+'(jproc-write "grep | cut")' and a 145 MB file resulted in
+completed in less than half the time with (jproc-write).
+
 A performance macro that will adjust the time unit for
 better readability and context. It will print out elapsed time
 in nano seconds (ns), milliseconds (ms) or seconds(s). 
@@ -33,7 +37,7 @@ in nano seconds (ns), milliseconds (ms) or seconds(s).
     (def message2 "'cl + grep + cut'
     (perf (jproc-write command2 output2 ":") message) --> 'cl + grep + cut' Time(ms):18.450
 
-### notes
+## notes
 * requires "/bin/sh" functionality
 * built with leiningen (thanks technomancy)
 * clojure 1.3
