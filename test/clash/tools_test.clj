@@ -6,10 +6,9 @@
 ;   the terms of this license.
 ;   You must not remove this notice, or any other, from this software.
 
-(ns clash.java.test.tools
-  (:use [clash.java.tools])
-  (:use [clojure.test]))
-
+(ns clash.tools_test
+  (:use [clojure.test]
+        [clash.tools]))
 
 (deftest test-formatf
   (is (= "2.00" (formatf 2 2)))
@@ -20,6 +19,11 @@
   (is (= "t1 Time(ns):100" (elapsed 100 "t1" 0)))
   (is (= "t2 Time(ms):1.000" (elapsed 1000000 "t2" 4)))
   (is (= "t3 Time(s):1.000" (elapsed 1000000000 "t3" 4))) )
+
+(deftest test-create-shell-cut
+  (is (= "cut -d\";\" -f3,5" (build-shell-cut-with-keys [:c :b :a :e :d] [:a :d] ";")))
+  (is (= "cut -d\";\" -f1-3" (build-shell-cut-with-keys [:c :b :e] [] ";")))
+  )
 
 (deftest test-str-contains
    (is (not (str-contains? nil "o")))

@@ -8,13 +8,12 @@
 
 (ns
     ^{:author "David Millett"
-      :doc "Use performant shell commands like 'grep', 'cut',
-etc piped together on larger files."}
-    clash.java.command)
-
-(use '[clojure.java.io :only(reader writer)])
-(use '[clojure.string :only(split)])
-(use '[clash.java.tools])
+      :doc "Use performant shell commands like 'grep', 'cut', etc piped together on larger files."}
+    clash.command
+  (:use [clojure.java.io :only (reader writer)]
+        [clojure.string :only (split)]
+        [clash.tools]
+        [clash.text-tools]))
 
 ;; Linux/Unix "/bin/sh", "-c"
 ;; Mac

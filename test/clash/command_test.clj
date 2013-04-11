@@ -6,13 +6,12 @@
 ;   the terms of this license.
 ;   You must not remove this notice, or any other, from this software.
 
-(ns clash.java.test.command
-  (:use [clash.java.command])
-  (:use [clojure.test]))
-
-(use '[clojure.java.io :only(reader delete-file)])
-(use '[clash.java.tools])
-
+(ns clash.command_test
+  (:use [clash.command]
+        [clojure.java.io :only (reader delete-file)]
+        [clojure.test]
+        [clash.tools]
+        [clash.text-tools]))
 
 (def tresource
   "Define the current test directory."
