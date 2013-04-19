@@ -8,3 +8,4 @@
 /.lein-deps-sum
 *.idea
 target/
+.lein-repl-history

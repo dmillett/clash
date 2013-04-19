@@ -82,23 +82,25 @@
           (select-keys result keys)) ))) )
 
 (defn regex-group-into-map
-  "Apply a regex"
+  "Parse the first regex match with a specific structure using 're-find' into
+  a map. Specify keys to return a subset of the map structure. Empty text or nil
+  pattern/structure results in nil."
   ([text structure pattern] (regex-group-into-map text structure pattern []))
-  ([text structure pattern keys]
+  ([text structure pattern sub-keys]
     (if (or (empty? text) (nil? pattern) (nil? structure))
       nil ; breakout
       (let [matches (re-find pattern text)]
         (if-not (and (nil? matches) (< (count matches) 1))
           (let [result (zipmap structure (rest matches))]
-            (if (empty? keys)
+            (if (empty? sub-keys)
               result
-              (select-keys result keys))) ))) ))
+              (select-keys result sub-keys))) ))) ))
 
 
 (defn regex-groups-into-maps
   "Parse multiple regex matches with structures, using 're-seq', into a map.
-   Returns nil for empty 'text', 'structure', or nil 'pattern'. To return a subset of
-   each structure in the sequence, then specify 'sub-keys'.
+   To return a subset of each structure in the sequence, then specify 'sub-keys'.
+   Empty text or nil pattern/structure results in nil
 
    Example: \"a,b,c,d,e,f\" with pattern (\\w),(\\w),(\\w) and structure [:a :b :c]
             will return ({:a a :b b :c c} {:a d :b e :c f})"
