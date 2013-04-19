@@ -15,7 +15,7 @@
 
 (def tresource
   "Define the current test directory."
-  (str (System/getProperty "user.dir") "/test/clash/java/test"))
+  (str (System/getProperty "user.dir") "/test/clash"))
 
 (deftest test-pipe
   (is (= 3 (count (pipe "foo|bar"))))
