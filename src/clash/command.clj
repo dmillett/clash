@@ -12,8 +12,9 @@
     clash.command
   (:use [clojure.java.io :only (reader writer)]
         [clojure.string :only (split)]
-        [clash.tools]
-        [clash.text-tools]))
+        ;[clash.tools]
+        [clash.text_tools]
+        ))
 
 ;; Linux/Unix "/bin/sh", "-c"
 ;; Mac
@@ -28,7 +29,6 @@
       ; linux, solaris, pretty much non microsoft
       (into-array (list "/bin/sh" "-c" command))
        command) )
-
 
 (defn jproc
   "Get a Java Process for a Runtime system execution."

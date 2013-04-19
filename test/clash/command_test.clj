@@ -9,9 +9,9 @@
 (ns clash.command_test
   (:use [clash.command]
         [clojure.java.io :only (reader delete-file)]
-        [clojure.test]
         [clash.tools]
-        [clash.text-tools]))
+        [clash.text_tools]
+        [clojure.test]))
 
 (def tresource
   "Define the current test directory."
@@ -36,9 +36,9 @@
 
 ; Using (perf) instead of (time)
 (deftest test-jproc-write
-  (is (= 4 (count-lines input1)))
+  (is (= 4 (count-file-lines input1)))
   (perf (jproc-write command1 output1 "\n") "'cl + grep' results to file")
-  (is (= 3 (count-lines output1)))
+  (is (= 3 (count-file-lines output1)))
   (delete-file output1)
   )
 
@@ -46,9 +46,9 @@
 (def output2 (str tresource "/output2.txt"))
 
 (deftest test-jproc-write-grep-cut
-  (is (= 4 (count-lines input1)))
+  (is (= 4 (count-file-lines input1)))
   (perf (jproc-write command2 output2 ":") "'cl + grep + cut' results to file")
-  (is (= 1 (count-lines output2)))
+  (is (= 1 (count-file-lines output2)))
   ; To see results comment out the next line "is:this: hopefully: satire?" 
   (delete-file output2)
   )
@@ -57,9 +57,9 @@
 (def output3 (str tresource "/output3.txt"))
 
 (deftest test-with-jproc
-  (is (= 4 (count-lines input1)))
+  (is (= 4 (count-file-lines input1)))
   (with-jproc command3 "" output3 last)
-  (is (= 1 (count-lines output3)))
+  (is (= 1 (count-file-lines output3)))
   ; To see results comment out the next line "y"
   (delete-file output3)
   )

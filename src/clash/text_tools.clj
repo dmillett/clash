@@ -48,7 +48,7 @@
           number (count result)]
       (if (> number 1)
         (apply str (interpose d2 result))
-        text)) ) )
+        text) ) ) )
 
 (defn count-tokens
   "Count the number of tokens in a string (text) for
@@ -56,4 +56,58 @@
   [text, token]
   (if (or (empty? text) (empty? token))
     0
-    (count (re-seq (re-pattern token) text))) )
+    (count (re-seq (re-pattern token) text)) ) )
+
+; Use with clash for best performance
+(defn create-shell-cut-with-keys
+  "Build a shell 'cut' command with a specific delimiter and specified fields. This
+  is more performant than using log-line-to-map to return a 'sub-map' of values"
+  [structure keys delim]
+  (let [indices (map #(+ 1 (.indexOf structure %)) keys)
+        cut (str "cut -d" \" delim \" " -f")]
+    (if (empty? indices)
+      (str cut "1-" (count structure))
+      (str cut (apply str (interpose \, indices))) )) )
+
+(defn text-structure-to-map
+  "Split a structured text into map and return some/all entries. A specific
+  pattern is required. If specific keys exist, then this functions creates
+  a sub-map of the original map."
+  ([line pattern structure] (text-structure-to-map line pattern structure []))
+  ([line pattern structure keys]
+    (when-not (empty? line)
+      (let [result (zipmap structure (str/split line pattern))]
+        (if (empty? keys)
+          result
+          (select-keys result keys)) ))) )
+
+(defn regex-group-into-map
+  "Apply a regex"
+  ([text structure pattern] (regex-group-into-map text structure pattern []))
+  ([text structure pattern keys]
+    (if (or (empty? text) (nil? pattern) (nil? structure))
+      nil ; breakout
+      (let [matches (re-find pattern text)]
+        (if-not (and (nil? matches) (< (count matches) 1))
+          (let [result (zipmap structure (rest matches))]
+            (if (empty? keys)
+              result
+              (select-keys result keys))) ))) ))
+
+
+(defn regex-groups-into-maps
+  "Parse multiple regex matches with structures, using 're-seq', into a map.
+   Returns nil for empty 'text', 'structure', or nil 'pattern'. To return a subset of
+   each structure in the sequence, then specify 'sub-keys'.
+
+   Example: \"a,b,c,d,e,f\" with pattern (\\w),(\\w),(\\w) and structure [:a :b :c]
+            will return ({:a a :b b :c c} {:a d :b e :c f})"
+  ([text structure pattern] (regex-groups-into-maps text structure pattern []))
+  ([text structure pattern sub-keys]
+    (if (or (empty? text) (empty? structure) (nil? pattern))
+       nil
+       (let [text_groups (re-seq pattern text)]
+         (when-not (empty? text_groups)
+           (if (empty? sub-keys)
+             (map #(zipmap structure (rest %)) text_groups)
+             (map #(select-keys (zipmap structure (rest %)) sub-keys) text_groups)) ))) ))

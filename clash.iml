@@ -12,7 +12,8 @@
     </content>
     <orderEntry type="inheritedJdk" />
     <orderEntry type="sourceFolder" forTests="false" />
-    <orderEntry type="library" name="clojure-current" level="project" />
+    <orderEntry type="library" exported="" name="clojure-current" level="project" />
+    <orderEntry type="library" name="jvm" level="application" />
   </component>
   <component name="org.twodividedbyzero.idea.findbugs">
     <option name="_basePreferences">
