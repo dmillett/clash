@@ -8,8 +8,7 @@
 
 (ns clash.tools_test
   (:use [clash.tools]
-        [clojure.test]
-        [clash.text_tools]))
+        [clojure.test]))
 
 (deftest test-formatf
   (is (= "2.00" (formatf 2 2)))
@@ -21,9 +20,20 @@
   (is (= "t2 Time(ms):1.000" (elapsed 1000000 "t2" 4)))
   (is (= "t3 Time(s):1.000" (elapsed 1000000000 "t3" 4))) )
 
-(deftest test-str-contains
-   (is (not (str-contains? nil "o")))
-   (is (not (str-contains? "foo" nil)))
-   (is (not (str-contains? "foo" "g")))
-   (is (str-contains? "foo" "o"))
-   (is (not (str-contains? "foo" "|"))) )
+;; Test functions for perf and latency
+(defn foobar [x] (* x x))
+(defn phrase-it [result phrase] (str result phrase))
+
+(deftest test-latency
+  (let [result1 (latency (foobar 5) "foobar function")
+        result2 (latency (phrase-it (foobar 10) ", the square of 10") "phrase-it, foobar latency")]
+
+    (is (= 25 (-> result1 :result)))
+    (is (not (nil? (-> result1 :latency_text))))
+    (is (= "100, the square of 10" (-> result2 :result)))
+    )
+  )
+
+
+
+

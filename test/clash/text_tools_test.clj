@@ -24,6 +24,13 @@ cd")
     "ab;cd" (as-one-line text2 ";")
     ))
 
+(deftest test-str-contains
+  (is (not (str-contains? nil "o")))
+  (is (not (str-contains? "foo" nil)))
+  (is (not (str-contains? "foo" "g")))
+  (is (str-contains? "foo" "o"))
+  (is (not (str-contains? "foo" "|"))) )
+
 (deftest test-create-shell-cut
   (is (= "cut -d\";\" -f3,5" (create-shell-cut-with-keys [:c :b :a :e :d] [:a :d] ";")))
   (is (= "cut -d\";\" -f1-3" (create-shell-cut-with-keys [:c :b :e] [] ";")))
