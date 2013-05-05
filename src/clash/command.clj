@@ -26,9 +26,9 @@
   enable multiple commands to execute via 'pipe'. "
   [command]
   (if (str-contains? command "|")
-      ; linux, solaris, pretty much non microsoft
-      (into-array (list "/bin/sh" "-c" command))
-       command) )
+    ; linux, solaris, pretty much non microsoft
+    (into-array (list "/bin/sh" "-c" command))
+     command) )
 
 (defn jproc
   "Get a Java Process for a Runtime system execution."
@@ -103,5 +103,3 @@
      (doseq [line# (line-seq rdr#)]
        (let [result# (~function line#)]
          (println (str "macro result? " result# ~delim))))) )
-
-       

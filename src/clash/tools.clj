@@ -64,6 +64,8 @@
 ;; todo: convert HH mm DD to nanotime pattern
 
 (defn latency
+  "Determine the execution latency for any function passed in. Results are returned
+  in a map with :latency_text (execution latency) and :result (function execution result)."
   [function message]
   (let [start (System/nanoTime)
         result function

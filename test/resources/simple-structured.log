@@ -1,0 +1,8 @@
+# time|application|version|logging_level|log_message
+05042013-13:24:12.000|sample-server|1.0.0|info|Buy,FOO,500,12.00
+05042013-13:24:12.010|sample-server|1.0.0|info|Buy,FOO,200,12.20
+05042013-13:24:12.130|sample-server|1.0.0|info|Buy,BAR,1000,2.25
+05042013-13:24:12.130|sample-server|1.0.0|info|NullPointerException: not enough defense programming
+05042013-13:24:12.450|sample-server|1.0.0|info|Sell,FOO,500,12.72
+05042013-13:24:13.005|sample-server|1.0.0|info|Buy,ZOO,200,9.24
+05042013-13:24:13.123|sample-server|1.0.0|info|Sell,BAR,50,2.30

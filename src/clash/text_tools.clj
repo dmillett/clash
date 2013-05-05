@@ -25,7 +25,7 @@
       (str/replace text "\n" delim) )) )
 
 (defn str-contains?
-  "Does a String contain a specific string?"
+  "Does a String contain a specific piece of text?"
   [text, search]
   (if (or (empty? text) (empty? search))
     false
