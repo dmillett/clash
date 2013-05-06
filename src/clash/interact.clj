@@ -18,12 +18,28 @@
 ;; (let [decoded (tt/url-decode line)] (sd/parse-soldump-line decoded))
 ;;   (sd/parse-soldump-line line)
 (defn atomic-map-from-file
-  "Works through a file, by line (does not hold head), and creates an 'atom map',
-  object store 'ref' available for use in other locations (like an interactive
-  repl). Specify a file to open, predicate to include the line, a transformer
-  to convert the text, and a structure to parse text into.
+  "Load ~structured text from a file into a map of data structures to interact with
+  at the command line (repl). Larger files and structures may require increasing the
+   jvm heap. It helps to have specific regex to decrease the number of 'bad'
+   structures included in the atomized data structure.
 
-  Usage: (atomic-map-from-file \"log-file-foo.txt\"  "
+  Usage:
+  (atomic-map-from-file \"/foo.log\" foo-parser)
+  (atomic-map-from-file \"/foo.log\" is-foo? url-decode foo-parser key-builder)
+
+  'input' - a text file with structure (typically a log file)
+  'parser' - function that parses a text line, with regex, into a data structure
+  'predicate' - function includes/excludes text line from parsing
+              - default allows every line
+              - define function using 'every-pred' for 1 - N predicates
+  'transformer' - function to alter text line (decode, decrypt, etc) prior to parsing
+                - defaults to no transformation
+  'key' - function to generate a unique key for the map
+        - can use structured object to generate key
+        - defaults to (System/nanoTime)
+
+   Alternatively, just the 2 arg function and rely on the parser to perform much of
+   the functionality with more strict regex."
   ([input parser] (atomic-map-from-file input nil nil parser nil))
   ([input predicate transformer parser key]
     (let [result (atom {})]
@@ -40,20 +56,22 @@
 
 
 (defn atomic-list-from-file
-  "Load ~structured text from a file into a list of data structures to
-  interact with at the command line (repl). Larger files and structures
-  may require increasing the jvm heap. It helps to have specific regex
-  to decrease the number of 'bad' structures included in the atomized data
-  structure.
+  "Load ~structured text from a file into a list of data structures to interact with
+  at the command line (repl). Larger files and structures may require increasing the
+   jvm heap. It helps to have specific regex to decrease the number of 'bad'
+   structures included in the atomized data structure.
 
   Usage:
   (atomic-list-from-file \"/foo.log\" foo-parser)
   (atomic-list-from-file \"/foo.log\" is-foo? url-decode foo-parser)
 
-  'input' - a text file
-  'parser' - a function that parses a line of text (via regex) into a data structure
-  'predicates' - a function to include/exclude a line of text from parsing (see 'every-pred')
-  'transformer' - a function to alter the line (decode, decrypt, etc) prior to parsing
+  'input' - a text file with structure (typically a log file)
+  'parser' - function that parses a text line, with regex, into a data structure
+  'predicates' - function includes/excludes text line from parsing
+               - default will allow every line
+               - define predicates with 'every-pred' for 1 - N predicates
+  'transformer' - function to alter text line (decode, decrypt, etc) prior to parsing
+                - defaults to no text transformation
 
    Alternatively, just the 2 arg function and rely on the parser to perform much of
    the functionality with more strict regex."
@@ -75,7 +93,7 @@
   "Perform a count on each data structure in a list if it matches
   the conditions defined in the predicates function. The predicates
   function may contain multiple conditions when used with (every-pred p1 p2)."
-  [count solutions predicates]
+  [solutions predicates]
   (reduce (fn [count solution]
             (if (predicates solution)
               (inc count)
@@ -83,6 +101,9 @@
               ))
     0 solutions) )
 
-;(defn collect-with-condition
-;
-;  )
+(defn collect-with-condition
+  "Build a collection of structued data objects that satisfy the conditions
+  defined in 'predicates'. The predicates should be customized to use the
+  data structure to filter."
+  [solutions predicates]
+  (filter #(predicates  %) solutions) )
