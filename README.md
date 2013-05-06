@@ -23,6 +23,17 @@ performance than pure clojure/java grep/cut implementations.
     ; Writes result to output2 (see test/command.clj)
     (jproc-write command2 output2 ":")
 
+### example 3
+    ;; mapping regex groups: text, structure, pattern, sub-key(s) into a list of maps
+    
+    ; Return all keys
+    (regex-groups-into-maps "a,b,c,d" [:a :b] #"(\w),(\w)")
+    => ({:a "a" :b "b"} {:a "c" :b "d"})    
+    
+    ; Only return ':a' keys
+    (regex-groups-into-maps "a,b,c,d" [:a :b] #"(\w),(\w)" [:a])
+    => ({:a "a"} {:a "c"})
+
 ### performance
 A simple performance test comparing '(re-split (re-find))' vs
 '(jproc-write "grep | cut")' and a 145 MB file resulted in
@@ -34,13 +45,13 @@ in nano seconds (ns), milliseconds (ms) or seconds(s).
 
     (perf expr message)
 
-    (def message2 "'cl + grep + cut'
+    (def message2 "'cl + grep + cut'")
     (perf (jproc-write command2 output2 ":") message) --> 'cl + grep + cut' Time(ms):18.450
 
 ## notes
 * requires "/bin/sh" functionality
-* built with leiningen (thanks technomancy)
-* clojure 1.3
+* built with leiningen2 (thanks technomancy)
+* clojure 1.5
 * first clojure foray
 
 ## License
