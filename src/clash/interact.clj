@@ -95,7 +95,7 @@
   function may contain multiple conditions when used with (every-pred p1 p2)."
   [solutions predicates]
   (reduce (fn [count solution]
-            (if (predicates solution)
+            (if (or (nil? predicates) (predicates solution))
               (inc count)
               count
               ))
@@ -106,4 +106,6 @@
   defined in 'predicates'. The predicates should be customized to use the
   data structure to filter."
   [solutions predicates]
-  (filter #(predicates  %) solutions) )
+  (if (nil? predicates)
+    solutions
+    (filter #(predicates  %) solutions) ) )

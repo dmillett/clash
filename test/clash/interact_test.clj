@@ -72,9 +72,18 @@
   (let [solutions (atomic-list-from-file simple-file better-stock-message-parser)]
     (are [x y] (= x y)
       0 (count-with-conditions @solutions #(= "XYZ" (-> % :stock)))
+      6 (count-with-conditions @solutions nil)
       3 (count-with-conditions @solutions #(= "FOO" (-> % :stock)))
       3 (count-with-conditions @solutions (p1? "FOO"))
       2 (count-with-conditions @solutions (p2? "FOO" "Buy"))
       1 (count-with-conditions @solutions (p3? "FOO" "Sell"))
       ) ) )
 
+(deftest test-collect-with-conditions
+  (let [solutions (atomic-list-from-file simple-file better-stock-message-parser)]
+    (are [x y] (= x y)
+      0 (count (collect-with-condition @solutions (p1? "XYZ")) )
+      1 (count (collect-with-condition @solutions (p3? "FOO" "Sell")))
+      2 (count (collect-with-condition @solutions (p2? "FOO" "Buy")))
+      6 (count (collect-with-condition @solutions nil))
+      ) ) )
