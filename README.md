@@ -1,5 +1,5 @@
 # clash
-A clojure project for interactively analyzing structured text files (ex: logs, csv, etc.), within
+A clojure project for quick interactive analysis of structured text files (ex: logs, csv, etc.), within
 the REPL. After parsing structured text into an in memory data structure as an *atom*, clash facilitates
 counting and collecting results from the data structure based on specified predicates and incrementing
 functions.
@@ -9,26 +9,76 @@ advantages of commands like 'grep' and 'cut' individually or piped together. The
 shell command are OS specific (non MS Windows), but offer better performance than pure clojure/java 
 grep/cut implementations.
 
-## Usage
-Below is a brief summary of a simple example included with this repository.
+## Features & Benefits
+1. Quickly load small-large log or text file into an object structure 
+    * See clash.interact/atomic-list-from-file
+    * See clash.interact/atomic-map-from-file
+    * Tested with 100 MB file with over 400,000+ complex object structures
+2. Very fast, condition based, result counts and retrievals 
+    * See clash.interact/count_with_conditions
+    * See clash..interact/collect_with_conditions
+    * Millisecond and subsecond results for nested queries on 400,000+ objects 
+3. Quickly build and analyze data withing Clojure REPL
+    * Existing log/text file data for patterns and ML
+    * Experiment and identify optimal data queries for larger scale Hadoop style analysis
+    * Determine initial trends
+    
+## Setup
+1. Retrieve code for stand alone use or as a resource
+    * git clone
+    * git submodule add  <your-project>/checkouts
+2. Install Leiningen and update the **project.clj**
+    * Adjust based on number and complexity of structured objects
 
-### reading simple log file into list of object structures for analysis
+```clojure
+:jvm-opts ["-Xms128" "-Xmx512"]
+```
+```clojure
+:repl-options { :init (do
+                (load-file "checkouts/clash/src/clash/tools.clj")
+                (load-file "checkouts/clash/src/clash/interact.clj")
+                (load-file "your-clojure-source-file.clj")
+                (use 'clash.tools)
+                (use 'clash.interact)
+                (use 'ns.your-clojure-file)
+                (defn load-local-resource
+                  [filename]
+                  (str (System/getProperty "user.dir") "path/to/log-file" filename))
+               )}
+```
+
+## Usage
+Below is a brief summary of a simple example (see *test/clash/interact_test.clj*) included with 
+this repository.
+
+##### Start the clojure REPL
+
+```
+lein repl
+```
+##### Define object structure, regex, and parser for target file
+
 ```clojure
 ;; A log line example from (simple-structured.log)
 (def line "05042013-13:24:12.000|sample-server|1.0.0|info|Buy,FOO,500,12.00")
-    
+ 
+; Defrecords offer a 12%-15% performance improvement during parsing
 (def simple-stock-structure [:trade_time :action :stock :quantity :price])
 (def detailed-stock-pattern #"(\d{8}-\d{2}:\d{2}:\d{2}.\d{3})\|.*\|(\w*),(\w*),(\d*),(.*)")
-    
+
 ; Parse log line into 'simple-stock-structure' via 'detailed-stock-pattern'
 (defn better-stock-message-parser
   "An exact parsing of line text into 'simple-stock-structure' using 'detailed-stock-pattern'."
   [line]
   (tt/regex-group-into-map line simple-stock-structure detailed-stock-pattern) )
+```
+##### Read file data structures into memory as a *list* or *map*
 
+```clojure
 ; Create a reference atom of solutions to use in REPL 
 (def solutions (atomic-list-from-file simple-file better-stock-message-parser))
 ```
+
 ##### test examples (see test/clash/interact_test.clj)
 ```clojure
 ; Ensure the lines were parsed and mapped properly
@@ -84,6 +134,8 @@ Below is a brief summary of a simple example included with this repository.
 ### performance
 I've personally used this to process large log files with over 400,000 complex data structures where
 it takes ~30 seconds to load into memory, but less than a second for most complex queries thereafter.
+Clojure *defrecord* objects offer a 12-15% performance improvement when parsing a file, but are slightly
+less flexible to use.
 
 A simple performance test comparing '(re-split (re-find))' vs '(jproc-write "grep | cut")' and a 
 145 MB file resulted in completed in less than half the time with (jproc-write).
