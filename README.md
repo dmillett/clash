@@ -31,7 +31,8 @@ grep/cut implementations.
     * Adjust based on number and complexity of structured objects
 
 ```clojure
-:jvm-opts ["-Xms128" "-Xmx512"]
+;; Increase to 1024m or 2096m for larger files
+:jvm-opts ["-Xms256m" "-Xmx512m"]
 ```
 ```clojure
 :repl-options { :init (do
