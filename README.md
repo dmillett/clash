@@ -13,6 +13,7 @@ grep/cut implementations.
 1. Quickly load small-large log or text file into an object structure 
     * See clash.interact/atomic-list-from-file
     * See clash.interact/atomic-map-from-file
+    * See clash.text_tools/regex-group-into-map
     * Tested with 100 MB file with over 400,000+ complex object structures
 2. Very fast, condition based, result counts and retrievals 
     * See clash.interact/count_with_conditions
@@ -23,31 +24,6 @@ grep/cut implementations.
     * Experiment and identify optimal data queries for larger scale Hadoop style analysis
     * Determine initial trends
     
-## Setup
-1. Retrieve code for stand alone use or as a resource
-    * git clone
-    * git submodule add  <your-project>/checkouts
-2. Install Leiningen and update the **project.clj**
-    * Adjust based on number and complexity of structured objects
-
-```clojure
-;; Increase to 1024m or 2096m for larger files
-:jvm-opts ["-Xms256m" "-Xmx512m"]
-```
-```clojure
-:repl-options { :init (do
-                (load-file "checkouts/clash/src/clash/tools.clj")
-                (load-file "checkouts/clash/src/clash/interact.clj")
-                (load-file "your-clojure-source-file.clj")
-                (use 'clash.tools)
-                (use 'clash.interact)
-                (use 'ns.your-clojure-file)
-                (defn load-local-resource
-                  [filename]
-                  (str (System/getProperty "user.dir") "path/to/log-file" filename))
-               )}
-```
-
 ## Usage
 Below is a brief summary of a simple example (see *test/clash/interact_test.clj*) included with 
 this repository.
@@ -81,6 +57,17 @@ lein repl
 ```
 
 ##### test examples (see test/clash/interact_test.clj)
+```
+# time|application|version|logging_level|log_message
+05042013-13:24:12.000|sample-server|1.0.0|info|Buy,FOO,500,12.00
+05042013-13:24:12.010|sample-server|1.0.0|info|Buy,FOO,200,12.20
+05042013-13:24:12.130|sample-server|1.0.0|info|Buy,BAR,1000,2.25
+05042013-13:24:12.130|sample-server|1.0.0|info|NullPointerException: not enough defense programming
+05042013-13:24:12.450|sample-server|1.0.0|info|Sell,FOO,500,12.72
+05042013-13:24:13.005|sample-server|1.0.0|info|Buy,ZOO,200,9.24
+05042013-13:24:13.123|sample-server|1.0.0|info|Sell,BAR,50,2.30
+```
+
 ```clojure
 ; Ensure the lines were parsed and mapped properly
 (= 6 (count @solutions)
@@ -153,7 +140,35 @@ elapsed time in nano seconds (ns), milliseconds (ms) or seconds(s).
 (def message2 "'cl + grep + cut'")
 (perf (jproc-write command2 output2 ":") message) --> 'cl + grep + cut' Time(ms):18.450
 ```
-## notes
+## Setup
+1. Retrieve code for stand alone use or as a resource
+    * git clone
+    * git submodule add  <your-project>/checkouts
+2. Install Leiningen and update the **project.clj**
+    * Adjust based on number and complexity of structured objects
+
+```clojure
+;; Increase to 1024m or 2096m for larger files
+:jvm-opts ["-Xms256m" "-Xmx512m"]
+```
+```clojure
+:repl-options { :init (do
+                (load-file "checkouts/clash/src/clash/tools.clj")
+                (load-file "checkouts/clash/src/clash/text_tools.clj")
+                (load-file "checkouts/clash/src/clash/interact.clj")
+                (load-file "your-clojure-source-file.clj")
+                (use 'clash.tools)
+                (use 'clash.text_tools)
+                (use 'clash.interact)
+                (use 'ns.your-clojure-file)
+                (defn load-local-resource
+                  [filename]
+                  (str (System/getProperty "user.dir") "path/to/log-file" filename))
+               )}
+```
+
+
+### notes
 * requires "/bin/sh" functionality
 * built with leiningen2 (thanks technomancy)
 * clojure 1.5.1 (thank rich, et al)
