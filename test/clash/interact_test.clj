@@ -23,12 +23,14 @@
 (def detailed-stock-pattern #"(\d{8}-\d{2}:\d{2}:\d{2}.\d{3})\|.*\|(\w*),(\w*),(\d*),(.*)")
 
 (defn is-buy-or-sell?
+  "If the current line contains 'Buy' or 'Sell'. "
   [line]
   (if (or (tt/str-contains? line "Buy") (tt/str-contains? line "Sell"))
     true
     false) )
 
 (defn simple-stock-message-parser
+  "An inexact split and parse of line text into 'simple-stock-structure'."
   [line]
   (let [splitsky (tt/split-with-regex line #"\|")
         date (first splitsky)
@@ -37,6 +39,8 @@
     (tt/text-structure-to-map corrected #"," simple-stock-structure)) )
 
 (defn better-stock-message-parser
+  "An exact parsing of line text into 'simple-stock-structure' using
+  'detailed-stock-pattern'."
   [line]
   (tt/regex-group-into-map line simple-stock-structure detailed-stock-pattern) )
 
@@ -80,7 +84,7 @@
   [stock action]
   (every-pred (stock-name? stock) #(= action (-> % :action))) )
 
-(def stock-quanity-increment
+(def increment-with-stock-quanity
   "Destructures 'solution' and existing 'count', and adds the stock 'quantity'
    'count'."
   (fn [solution count] (+ count (read-string (-> solution :quantity))) ) )
@@ -96,15 +100,16 @@
       1 (count-with-conditions @solutions (stock-name-action-every-pred? "FOO" "Sell"))
       ) ) )
 
+;; Demonstrating custom increment
 (deftest test-count-with-conditions__with_incrementer
   (let [solutions (atomic-list-from-file simple-file better-stock-message-parser)]
     (are [x y] (= x y)
       3 (count-with-conditions @solutions (stock-name? "FOO") nil)
-      1200 (count-with-conditions @solutions (stock-name? "FOO") stock-quanity-increment)
-      )
-    )
-  )
+      1200 (count-with-conditions @solutions (stock-name? "FOO") increment-with-stock-quanity)
+      2450 (count-with-conditions @solutions nil increment-with-stock-quanity)
+      ) ) )
 
+;;
 (deftest test-collect-with-conditions
   (let [solutions (atomic-list-from-file simple-file better-stock-message-parser)]
     (are [x y] (= x y)
