@@ -93,13 +93,14 @@
   "Perform a count on each data structure in a list if it matches
   the conditions defined in the predicates function. The predicates
   function may contain multiple conditions when used with (every-pred p1 p2)."
-  [solutions predicates]
-  (reduce (fn [count solution]
-            (if (or (nil? predicates) (predicates solution))
-              (inc count)
-              count
-              ))
-    0 solutions) )
+  ([solutions predicates] (count-with-conditions solutions predicates nil))
+  ([solutions predicates incrementer]
+    (reduce (fn [count solution]
+              (if (or (nil? predicates) (predicates solution))
+                (if-not (nil? incrementer) (incrementer solution count) (inc count))
+                count
+                ))
+      0 solutions) ))
 
 (defn collect-with-condition
   "Build a collection of structued data objects that satisfy the conditions

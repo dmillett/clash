@@ -64,9 +64,26 @@
     (is (= 6 (count @result2)))
     ) )
 
-(defn p1? [stock] #(= stock (-> % :stock)))
-(defn p2? [stock action] #(and (= stock (-> % :stock)) (= action (-> % :action))) )
-(defn p3? [stock action] (every-pred (p1? stock) #(= action (-> % :action))) )
+(defn stock-name?
+  "A predicate to check 'stock' name against the current solution."
+  [stock]
+  #(= stock (-> % :stock)))
+
+(defn stock-name-action?
+  "A predicate to check 'stock' name and 'action' against the current solution."
+  [stock action]
+  #(and (= stock (-> % :stock)) (= action (-> % :action))) )
+
+(defn stock-name-action-every-pred?
+  "A predicate to check 'stock' name and 'action' against the current solution,
+  using 'every-pred'."
+  [stock action]
+  (every-pred (stock-name? stock) #(= action (-> % :action))) )
+
+(def stock-quanity-increment
+  "Destructures 'solution' and existing 'count', and adds the stock 'quantity'
+   'count'."
+  (fn [solution count] (+ count (read-string (-> solution :quantity))) ) )
 
 (deftest test-count-with-conditions
   (let [solutions (atomic-list-from-file simple-file better-stock-message-parser)]
@@ -74,16 +91,25 @@
       0 (count-with-conditions @solutions #(= "XYZ" (-> % :stock)))
       6 (count-with-conditions @solutions nil)
       3 (count-with-conditions @solutions #(= "FOO" (-> % :stock)))
-      3 (count-with-conditions @solutions (p1? "FOO"))
-      2 (count-with-conditions @solutions (p2? "FOO" "Buy"))
-      1 (count-with-conditions @solutions (p3? "FOO" "Sell"))
+      3 (count-with-conditions @solutions (stock-name? "FOO"))
+      2 (count-with-conditions @solutions (stock-name-action? "FOO" "Buy"))
+      1 (count-with-conditions @solutions (stock-name-action-every-pred? "FOO" "Sell"))
       ) ) )
+
+(deftest test-count-with-conditions__with_incrementer
+  (let [solutions (atomic-list-from-file simple-file better-stock-message-parser)]
+    (are [x y] (= x y)
+      3 (count-with-conditions @solutions (stock-name? "FOO") nil)
+      1200 (count-with-conditions @solutions (stock-name? "FOO") stock-quanity-increment)
+      )
+    )
+  )
 
 (deftest test-collect-with-conditions
   (let [solutions (atomic-list-from-file simple-file better-stock-message-parser)]
     (are [x y] (= x y)
-      0 (count (collect-with-condition @solutions (p1? "XYZ")) )
-      1 (count (collect-with-condition @solutions (p3? "FOO" "Sell")))
-      2 (count (collect-with-condition @solutions (p2? "FOO" "Buy")))
+      0 (count (collect-with-condition @solutions (stock-name? "XYZ")) )
+      1 (count (collect-with-condition @solutions (stock-name-action-every-pred? "FOO" "Sell")))
+      2 (count (collect-with-condition @solutions (stock-name-action? "FOO" "Buy")))
       6 (count (collect-with-condition @solutions nil))
       ) ) )
