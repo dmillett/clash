@@ -104,9 +104,9 @@
 (deftest test-count-with-conditions__with_incrementer
   (let [solutions (atomic-list-from-file simple-file better-stock-message-parser)]
     (are [x y] (= x y)
-      3 (count-with-conditions @solutions (stock-name? "FOO") nil)
-      1200 (count-with-conditions @solutions (stock-name? "FOO") increment-with-stock-quanity)
-      2450 (count-with-conditions @solutions nil increment-with-stock-quanity)
+      3 (count-with-conditions @solutions (stock-name? "FOO") 0)
+      1200 (count-with-conditions @solutions (stock-name? "FOO") increment-with-stock-quanity 0)
+      2470 (count-with-conditions @solutions nil increment-with-stock-quanity 20)
       ) ) )
 
 ;; Medium complexity structures
