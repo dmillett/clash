@@ -109,7 +109,31 @@
       2450 (count-with-conditions @solutions nil increment-with-stock-quanity)
       ) ) )
 
-;;
+;; Medium complexity structures
+(def medium_complexity
+  '({:foo "FOO" :bar {:zoo "ZOO" :fur (2 4)} }
+     {:foo "BAR" :bar {:zoo "ZAP" :fur (3 5 7)} }) )
+
+(defn is-zoo?
+  [stock]
+  (fn [solution] (= stock (-> solution :bar :zoo))) )
+
+(def is-fur-odd?
+  (fn [solution]
+    (let [values (-> solution :bar :fur)]
+      (every? odd? values)) ) )
+
+(deftest test-count-with-conditions__medium_complexity
+  (are [x y] (= x y)
+    true ((is-zoo? "ZOO") (first medium_complexity))
+    0 (count-with-conditions medium_complexity (is-zoo? "PIG"))
+    1 (count-with-conditions medium_complexity (is-zoo? "ZOO"))
+    1 (count-with-conditions medium_complexity is-fur-odd?)
+    0 (count-with-conditions medium_complexity (every-pred is-fur-odd? (is-zoo? "BAR")))
+    1 (count-with-conditions medium_complexity (every-pred is-fur-odd? (is-zoo? "ZAP")))
+    ) )
+
+;; Collecting results
 (deftest test-collect-with-conditions
   (let [solutions (atomic-list-from-file simple-file better-stock-message-parser)]
     (are [x y] (= x y)
