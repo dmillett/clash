@@ -40,20 +40,20 @@ lein repl
 (def line "05042013-13:24:12.000|sample-server|1.0.0|info|Buy,FOO,500,12.00")
  
 ; Defrecords offer a 12%-15% performance improvement during parsing
-(def simple-stock-structure [:trade_time :action :stock :quantity :price])
-(def detailed-stock-pattern #"(\d{8}-\d{2}:\d{2}:\d{2}.\d{3})\|.*\|(\w*),(\w*),(\d*),(.*)")
+(def structure [:trade_time :action :stock :quantity :price])
+(def pattern #"(\d{8}-\d{2}:\d{2}:\d{2}.\d{3})\|.*\|(\w*),(\w*),(\d*),(.*)")
 
 ; Parse log line into 'simple-stock-structure' via 'detailed-stock-pattern'
-(defn better-stock-message-parser
-  "An exact parsing of line text into 'simple-stock-structure' using 'detailed-stock-pattern'."
+(defn stock-message-parser
+  "An exact parsing of line text into 'structure' using 'pattern'."
   [line]
-  (tt/regex-group-into-map line simple-stock-structure detailed-stock-pattern) )
+  (tt/regex-group-into-map line structure pattern) )
 ```
 ##### Read file data structures into memory as a *list* or *map*
 
 ```clojure
 ; Create a reference atom of solutions to use in REPL 
-(def solutions (atomic-list-from-file simple-file better-stock-message-parser))
+(def solutions (atomic-list-from-file simple-file stock-message-parser))
 ```
 
 ##### test examples (see test/clash/interact_test.clj)
@@ -72,6 +72,7 @@ lein repl
 ; Ensure the lines were parsed and mapped properly
 (= 6 (count @solutions)
     
+; in the context of a map composed of 'structure' keys
 (defn stock-name-action?
   "A predicate to check 'stock' name and 'action' against the current solution."
   [stock action]
@@ -80,17 +81,19 @@ lein repl
 ; A count of all "Buy" actions of stock "FOO"
 (= 2 (count-with-conditions @solutions (stock-name-action? "FOO" "Buy")))
     
-(def increment-with-stock-quanity
+(def increment-by-stock-quanity
   "Destructures 'solution' and existing 'count', and adds the stock 'quantity' and 'count'."
   (fn [solution count] (+ count (read-string (-> solution :quantity))) ) )
     
 ; Incrementing count based on stock quantity for each structure
-(= 1200 (count-with-conditions @solutions (stock-name? "FOO") increment-with-stock-quanity))
+(= 1200 (count-with-conditions @solutions (stock-name? "FOO") increment-by-stock-quanity))
 
 ; Collecting a sequence of all matching solutions
 (= 2 (count (collect-with-condition @solutions (stock-name-action? "FOO" "Buy"))))
 ```
 ### example 2
+Some basic internal utility for creating a map composed of structured keys and
+a regular expression.
 ```clojure
 ;; mapping regex groups: text, structure, pattern, sub-key(s) into a list of maps
     
@@ -104,6 +107,17 @@ lein repl
 ```
 ### example 3
 ```clojure
+(def command2 (str "grep message " input1 " | cut -d\",\" -f2 " input1))
+(def output2 (str tresource "/output2.txt"))
+
+; Writes result to output2 (see test/command.clj)
+(jproc-write command2 output2 ":")
+```
+### example 4
+Applying linux/unix shell commands in conjunction with Clojure to a text file. It's
+generally faster to delegate to the C implementations than iterate through a file
+with the JVM. These are simple, included test files.
+```clojure
 (def input1 (str tresource "/input1.txt"))
 (def output1 (str tresource "/output1.txt"))
 (def command1 (str "grep message " input1))
@@ -111,17 +125,9 @@ lein repl
 ; Writes result to output1 (see test/command.clj)
 (jproc-write command1 output1 "\n")
 ```
-### example 4
-```clojure
-(def command2 (str "grep message " input1 " | cut -d\",\" -f2 " input1))
-(def output2 (str tresource "/output2.txt"))
-
-; Writes result to output2 (see test/command.clj)
-(jproc-write command2 output2 ":")
-```
 ### performance
 I've personally used this to process large log files with over 400,000 complex data structures where
-it takes ~30 seconds to load into memory, but less than a second for most complex queries thereafter.
+it takes ~25 seconds to load into memory, but less than a second for most complex queries thereafter.
 Clojure *defrecord* objects offer a 12-15% performance improvement when parsing a file, but are slightly
 less flexible to use.
 
