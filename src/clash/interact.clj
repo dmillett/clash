@@ -86,6 +86,31 @@
               ; Updating 'result' with 'data'
               (if-not (nil? data) (swap! result conj data)) )) )) result) ) )
 
+(defn with-all-predicates
+  "Pass value(s) to a list of predicates for evaluation. If all predicates return 'true',
+   then function returns 'true'. Otherwise function returns 'false'. Could not pass a function
+   list to (every-pred) successfully."
+  [values & predicates]
+  (let [arguments (if (coll? values) values (list values))]
+    (loop [result true
+           preds predicates]
+      (if (or (not result) (empty? preds))
+        result
+        (recur (every? (first preds) arguments) (rest preds) )
+        ) ) ) )
+
+(defn with-any-predicates
+  "Pass value(s) and a list of predicates for evaluation. If any predicate returns 'true',
+  then function returns 'true'. Otherwise function returns 'false'."
+  [values & predicates]
+  (let [arguments (if (coll? values) values (list values))]
+    (loop [result false
+           preds predicates]
+      (if (or result (empty? preds))
+        result
+        (recur (every? (first preds) arguments) (rest preds))
+        )  ) ) )
+
 ;;
 ;; To pass along more than one condition, use (every-pred p1 p2 p3)
 ;; Example: (def even3 (every-pred even? #(mod % 3)))

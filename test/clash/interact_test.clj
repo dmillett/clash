@@ -142,3 +142,29 @@
       2 (count (collect-with-condition @solutions (stock-name-action? "FOO" "Buy")))
       6 (count (collect-with-condition @solutions nil))
       ) ) )
+
+(deftest test-with-all-predicates
+  (let [result1 (with-all-predicates 5 even?)
+        result2 (with-all-predicates 4 even?)
+        result3 (with-all-predicates 4 number? even?)
+        result4 (with-all-predicates 4 number? odd?)
+        result5 (with-all-predicates 12 number? even? #(= 0 (mod % 6)))]
+    (is (not result1))
+    (is result2)
+    (is result3)
+    (is (not result4))
+    (is result5)
+    ) )
+
+(deftest test-with-any-predicates
+  (let [result1 (with-any-predicates 5 even?)
+        result2 (with-any-predicates 4 even?)
+        result3 (with-any-predicates 4 number? even?)
+        result4 (with-any-predicates 4 number? odd?)
+        result5 (with-any-predicates 12 number? even? #(= 0 (mod % 5)))]
+    (is (not result1))
+    (is result2)
+    (is result3)
+    (is result4)
+    (is result5)
+    ) )
