@@ -144,11 +144,11 @@
       ) ) )
 
 (deftest test-with-all-predicates
-  (let [result1 (with-all-predicates 5 even?)
-        result2 (with-all-predicates 4 even?)
-        result3 (with-all-predicates 4 number? even?)
-        result4 (with-all-predicates 4 number? odd?)
-        result5 (with-all-predicates 12 number? even? #(= 0 (mod % 6)))]
+  (let [result1 (all-preds? 5 even?)
+        result2 (all-preds? 4 even?)
+        result3 (all-preds? 4 number? even?)
+        result4 (all-preds? 4 number? odd?)
+        result5 (all-preds? 12 number? even? #(= 0 (mod % 6)))]
     (is (not result1))
     (is result2)
     (is result3)
@@ -157,14 +157,33 @@
     ) )
 
 (deftest test-with-any-predicates
-  (let [result1 (with-any-predicates 5 even?)
-        result2 (with-any-predicates 4 even?)
-        result3 (with-any-predicates 4 number? even?)
-        result4 (with-any-predicates 4 number? odd?)
-        result5 (with-any-predicates 12 number? even? #(= 0 (mod % 5)))]
+  (let [result1 (any-preds? 5 even?)
+        result2 (any-preds? 4 even?)
+        result3 (any-preds? 4 number? even?)
+        result4 (any-preds? 4 number? odd?)
+        result5 (any-preds? 12 number? even? #(= 0 (mod % 5)))]
     (is (not result1))
     (is result2)
     (is result3)
     (is result4)
     (is result5)
     ) )
+
+(defn divide-by-x?
+  [x]
+  #(= 0 (mod % x)) )
+
+(deftest any-and-all?
+  (let [result1 ((all? number? even?) 10)
+        result2 ((all? number? odd?) 10)
+        result3 ((any? number? even?) 11)
+        result4 ((all? number? even? (divide-by-x? 5)) 10)
+        result5 ((any? number? odd? even?) 16)
+        result5 ((all? number? (any? (divide-by-x? 6) (divide-by-x? 4))) 16)]
+    (is result1)
+    (is (not result2))
+    (is result3)
+    (is result4)
+    (is result5)
+    )
+  )

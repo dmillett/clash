@@ -86,7 +86,7 @@
               ; Updating 'result' with 'data'
               (if-not (nil? data) (swap! result conj data)) )) )) result) ) )
 
-(defn with-all-predicates
+(defn all-preds?
   "Pass value(s) to a list of predicates for evaluation. If all predicates return 'true',
    then function returns 'true'. Otherwise function returns 'false'. Could not pass a function
    list to (every-pred) successfully."
@@ -99,7 +99,7 @@
         (recur (every? (first preds) arguments) (rest preds) )
         ) ) ) )
 
-(defn with-any-predicates
+(defn any-preds?
   "Pass value(s) and a list of predicates for evaluation. If any predicate returns 'true',
   then function returns 'true'. Otherwise function returns 'false'."
   [values & predicates]
@@ -110,6 +110,34 @@
         result
         (recur (every? (first preds) arguments) (rest preds))
         )  ) ) )
+
+(defn all?
+  "Pass value(s) implicitly and a list of predicates explicitly for evaluation.
+  If all predicates return 'true', then function returns 'true'. Otherwise
+  function returns 'false'. Could not pass a function list to (every-pred)
+  successfully. Ex: ((all? number? odd?) 10) --> false"
+  [& predicates]
+  #(let [arguments (if (coll? %) % (list %))]
+     (loop [result true
+            preds predicates]
+       (if (or (not result) (empty? preds))
+         result
+         (recur (every? (first preds) arguments) (rest preds) )
+         ) ) ) )
+
+(defn any?
+  "Pass value(s) implicitly and a list of predicates explicitly for evaluation.
+  If any predicate returns 'true', then function returns 'true'. Otherwise
+  function returns 'false'. Ex: ((any? number? odd?) 10) --> true"
+  [& predicates]
+  #(let [arguments (if (coll? %) % (list %))]
+     (loop [result false
+            preds predicates]
+       (if (or result (empty? preds))
+         result
+         (recur (every? (first preds) arguments) (rest preds))
+         )  ) ) )
+
 
 ;;
 ;; To pass along more than one condition, use (every-pred p1 p2 p3)
