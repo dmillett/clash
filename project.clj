@@ -2,7 +2,6 @@
   :description "A clojure library that encapsulates shell functionality for commands
   like 'grep' and 'cut'. This is useful for search or indexing large text files."
   :dependencies [[org.clojure/clojure "1.5.1"]]
-  :aot [clash]
   :jvm-opts ["-Xms256m" "-Xmx512m"]
   :repl-options {:init (do
                          (load-file "src/clash/tools.clj")
