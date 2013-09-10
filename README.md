@@ -92,6 +92,21 @@ lein repl
 (= 2 (count (collect-with-condition @solutions (stock-name-action? "FOO" "Buy"))))
 ```
 ### example 2
+Use **all?** and **any?** to combine and/or logic with predicates
+```clojure
+(defn price-high?
+  [high_threshold]
+  #(> % high_threshold) )
+
+(defn price-low?
+  [high_threshold]
+  #(< % high_threshold) )
+
+; Just one result with price at 12.20
+(count-with-conditions @solutions (all? (stock-name? "FOO") (any? (price-high? 12.10) (price-low? 12.70)))) 
+
+```
+### example 3
 Some basic internal utility for creating a map composed of structured keys and
 a regular expression.
 ```clojure
