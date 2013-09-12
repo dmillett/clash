@@ -94,17 +94,18 @@ lein repl
 ### example 2
 Use **all?** and **any?** to combine and/or logic with predicates
 ```clojure
-(defn price-high?
-  [high_threshold]
-  #(> % high_threshold) )
+(defn price-higher?
+  "If a stock price is higher than X."
+  [min]
+  #(< min (read-string (-> % :price)) ) )
 
-(defn price-low?
-  [high_threshold]
-  #(< % high_threshold) )
+(defn price-lower?
+  "If a stock price is lower than X."
+  [max]
+  #(> max (read-string (-> % :price)) ) )
 
-; Just one result with price at 12.20
-(count-with-conditions @solutions (all? (stock-name? "FOO") (any? (price-high? 12.10) (price-low? 12.70)))) 
-
+; Just one result with price at 12.20 ("FOO" and > 12.10 and < 12.70)
+(count-with-conditions @solutions (all? (name? "FOO") (price-higher? 12.1) (price-lower? 12.7) ) )
 ```
 ### example 3
 Some basic internal utility for creating a map composed of structured keys and

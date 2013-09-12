@@ -79,12 +79,12 @@
 (defn price-higher?
   "If a stock price is higher than X."
   [min]
-  #(> min (read-string (-> % :price)) ) )
+  #(< min (read-string (-> % :price)) ) )
 
 (defn price-lower?
   "If a stock price is lower than X."
   [max]
-  #(< max (read-string (-> % :price)) ) )
+  #(> max (read-string (-> % :price)) ) )
 
 (defn name-action?
   "A predicate to check 'stock' name and 'action' against the current solution."
@@ -104,6 +104,7 @@
 
 (deftest test-count-with-conditions
   (let [solutions (atomic-list-from-file simple-file better-stock-message-parser)]
+    ;(println solutions)
     (are [x y] (= x y)
       0 (count-with-conditions @solutions #(= "XYZ" (-> % :stock)))
       6 (count-with-conditions @solutions nil)
@@ -111,7 +112,9 @@
       3 (count-with-conditions @solutions (name? "FOO"))
       2 (count-with-conditions @solutions (name-action? "FOO" "Buy"))
       1 (count-with-conditions @solutions (name-action-every-pred? "FOO" "Sell"))
-      ;3 (count-with-conditions @solutions ((all? (name? "FOO") (any? (action? "Sell") (action? "Buy")) ) ) )
+      ; any? and all?
+      3 (count-with-conditions @solutions (all? (name? "FOO") (any? (action? "Sell") (action? "Buy"))) )
+      1 (count-with-conditions @solutions (all? (name? "FOO") (price-higher? 12.1) (price-lower? 12.7)))
       ) ) )
 
 ;; Demonstrating custom increment
