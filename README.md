@@ -23,9 +23,29 @@ grep/cut implementations.
     * Existing log/text file data for patterns and ML
     * Experiment and identify optimal data queries for larger scale Hadoop style analysis
     * Determine initial trends
-    
+
+### exceptional performance (real world)
+I am using this library as the basis of a more comprehensive library at Orbitz (my day job),
+to chew on (pun intended), complex data structures dumped in log files.
+* Log files with 40,000 - 500,000 entries
+* File load time into memory ranges from 1.0 - 25 seconds
+* 30+ custom predicate and increment functions
+* Most 'count' and 'collect' functions take 20 ms to 1.5 seconds
+* Use **defrecord** offers 12-15% performance improvement over map
+* Each entry has a nested structure with the following form:
+```
+   {:timestamp
+    :objectA
+       :objectB
+       :objectC
+       :(list of ObjectD)
+         :field1 :field2 :field3 :field4 :field5 :field6
+    :(list of objectE)
+      :field7 :field8 :field9 :field10 :field11}
+```
+*old 4 core pentium 4 with 8 gigs of RAM
 ## Usage
-Below is a brief summary of a simple example (see *test/clash/interact_test.clj*) included with 
+Below is a brief summary of a simple example (see *test/clash/example/stock_example_test.clj*) included with
 this repository.
 
 ##### Start the clojure REPL
@@ -56,7 +76,7 @@ lein repl
 (def solutions (atomic-list-from-file simple-file stock-message-parser))
 ```
 
-##### test examples (see test/clash/interact_test.clj)
+##### test examples (see test/clash/example/stock_example_test.clj)
 ```
 # time|application|version|logging_level|log_message
 05042013-13:24:12.000|sample-server|1.0.0|info|Buy,FOO,500,12.00
@@ -141,13 +161,8 @@ with the JVM. These are simple, included test files.
 ; Writes result to output1 (see test/command.clj)
 (jproc-write command1 output1 "\n")
 ```
-### performance
-I've personally used this to process large log files with over 400,000 complex data structures where
-it takes ~25 seconds to load into memory, but less than a second for most complex queries thereafter.
-Clojure *defrecord* objects offer a 12-15% performance improvement when parsing a file, but are slightly
-less flexible to use.
-
-A simple performance test comparing '(re-split (re-find))' vs '(jproc-write "grep | cut")' and a 
+### general notes
+A simple performance test comparing '(re-split (re-find))' vs '(jproc-write "grep | cut")' and a
 145 MB file resulted in completed in less than half the time with (jproc-write).
 
 A performance macro that will adjust the time unit for better readability and context. It will print 
