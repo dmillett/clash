@@ -48,6 +48,7 @@
 
 (defn elapsed
   "An text message with adjusted execution time (ns, ms, or s)."
+  ([time] (elapsed time "" 4))
   ([time message] (elapsed time message 4))
   ([time message digits]
     (cond
@@ -63,14 +64,15 @@
 
 ;; todo: convert HH mm DD to nanotime pattern
 
-(defn latency
-  "Determine the execution latency for any function passed in. Results are returned
-  in a map with :latency_text (execution latency) and :result (function execution result)."
-  [function message]
-  (let [start (System/nanoTime)
-        result function
-        summary (elapsed (nano-time start) message)]
-    {:latency_text summary :result result}) )
+(defmacro latentcy
+  "A macro to determine the latency for function execution. Returns a map
+  with ':latency', ':latency_text', and ':result'"
+  [exe]
+  `(let [time# (System/nanoTime)
+         result# ~exe
+         latentcy# (nano-time time#)
+         latentcy_text# (elapsed latentcy#)]
+     {:latency_text latentcy_text# :latentcy latentcy# :result result#} ) )
 
 (defmacro perf
   "Determine function execution time in nano seconds. Display is
