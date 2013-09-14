@@ -33,17 +33,18 @@ to chew on (pun intended), complex data structures dumped in log files.
 * Most 'count' and 'collect' functions take 20 ms to 1.5 seconds
 * Use **defrecord** offers 12-15% performance improvement over map
 * Each entry has a nested structure with the following form:
-```
-   {:timestamp
+```clojure
+   [:timestamp 
     :objectA
        :objectB
        :objectC
        :(list of ObjectD)
          :field1 :field2 :field3 :field4 :field5 :field6
     :(list of objectE)
-      :field7 :field8 :field9 :field10 :field11}
+      :field7 :field8 :field9 :field10 :field11]
 ```
-*old 4 core pentium 4 with 8 gigs of RAM
+*old 4 core pentium 4 with 8 gigs of RAM*
+
 ## Usage
 Below is a brief summary of a simple example (see *test/clash/example/stock_example_test.clj*) included with
 this repository.
