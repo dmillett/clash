@@ -65,8 +65,8 @@
 (deftest test-collect-with-conditions
   (let [solutions (atomic-list-from-file simple-file better-stock-message-parser)]
     (are [x y] (= x y)
-      0 (count (collect-with-condition @solutions (name? "XYZ")) )
-      1 (count (collect-with-condition @solutions (name-action-every-pred? "FOO" "Sell")))
-      2 (count (collect-with-condition @solutions (name-action? "FOO" "Buy")))
-      6 (count (collect-with-condition @solutions nil))
+      0 (count (collect-with-conditions @solutions (name? "XYZ")) )
+      1 (count (collect-with-conditions @solutions (name-action-every-pred? "FOO" "Sell")))
+      2 (count (collect-with-conditions @solutions (name-action? "FOO" "Buy")))
+      6 (count (collect-with-conditions @solutions nil))
       ) ) )

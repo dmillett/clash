@@ -135,7 +135,6 @@
        (recur ((first preds) %) (rest preds))
        ) ) )
 
-
 ;;
 ;; To pass along more than one condition, use (every-pred p1 p2 p3)
 ;; Example: (def even3 (every-pred even? #(mod % 3)))
@@ -153,7 +152,7 @@
                 ))
       initial_count solutions) ))
 
-(defn collect-with-condition
+(defn collect-with-conditions
   "Build a collection of structued data objects that satisfy the conditions
   defined in 'predicates'. The predicates should be customized to use the
   data structure to filter."
