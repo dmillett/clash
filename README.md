@@ -2,7 +2,7 @@
 A clojure project for quick interactive analysis of structured text files (ex: logs, csv, etc.), within
 the REPL. After parsing structured text into an in memory data structure as an *atom*, clash facilitates
 counting and collecting results from the data structure based on specified predicates and incrementing
-functions.
+functions. This is valuable for quickly analyzing data that is not persisted in databases.
 
 Clash also includes clojure-shell (bash, csh, zsh, ec) functionality that incorporates most of the speed 
 advantages of commands like 'grep' and 'cut' individually or piped together. The results of unpiped/piped
@@ -11,20 +11,12 @@ grep/cut implementations.
 
 ## Features & Benefits
 1. Quickly load small-large log or text file into an object structure 
-    * See clash.interact/atomic-list-from-file
-    * See clash.interact/atomic-map-from-file
-    * See clash.text_tools/regex-group-into-map
-    * Tested with 100 MB file with over 400,000+ complex object structures
 2. Very fast, condition based, result counts and retrievals 
-    * See clash.interact/count_with_conditions
-    * See clash..interact/collect_with_conditions
-    * Millisecond and subsecond results for nested queries on 400,000+ objects 
-3. Quickly build and analyze data withing Clojure REPL
+3. Quickly build and analyze text data withing Clojure REPL
     * Existing log/text file data for patterns and ML
     * Experiment and identify optimal data queries for larger scale Hadoop style analysis
     * Determine initial trends
 
-### exceptional performance (real world)
 I am using this library as the basis of a more comprehensive library at Orbitz (my day job),
 to chew on (pun intended), complex data structures dumped in log files.
 * Log files with 40,000 - 500,000 entries
@@ -34,21 +26,35 @@ to chew on (pun intended), complex data structures dumped in log files.
 * Use **defrecord** offers 12-15% performance improvement over map
 * Each entry has a nested structure with the following form:
 ```clojure
-   [:timestamp 
-    :objectA
-       :objectB
-       :objectC
-       :(list of ObjectD)
-         :field1 :field2 :field3 :field4 :field5 :field6
-    :(list of objectE)
-      :field7 :field8 :field9 :field10 :field11]
+   [:timestamp :objectA :objectB :objectC 
+    :[:field1 :field2 :field3 :field4 :field5 :field6]
+    :[:field7 :field8 :field9 :field10 :field11]]
 ```
 *old 4 core pentium 4 with 8 gigs of RAM*
 
 ## Usage
+
 Below is a brief summary of a simple example (see *test/clash/example/stock_example_test.clj*) included with
 this repository.
+```clojure
+; Load objects from a file into memory (via defined regex and keyset)
+; It's possible to transform text prior to parsing and apply predicates
+(atomic-list-from-file filename parser)
+(atomic-map-from-file filename parser)
 
+; Build filters with conditionals
+((all? predicate1? (any? predicate2? predicate3?) predicate4?) solution_data)
+
+; Analyze data with defined predicates (filters with 'and'/'or' functionality)
+; Incrementers can extract information and update cumulative results
+; Count or total specific pieces of data per 'solution'
+(count-with-conditions solutions predicates)
+(count-with-conditions solutions predicates initial_count incrementer)
+
+; Build a result set with via filters, etc for each 'solution'
+(collect-with-conditions solutions predicates)
+
+```
 ##### Start the clojure REPL
 
 ```
