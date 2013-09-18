@@ -24,9 +24,9 @@
 (defn foobar [x] (* x x))
 (defn phrase-it [result phrase] (str result phrase))
 
-(deftest test-latentcy
-  (let [result1 (latentcy (foobar 5))
-        result2 (latentcy (phrase-it (foobar 10) ", the square of 10"))]
+(deftest test-latency
+  (let [result1 (latency (foobar 5))
+        result2 (latency (phrase-it (foobar 10) ", the square of 10"))]
 
     (is (= 25 (-> result1 :result)))
     (is (not (nil? (-> result1 :latency_text))))

@@ -64,15 +64,15 @@
 
 ;; todo: convert HH mm DD to nanotime pattern
 
-(defmacro latentcy
+(defmacro latency
   "A macro to determine the latency for function execution. Returns a map
   with ':latency', ':latency_text', and ':result'"
   [exe]
   `(let [time# (System/nanoTime)
          result# ~exe
-         latentcy# (nano-time time#)
-         latentcy_text# (elapsed latentcy#)]
-     {:latency_text latentcy_text# :latentcy latentcy# :result result#} ) )
+         nano_latency# (nano-time time#)
+         latency_text# (elapsed nano_latency#)]
+     {:latency_text latency_text# :latentcy nano_latency# :result result#} ) )
 
 (defmacro perf
   "Determine function execution time in nano seconds. Display is
