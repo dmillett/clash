@@ -34,8 +34,33 @@ to chew on (pun intended), complex data structures dumped in log files.
 
 ## Usage
 
+##### Start the clojure REPL
+
+```
+lein repl
+```
+
+##### Load the examples
 Below is a brief summary of a simple example (see *test/clash/example/stock_example_test.clj*) included with
 this repository.
+```clojure
+; First pass with a general, simpler parser (and regex) - reads every line
+user=> (def sols (atomic-list-from-file simple-file simple-stock-message-parser))
+#'user/sols
+user=> (count @sols)
+8
+
+; Second pass with a more exact parser (and regex) - reads specific lines
+user=> (def sols2 (atomic-list-from-file simple-file better-stock-message-parser))
+#'user/sols2
+user=> (count @sols2)
+6
+
+user=> (first @sols2)
+{:price "2.30", :quantity "50", :stock "BAR", :action "Sell", :trade_time "05042013-13:24:13.123"}
+```
+##### Core functions
+Build on these functions with domain specific structure
 ```clojure
 ; Load objects from a file into memory (via defined regex and keyset)
 ; It's possible to transform text prior to parsing and apply predicates
@@ -55,12 +80,19 @@ this repository.
 (collect-with-conditions solutions predicates)
 
 ```
-##### Start the clojure REPL
+##### test examples (see test/clash/example/stock_example_test.clj)
+```
+# time|application|version|logging_level|log_message
+05042013-13:24:12.000|sample-server|1.0.0|info|Buy,FOO,500,12.00
+05042013-13:24:12.010|sample-server|1.0.0|info|Buy,FOO,200,12.20
+05042013-13:24:12.130|sample-server|1.0.0|info|Buy,BAR,1000,2.25
+05042013-13:24:12.130|sample-server|1.0.0|info|NullPointerException: not enough defense programming
+05042013-13:24:12.450|sample-server|1.0.0|info|Sell,FOO,500,12.72
+05042013-13:24:13.005|sample-server|1.0.0|info|Buy,ZOO,200,9.24
+05042013-13:24:13.123|sample-server|1.0.0|info|Sell,BAR,50,2.30
+```
 
-```
-lein repl
-```
-##### Define object structure, regex, and parser for target file
+##### Example Code: define object structure, regex, and parser for target file
 
 ```clojure
 ;; A log line example from (simple-structured.log)
@@ -76,25 +108,7 @@ lein repl
   [line]
   (tt/regex-group-into-map line structure pattern) )
 ```
-##### Read file data structures into memory as a *list* or *map*
-
-```clojure
-; Create a reference atom of solutions to use in REPL 
-(def solutions (atomic-list-from-file simple-file stock-message-parser))
-```
-
-##### test examples (see test/clash/example/stock_example_test.clj)
-```
-# time|application|version|logging_level|log_message
-05042013-13:24:12.000|sample-server|1.0.0|info|Buy,FOO,500,12.00
-05042013-13:24:12.010|sample-server|1.0.0|info|Buy,FOO,200,12.20
-05042013-13:24:12.130|sample-server|1.0.0|info|Buy,BAR,1000,2.25
-05042013-13:24:12.130|sample-server|1.0.0|info|NullPointerException: not enough defense programming
-05042013-13:24:12.450|sample-server|1.0.0|info|Sell,FOO,500,12.72
-05042013-13:24:13.005|sample-server|1.0.0|info|Buy,ZOO,200,9.24
-05042013-13:24:13.123|sample-server|1.0.0|info|Sell,BAR,50,2.30
-```
-
+### Exlporing the example with test conditions
 ```clojure
 ; Ensure the lines were parsed and mapped properly
 (= 6 (count @solutions)
@@ -118,7 +132,7 @@ lein repl
 ; Collecting a sequence of all matching solutions
 (= 2 (count (collect-with-condition @solutions (stock-name-action? "FOO" "Buy"))))
 ```
-### example 2
+##### example 2
 Use **all?** and **any?** to combine and/or logic with predicates
 ```clojure
 (defn price-higher?
