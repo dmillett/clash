@@ -33,16 +33,13 @@ to chew on (pun intended), complex data structures dumped in log files.
 *old 4 core pentium 4 with 8 gigs of RAM*
 
 ## Usage
+These examples can be found in in the example namespace of this repository.
 
-##### Start the clojure REPL
+#### Load the examples
 
 ```
 lein repl
 ```
-
-##### Load the examples
-Below is a brief summary of a simple example (see *test/clash/example/stock_example_test.clj*) included with
-this repository.
 ```clojure
 ; First pass with a general, simpler parser (and regex) - reads every line
 user=> (def sols (atomic-list-from-file simple-file simple-stock-message-parser))
@@ -59,7 +56,18 @@ user=> (count @sols2)
 user=> (first @sols2)
 {:price "2.30", :quantity "50", :stock "BAR", :action "Sell", :trade_time "05042013-13:24:13.123"}
 ```
-##### Core functions
+#### example data (see test/resources/simple-structured.log)
+```
+# time|application|version|logging_level|log_message
+05042013-13:24:12.000|sample-server|1.0.0|info|Buy,FOO,500,12.00
+05042013-13:24:12.010|sample-server|1.0.0|info|Buy,FOO,200,12.20
+05042013-13:24:12.130|sample-server|1.0.0|info|Buy,BAR,1000,2.25
+05042013-13:24:12.130|sample-server|1.0.0|info|NullPointerException: not enough defense programming
+05042013-13:24:12.450|sample-server|1.0.0|info|Sell,FOO,500,12.72
+05042013-13:24:13.005|sample-server|1.0.0|info|Buy,ZOO,200,9.24
+05042013-13:24:13.123|sample-server|1.0.0|info|Sell,BAR,50,2.30
+```
+#### Core functions
 Build on these functions with domain specific structure
 ```clojure
 ; Load objects from a file into memory (via defined regex and keyset)
@@ -80,20 +88,7 @@ Build on these functions with domain specific structure
 (collect-with-conditions solutions predicates)
 
 ```
-##### test examples (see test/clash/example/stock_example_test.clj)
-```
-# time|application|version|logging_level|log_message
-05042013-13:24:12.000|sample-server|1.0.0|info|Buy,FOO,500,12.00
-05042013-13:24:12.010|sample-server|1.0.0|info|Buy,FOO,200,12.20
-05042013-13:24:12.130|sample-server|1.0.0|info|Buy,BAR,1000,2.25
-05042013-13:24:12.130|sample-server|1.0.0|info|NullPointerException: not enough defense programming
-05042013-13:24:12.450|sample-server|1.0.0|info|Sell,FOO,500,12.72
-05042013-13:24:13.005|sample-server|1.0.0|info|Buy,ZOO,200,9.24
-05042013-13:24:13.123|sample-server|1.0.0|info|Sell,BAR,50,2.30
-```
-
-##### Example Code: define object structure, regex, and parser for target file
-
+#### define object structure, regex, and parser for target file
 ```clojure
 ;; A log line example from (simple-structured.log)
 (def line "05042013-13:24:12.000|sample-server|1.0.0|info|Buy,FOO,500,12.00")
@@ -108,32 +103,32 @@ Build on these functions with domain specific structure
   [line]
   (tt/regex-group-into-map line structure pattern) )
 ```
-### Exlporing the example with test conditions
+#### Exlporing the example with single conditions and incrementers
 ```clojure
-; Ensure the lines were parsed and mapped properly
-(= 6 (count @solutions)
-    
 ; in the context of a map composed of 'structure' keys
-(defn stock-name-action?
+(defn name-action?
   "A predicate to check 'stock' name and 'action' against the current solution."
   [stock action]
   #(and (= stock (-> % :stock)) (= action (-> % :action))) )
     
 ; A count of all "Buy" actions of stock "FOO"
-(= 2 (count-with-conditions @solutions (stock-name-action? "FOO" "Buy")))
-    
-(def increment-by-stock-quanity
+user=> (count-with-conditions @solutions (name-action? "FOO" "Buy"))
+2    
+
+; A running total of the :stock_price when 'predicates are true    
+(def increment-with-stock-quanity
   "Destructures 'solution' and existing 'count', and adds the stock 'quantity' and 'count'."
   (fn [solution count] (+ count (read-string (-> solution :quantity))) ) )
     
 ; Incrementing count based on stock quantity for each structure
-(= 1200 (count-with-conditions @solutions (stock-name? "FOO") increment-by-stock-quanity))
+user=> (count-with-conditions @sols2 (name? "FOO") increment-with-stock-quanity 0)
+1200
 
 ; Collecting a sequence of all matching solutions
-(= 2 (count (collect-with-condition @solutions (stock-name-action? "FOO" "Buy"))))
+user=> (count (collect-with-conditions @sols2 (name-action? "FOO" "Buy")))
+2
 ```
-##### example 2
-Use **all?** and **any?** to combine and/or logic with predicates
+#### using conditionals (all?) and (any?) to filter data
 ```clojure
 (defn price-higher?
   "If a stock price is higher than X."
@@ -145,10 +140,15 @@ Use **all?** and **any?** to combine and/or logic with predicates
   [max]
   #(> max (read-string (-> % :price)) ) )
 
-; Just one result with price at 12.20 ("FOO" and > 12.10 and < 12.70)
-(count-with-conditions @solutions (all? (name? "FOO") (price-higher? 12.1) (price-lower? 12.7) ) )
+; Using (all?)
+user=> (count-with-conditions @sols2 (all? (name? "FOO") (price-higher? 12.1) (price-lower? 12.7) ) )
+1
+
+; Using (all?) and (any?) together
+user=> (count-with-conditions @sols2 (all? (name? "FOO") (any? (price-higher? 12.20) (price-lower? 12.20)) ) )
+2
 ```
-### example 3
+#### creating maps from key sets and regex groups
 Some basic internal utility for creating a map composed of structured keys and
 a regular expression.
 ```clojure
@@ -162,7 +162,10 @@ a regular expression.
 (regex-groups-into-maps "a,b,c,d" [:a :b] #"(\w),(\w)" [:a])
 => ({:a "a"} {:a "c"})
 ```
-### example 3
+### example 4
+Applying linux/unix shell commands in conjunction with Clojure to a text file. It's
+generally faster to delegate to the C implementations than iterate through a file
+with the JVM. These are simple, included test files.
 ```clojure
 (def command2 (str "grep message " input1 " | cut -d\",\" -f2 " input1))
 (def output2 (str tresource "/output2.txt"))
@@ -170,10 +173,7 @@ a regular expression.
 ; Writes result to output2 (see test/command.clj)
 (jproc-write command2 output2 ":")
 ```
-### example 4
-Applying linux/unix shell commands in conjunction with Clojure to a text file. It's
-generally faster to delegate to the C implementations than iterate through a file
-with the JVM. These are simple, included test files.
+
 ```clojure
 (def input1 (str tresource "/input1.txt"))
 (def output1 (str tresource "/output1.txt"))
