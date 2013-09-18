@@ -13,29 +13,25 @@ grep/cut implementations.
 1. Quickly load small-large log or text file into an object structure 
 2. Very fast, condition based, result counts and retrievals 
 3. Quickly build and analyze text data withing Clojure REPL
-    * Existing log/text file data for patterns and ML
-    * Experiment and identify optimal data queries for larger scale Hadoop style analysis
-    * Determine initial trends
+ * Existing log/text file data for patterns and ML
+ * Experiment and identify optimal data queries for larger scale Hadoop style analysis
+ * Determine initial trends
 
 I am using this library as the basis of a more comprehensive library at Orbitz (my day job),
 to chew on (pun intended), complex data structures dumped in log files.
 * Log files with 40,000 - 500,000 entries
+* Each solution entry contains multiple nested structures
 * File load time into memory ranges from 1.0 - 25 seconds
 * 30+ custom predicate and increment functions
 * Most 'count' and 'collect' functions take 20 ms to 1.5 seconds
 * Use **defrecord** offers 12-15% performance improvement over map
-* Each entry has a nested structure with the following form:
-```clojure
-   [:timestamp :objectA :objectB :objectC 
-    :[:field1 :field2 :field3 :field4 :field5 :field6]
-    :[:field7 :field8 :field9 :field10 :field11]]
-```
+
 *old 4 core pentium 4 with 8 gigs of RAM*
 
 ## Usage
-
-Below is a brief summary of a simple example (see *test/clash/example/stock_example_test.clj*) included with
-this repository.
+These examples can be found in in the example namespace of this repository.
+### Core functions to build upon
+Build on these functions with domain specific structure
 ```clojure
 ; Load objects from a file into memory (via defined regex and keyset)
 ; It's possible to transform text prior to parsing and apply predicates
@@ -53,37 +49,13 @@ this repository.
 
 ; Build a result set with via filters, etc for each 'solution'
 (collect-with-conditions solutions predicates)
-
 ```
-##### Start the clojure REPL
+### Examples
+1. src/clash/example/stock_example.clj
+2. test/clash/example/stock_example_test.clj
+3. test/resources/simple-structured.log
 
-```
-lein repl
-```
-##### Define object structure, regex, and parser for target file
-
-```clojure
-;; A log line example from (simple-structured.log)
-(def line "05042013-13:24:12.000|sample-server|1.0.0|info|Buy,FOO,500,12.00")
- 
-; Defrecords offer a 12%-15% performance improvement during parsing
-(def structure [:trade_time :action :stock :quantity :price])
-(def pattern #"(\d{8}-\d{2}:\d{2}:\d{2}.\d{3})\|.*\|(\w*),(\w*),(\d*),(.*)")
-
-; Parse log line into 'simple-stock-structure' via 'detailed-stock-pattern'
-(defn stock-message-parser
-  "An exact parsing of line text into 'structure' using 'pattern'."
-  [line]
-  (tt/regex-group-into-map line structure pattern) )
-```
-##### Read file data structures into memory as a *list* or *map*
-
-```clojure
-; Create a reference atom of solutions to use in REPL 
-(def solutions (atomic-list-from-file simple-file stock-message-parser))
-```
-
-##### test examples (see test/clash/example/stock_example_test.clj)
+#### data 
 ```
 # time|application|version|logging_level|log_message
 05042013-13:24:12.000|sample-server|1.0.0|info|Buy,FOO,500,12.00
@@ -94,32 +66,68 @@ lein repl
 05042013-13:24:13.005|sample-server|1.0.0|info|Buy,ZOO,200,9.24
 05042013-13:24:13.123|sample-server|1.0.0|info|Sell,BAR,50,2.30
 ```
-
+#### define object structure, regex, and parser for sample text
 ```clojure
-; Ensure the lines were parsed and mapped properly
-(= 6 (count @solutions)
-    
+;; A log line example from (simple-structured.log)
+(def line "05042013-13:24:12.000|sample-server|1.0.0|info|Buy,FOO,500,12.00")
+ 
+; Defrecords offer a 12%-15% performance improvement during parsing
+(def simple-stock-structure [:trade_time :action :stock :quantity :price])
+(def detailed-stock-pattern #"(\d{8}-\d{2}:\d{2}:\d{2}.\d{3})\|.*\|(\w*),(\w*),(\d*),(.*)")
+
+; Parse log line into 'simple-stock-structure' via 'detailed-stock-pattern'
+(defn better-stock-message-parser
+  "An exact parsing of line text into 'simple-stock-structure' using
+  'detailed-stock-pattern'."
+  [line]
+  (tt/regex-group-into-map line simple-stock-structure detailed-stock-pattern) )
+```
+#### Load the examples
+```
+lein repl
+```
+```clojure
+; First pass with a general, simpler parser (and regex) - reads every line
+user=> (def sols (atomic-list-from-file simple-file simple-stock-message-parser))
+#'user/sols
+user=> (count @sols)
+8
+
+; Second pass with a more exact parser (and regex) - reads specific lines
+user=> (def sols2 (atomic-list-from-file simple-file better-stock-message-parser))
+#'user/sols2
+user=> (count @sols2)
+6
+
+user=> (first @sols2)
+{:price "2.30", :quantity "50", :stock "BAR", :action "Sell", :trade_time "05042013-13:24:13.123"}
+```
+#### single conditions and incrementers
+```clojure
 ; in the context of a map composed of 'structure' keys
-(defn stock-name-action?
+(defn name-action?
   "A predicate to check 'stock' name and 'action' against the current solution."
   [stock action]
   #(and (= stock (-> % :stock)) (= action (-> % :action))) )
     
 ; A count of all "Buy" actions of stock "FOO"
-(= 2 (count-with-conditions @solutions (stock-name-action? "FOO" "Buy")))
-    
-(def increment-by-stock-quanity
-  "Destructures 'solution' and existing 'count', and adds the stock 'quantity' and 'count'."
+user=> (count-with-conditions @solutions (name-action? "FOO" "Buy"))
+2    
+
+; A running total of the :stock_price when 'predicates are true    
+(def increment-with-stock-quanity
+  "A running total for stock 'quantity' and 'count'."
   (fn [solution count] (+ count (read-string (-> solution :quantity))) ) )
     
 ; Incrementing count based on stock quantity for each structure
-(= 1200 (count-with-conditions @solutions (stock-name? "FOO") increment-by-stock-quanity))
+user=> (count-with-conditions @sols2 (name? "FOO") increment-with-stock-quanity 0)
+1200
 
 ; Collecting a sequence of all matching solutions
-(= 2 (count (collect-with-condition @solutions (stock-name-action? "FOO" "Buy"))))
+user=> (count (collect-with-conditions @sols2 (name-action? "FOO" "Buy")))
+2
 ```
-### example 2
-Use **all?** and **any?** to combine and/or logic with predicates
+#### multiple conditions (all?) and (any?) to filter data
 ```clojure
 (defn price-higher?
   "If a stock price is higher than X."
@@ -131,10 +139,15 @@ Use **all?** and **any?** to combine and/or logic with predicates
   [max]
   #(> max (read-string (-> % :price)) ) )
 
-; Just one result with price at 12.20 ("FOO" and > 12.10 and < 12.70)
-(count-with-conditions @solutions (all? (name? "FOO") (price-higher? 12.1) (price-lower? 12.7) ) )
+; Using (all?)
+user=> (count-with-conditions @sols2 (all? (name? "FOO") (price-higher? 12.1) (price-lower? 12.7) ) )
+1
+
+; Using (all?) and (any?) together
+user=> (count-with-conditions @sols2 (all? (name? "FOO") (any? (price-higher? 12.20) (price-lower? 12.20)) ) )
+2
 ```
-### example 3
+### creating maps from key sets and regex groups
 Some basic internal utility for creating a map composed of structured keys and
 a regular expression.
 ```clojure
@@ -148,7 +161,10 @@ a regular expression.
 (regex-groups-into-maps "a,b,c,d" [:a :b] #"(\w),(\w)" [:a])
 => ({:a "a"} {:a "c"})
 ```
-### example 3
+### example 4
+Applying linux/unix shell commands in conjunction with Clojure to a text file. It's
+generally faster to delegate to the C implementations than iterate through a file
+with the JVM. These are simple, included test files.
 ```clojure
 (def command2 (str "grep message " input1 " | cut -d\",\" -f2 " input1))
 (def output2 (str tresource "/output2.txt"))
@@ -156,10 +172,7 @@ a regular expression.
 ; Writes result to output2 (see test/command.clj)
 (jproc-write command2 output2 ":")
 ```
-### example 4
-Applying linux/unix shell commands in conjunction with Clojure to a text file. It's
-generally faster to delegate to the C implementations than iterate through a file
-with the JVM. These are simple, included test files.
+
 ```clojure
 (def input1 (str tresource "/input1.txt"))
 (def output1 (str tresource "/output1.txt"))
