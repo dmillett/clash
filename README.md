@@ -51,28 +51,12 @@ Build on these functions with domain specific structure
 (collect-with-conditions solutions predicates)
 
 ```
-### Load the examples
+### Examples
+1. src/clash/example/stock_example.clj
+2. test/clash/example/stock_example_test.clj
+3. test/resources/simple-structured.log
 
-```
-lein repl
-```
-```clojure
-; First pass with a general, simpler parser (and regex) - reads every line
-user=> (def sols (atomic-list-from-file simple-file simple-stock-message-parser))
-#'user/sols
-user=> (count @sols)
-8
-
-; Second pass with a more exact parser (and regex) - reads specific lines
-user=> (def sols2 (atomic-list-from-file simple-file better-stock-message-parser))
-#'user/sols2
-user=> (count @sols2)
-6
-
-user=> (first @sols2)
-{:price "2.30", :quantity "50", :stock "BAR", :action "Sell", :trade_time "05042013-13:24:13.123"}
-```
-##### example data (see test/resources/simple-structured.log)
+#### data 
 ```
 # time|application|version|logging_level|log_message
 05042013-13:24:12.000|sample-server|1.0.0|info|Buy,FOO,500,12.00
@@ -99,7 +83,27 @@ user=> (first @sols2)
   [line]
   (tt/regex-group-into-map line simple-stock-structure detailed-stock-pattern) )
 ```
-#### Exlporing the example with single conditions and incrementers
+#### Load the examples
+```
+lein repl
+```
+```clojure
+; First pass with a general, simpler parser (and regex) - reads every line
+user=> (def sols (atomic-list-from-file simple-file simple-stock-message-parser))
+#'user/sols
+user=> (count @sols)
+8
+
+; Second pass with a more exact parser (and regex) - reads specific lines
+user=> (def sols2 (atomic-list-from-file simple-file better-stock-message-parser))
+#'user/sols2
+user=> (count @sols2)
+6
+
+user=> (first @sols2)
+{:price "2.30", :quantity "50", :stock "BAR", :action "Sell", :trade_time "05042013-13:24:13.123"}
+```
+#### single conditions and incrementers
 ```clojure
 ; in the context of a map composed of 'structure' keys
 (defn name-action?
@@ -113,7 +117,7 @@ user=> (count-with-conditions @solutions (name-action? "FOO" "Buy"))
 
 ; A running total of the :stock_price when 'predicates are true    
 (def increment-with-stock-quanity
-  "Destructures 'solution' and existing 'count', and adds the stock 'quantity' and 'count'."
+  "A running total for stock 'quantity' and 'count'."
   (fn [solution count] (+ count (read-string (-> solution :quantity))) ) )
     
 ; Incrementing count based on stock quantity for each structure
@@ -124,7 +128,7 @@ user=> (count-with-conditions @sols2 (name? "FOO") increment-with-stock-quanity 
 user=> (count (collect-with-conditions @sols2 (name-action? "FOO" "Buy")))
 2
 ```
-#### using conditionals (all?) and (any?) to filter data
+#### multiple conditions (all?) and (any?) to filter data
 ```clojure
 (defn price-higher?
   "If a stock price is higher than X."
