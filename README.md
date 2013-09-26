@@ -17,13 +17,10 @@ grep/cut implementations.
  * Experiment and identify optimal data queries for larger scale Hadoop style analysis
  * Determine initial trends
 
-I am using this library as the basis of a more comprehensive library at Orbitz (my day job),
-to chew on (pun intended), complex data structures dumped in log files.
-* Log files with 40,000 - 500,000 entries
-* Each solution entry contains multiple nested structures
-* File load time into memory ranges from 1.0 - 25 seconds
-* 30+ custom predicate and increment functions
-* Most 'count' and 'collect' functions take 20 ms to 1.5 seconds
+Tested with:
+* Log files with 40,000 - 500,000 complex entries
+* File load time into memory ranges from 1.0 - 25 seconds (< 150 MB file size)
+* Most 'count' and 'collect' functions take between 20 ms and 1.5 seconds
 * Use **defrecord** offers 12-15% performance improvement over map
 
 *old 4 core pentium 4 with 8 gigs of RAM*
@@ -230,7 +227,6 @@ elapsed time in nano seconds (ns), milliseconds (ms) or seconds(s).
 * built with leiningen2 (thanks technomancy)
 * clojure 1.5.1 (thank rich, et al)
 * requires custom heap values and init in project.clj (sample forthcoming)
-* first clojure foray
 
 ## License
 Copyright (c) David Millett 2012. All rights reserved.
