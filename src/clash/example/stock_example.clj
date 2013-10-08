@@ -22,7 +22,7 @@
     true
     false) )
 
-(defn simple-stock-message-parser
+(defn simple-message-parser
   "An inexact split and parse of line text into 'simple-stock-structure'."
   [line]
   (let [splitsky (tt/split-with-regex line #"\|")
@@ -31,7 +31,7 @@
         corrected (str date "," message)]
     (tt/text-structure-to-map corrected #"," simple-stock-structure)) )
 
-(defn better-stock-message-parser
+(defn better-message-parser
   "An exact parsing of line text into 'simple-stock-structure' using
   'detailed-stock-pattern'."
   [line]

@@ -17,28 +17,32 @@
 (def simple-file (str tresource "/simple-structured.log"))
 
 (deftest test-atomic-map-from-file
-  (let [result (atomic-map-from-file simple-file is-buy-or-sell? nil simple-stock-message-parser nil)]
+  (let [result1 (atomic-map-from-file simple-file simple-message-parser 4)
+        result2 (atomic-map-from-file simple-file is-buy-or-sell? nil simple-message-parser nil -1)]
 
-    (is (= 6 (count @result)))
+    (is (= 4 (count @result1)))
+    (is (= 6 (count @result2)))
     ) )
 
 (deftest test-atomic-list-from-file
-  (let [result1 (atomic-list-from-file simple-file is-buy-or-sell? nil simple-stock-message-parser)]
+  (let [result1 (atomic-list-from-file simple-file simple-message-parser 3)
+        result2 (atomic-list-from-file simple-file is-buy-or-sell? nil simple-message-parser -1)]
 
-    (is (= 6 (count @result1)))
+    (is (= 3 (count @result1)))
+    (is (= 6 (count @result2)))
     ) )
 
 ;; Note the count is 8 instead of 6 because the 'parser' function is more specific
 (deftest test-atomic-list-from-fil__2_parameters_better_parser
-  (let [result1 (atomic-list-from-file simple-file simple-stock-message-parser)
-        result2 (atomic-list-from-file simple-file better-stock-message-parser)]
+  (let [result1 (atomic-list-from-file simple-file simple-message-parser)
+        result2 (atomic-list-from-file simple-file better-message-parser)]
 
     (is (= 8 (count @result1)))
     (is (= 6 (count @result2)))
     ) )
 
 (deftest test-count-with-conditions
-  (let [solutions (atomic-list-from-file simple-file better-stock-message-parser)]
+  (let [solutions (atomic-list-from-file simple-file better-message-parser)]
     ;(println solutions)
     (are [x y] (= x y)
       0 (count-with-conditions @solutions #(= "XYZ" (-> % :stock)))
@@ -54,7 +58,7 @@
 
 ;; Demonstrating custom increment
 (deftest test-count-with-conditions__with_incrementer
-  (let [solutions (atomic-list-from-file simple-file better-stock-message-parser)]
+  (let [solutions (atomic-list-from-file simple-file better-message-parser)]
     (are [x y] (= x y)
       3 (count-with-conditions @solutions (name? "FOO") 0)
       1200 (count-with-conditions @solutions (name? "FOO") increment-with-stock-quanity 0)
@@ -63,7 +67,7 @@
 
 ;; Collecting results
 (deftest test-collect-with-conditions
-  (let [solutions (atomic-list-from-file simple-file better-stock-message-parser)]
+  (let [solutions (atomic-list-from-file simple-file better-message-parser)]
     (are [x y] (= x y)
       0 (count (collect-with-conditions @solutions (name? "XYZ")) )
       1 (count (collect-with-conditions @solutions (name-action-every-pred? "FOO" "Sell")))

@@ -73,7 +73,7 @@ Build on these functions with domain specific structure
 (def detailed-stock-pattern #"(\d{8}-\d{2}:\d{2}:\d{2}.\d{3})\|.*\|(\w*),(\w*),(\d*),(.*)")
 
 ; Parse log line into 'simple-stock-structure' via 'detailed-stock-pattern'
-(defn better-stock-message-parser
+(defn better-message-parser
   "An exact parsing of line text into 'simple-stock-structure' using
   'detailed-stock-pattern'."
   [line]
@@ -85,13 +85,13 @@ lein repl
 ```
 ```clojure
 ; First pass with a general, simpler parser (and regex) - reads every line
-user=> (def sols (atomic-list-from-file simple-file simple-stock-message-parser))
+user=> (def sols (atomic-list-from-file simple-file simple-message-parser))
 #'user/sols
 user=> (count @sols)
 8
 
 ; Second pass with a more exact parser (and regex) - reads specific lines
-user=> (def sols2 (atomic-list-from-file simple-file better-stock-message-parser))
+user=> (def sols2 (atomic-list-from-file simple-file better-message-parser))
 #'user/sols2
 user=> (count @sols2)
 6
