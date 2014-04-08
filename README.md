@@ -18,10 +18,11 @@ grep/cut implementations.
  * Determine initial trends
 
 Tested with:
-* Log files with 40,000 - 500,000 complex entries
-* File load time into memory ranges from 1.0 - 25 seconds (< 150 MB file size)
+* Log files with 40,000 - 500,000 complex entries (15 seconds to load into memory)
+* Log files with 8,000,000 simple entries (30 seconds to load into memory)
+* Compatible with core.reducers
 * Most 'count' and 'collect' functions take between 20 ms and 1.5 seconds
-* Use **defrecord** offers 12-15% performance improvement over map
+* Use **defrecord** offers ~10% performance improvement over map data structure
 
 *old 4 core pentium 4 with 8 gigs of RAM*
 
@@ -35,8 +36,11 @@ Build on these functions with domain specific structure
 (atomic-list-from-file filename parser)
 (atomic-map-from-file filename parser)
 
-; Build filters with conditionals
-((all? predicate1? (any? predicate2? predicate3?) predicate4?) solution_data)
+; core.reducers pmap and fold expect a vector for parallel operations
+(file-into-structure filename parser [])
+
+; Build filters with conditionals and predicates
+((all? predicate1? (any? pred2? pred3?) pred4?) solution_data)
 
 ; Analyze data with defined predicates (filters with 'and'/'or' functionality)
 ; Incrementers can extract information and update cumulative results
