@@ -10,7 +10,7 @@
   (:require [clash.text_tools :as tt])
   (:use [clojure.test]
         [clash.example.stock_example]
-        [clash.interact]
+        [clash.core]
         [clash.command_test]
         [clash.tools]) )
 
@@ -33,12 +33,23 @@
     ) )
 
 ;; Note the count is 8 instead of 6 because the 'parser' function is more specific
-(deftest test-atomic-list-from-fil__2_parameters_better_parser
+(deftest test-atomic-list-from-file__2_parameters_better_parser
   (let [result1 (atomic-list-from-file simple-file simple-message-parser)
         result2 (atomic-list-from-file simple-file better-message-parser)]
 
     (is (= 8 (count @result1)))
     (is (= 6 (count @result2)))
+    ) )
+
+(deftest test-file-into-structure
+  (let [vector_result (file-into-structure simple-file better-message-parser [])
+        list_result (file-into-structure simple-file better-message-parser '())]
+    (are [x y] (= x y)
+      clojure.lang.PersistentVector (type vector_result)
+      6 (count vector_result)
+      clojure.lang.PersistentList (type list_result)
+      6 (count list_result)
+      )
     ) )
 
 (deftest test-count-with-conditions

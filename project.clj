@@ -5,8 +5,8 @@
   :jvm-opts ["-Xms256m" "-Xmx512m"]
   :repl-options {:init (do
                          (load-file "src/clash/tools.clj")
-                         (load-file "src/clash/interact.clj")
-                         (load-file "test/clash/interact_test.clj")
+                         (load-file "src/clash/core.clj")
+                         (load-file "test/clash/core_test.clj")
                          (use 'clash.tools)
                          (use 'clash.interact)
 

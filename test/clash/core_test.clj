@@ -6,10 +6,10 @@
 ;   the terms of this license.
 ;   You must not remove this notice, or any other, from this software.
 
-(ns clash.interact_test
+(ns clash.core_test
   (:require [clash.text_tools :as tt])
   (:use [clojure.test]
-        [clash.interact]
+        [clash.core]
         [clash.command_test]
         [clash.tools]) )
 

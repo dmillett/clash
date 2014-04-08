@@ -8,7 +8,7 @@
 
 (ns clash.example.stock_example
   (:require [clash.text_tools :as tt])
-  (:use [clash.interact]) )
+  (:use [clash.core]) )
 
 (def simple-stock-structure [:trade_time :action :stock :quantity :price])
 
