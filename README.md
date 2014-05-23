@@ -213,11 +213,11 @@ elapsed time in nano seconds (ns), milliseconds (ms) or seconds(s).
 :repl-options { :init (do
                 (load-file "checkouts/clash/src/clash/tools.clj")
                 (load-file "checkouts/clash/src/clash/text_tools.clj")
-                (load-file "checkouts/clash/src/clash/interact.clj")
+                (load-file "checkouts/clash/src/clash/core.clj")
                 (load-file "your-clojure-source-file.clj")
                 (use 'clash.tools)
                 (use 'clash.text_tools)
-                (use 'clash.interact)
+                (use 'clash.core)
                 (use 'ns.your-clojure-file)
                 (defn load-local-resource
                   [filename]
