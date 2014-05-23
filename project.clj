@@ -8,7 +8,7 @@
                          (load-file "src/clash/core.clj")
                          (load-file "test/clash/core_test.clj")
                          (use 'clash.tools)
-                         (use 'clash.interact)
+                         (use 'clash.core)
 
                          (defn load-local-resource
                            [logfile]
