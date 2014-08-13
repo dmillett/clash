@@ -148,6 +148,22 @@ user=> (count-with-conditions @sols2 (all? (name? "FOO") (price-higher? 12.1) (p
 user=> (count-with-conditions @sols2 (all? (name? "FOO") (any? (price-higher? 12.20) (price-lower? 12.20)) ) )
 2
 ```
+### Evaluate a predicate over a collection until true
+(until?) is usually more performant than (empty? (filter pred coll)) or (every?) because it short circuits
+the evaluation and does not build a collection. This is potentially useful when evaluating nested collections
+within a high level collection. 
+(take-until) is potentially useful for taking data up to a given point.
+
+```clojure
+; find if a predicate returns true for any value in a collection
+(until? even? '("foo" "bar" 3 4 "zoo"))
+=> true
+
+; Build a collection of values until the predicate is satisfied
+(take-until even? '("foo" "bar" 3 4 "zoo"))
+=> (4 3 "bar" "foo")
+```
+
 ### creating maps from key sets and regex groups
 Some basic internal utility for creating a map composed of structured keys and
 a regular expression.
