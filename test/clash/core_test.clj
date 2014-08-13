@@ -76,10 +76,38 @@
         result4 ((all? number? even? (divide-by-x? 5)) 10)
         result5 ((any? number? odd? even?) 16)
         result5 ((all? number? (any? (divide-by-x? 6) (divide-by-x? 4))) 16)]
+
     (is result1)
     (is (not result2))
     (is result3)
     (is result4)
     (is result5)
-    )
-  )
+    ) )
+
+(deftest test-until
+  (let [r1 (until? even? '("foo" "bar"))
+        r2 (until? number? '(1 2 3))
+        r3 (until? number? '("foo" 2 "bar"))
+        r4 (until? even? '("foo" 1 "bar" 3 4 "zoo"))
+        r5 (until? even? '("foo" 1 "bar" 3 5))]
+
+    (is (not r1))
+    (is r2)
+    (is r3)
+    (is r4)
+    (is (not r5))
+    ) )
+
+(deftest test-take-until
+  (let [r1 (take-until number? '(1 2 3))
+        r2 (take-until number? '("foo" "bar" 3 4))
+        r3 (take-until even? ["foo" "bar" 3 5 6 "zoo"])
+        r4 (take-until even? '("foo" "bar"))]
+
+    (are [x y] (= x y)
+
+      '(1) r1
+      '(3 "bar" "foo") r2
+      '(6 5 3 "bar" "foo") r3
+      '() r4
+      ) ) )

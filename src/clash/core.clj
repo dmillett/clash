@@ -43,24 +43,51 @@
   function returns 'false'. Could not pass a function list to (every-pred)
   successfully. Ex: ((all? number? odd?) 10) --> false"
   [& predicates]
-  #(loop [result true
-          preds predicates]
-     (if (or (not result) (empty? preds))
-       result
-       (recur ((first preds) %) (rest preds))
-       ) ) )
+  (fn [item]
+    (loop [result true
+            preds predicates]
+       (if (or (not result) (empty? preds))
+         result
+         (recur ((first preds) item) (rest preds))
+         ) ) ) )
 
 (defn any?
   "Pass value(s) implicitly and a list of predicates explicitly for evaluation.
   If any predicate returns 'true', then function returns 'true'. Otherwise
   function returns 'false'. Ex: ((any? number? odd?) 10) --> true"
   [& predicates]
-  #(loop [result false
-          preds predicates]
-     (if (or result (empty? preds))
-       result
-       (recur ((first preds) %) (rest preds))
-       ) ) )
+  (fn [item]
+    (loop [result false
+            preds predicates]
+       (if (or result (empty? preds))
+         result
+         (recur ((first preds) item) (rest preds))
+         ) ) ) )
+
+(defn until?
+  "Returns 'true' for the first item in a collection that satisfies the predicate.
+  Otherwise returns 'false'"
+  [pred coll]
+  (loop [result false
+         items coll]
+    (cond
+      (empty? items) result
+      (try (pred (first items)) (catch Exception e false)) true
+      :else (recur result (rest items))
+      ) ) )
+
+(defn take-until
+  "A compliment to (take-while). Gather values of a collection into a list until
+  the predicate is satisfied. Otherwise returns an empty list."
+  [pred coll]
+  (loop [result '()
+         items coll]
+    (cond
+      (and (empty? items) (= (count coll) (count result))) '()
+      (empty? items) result
+      (try (pred (first items)) (catch Exception e false)) (conj result (first items))
+      :else (recur (conj result (first items)) (rest items))
+      ) ) )
 
 (defn transform-text
   "A function to transform text from form to another. Example, decode/encode
