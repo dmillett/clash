@@ -89,7 +89,7 @@
       :else (recur (conj result (first items)) (rest items))
       ) ) )
 
-(defn transform-text
+(defn- transform-text
   "A function to transform text from form to another. Example, decode/encode
   URL, decode/encode encryption, etc"
   [transformer ^String text]
@@ -213,25 +213,65 @@
 ;;
 ;; To pass along more than one condition, use (every-pred p1 p2 p3)
 ;; Example: (def even3 (every-pred even? #(mod % 3)))
-(defn count-with-conditions
+(defn count-with
   "Perform a count on each data structure in a list if it matches
   the conditions defined in the predicates function. The predicates
   function may contain multiple conditions when used with (every-pred p1 p2)."
-  ([solutions predicates] (count-with-conditions solutions predicates nil 0))
-  ([solutions predicates initial_count] (count-with-conditions solutions predicates nil 0))
-  ([solutions predicates incrementer initial_count]
+  ([solutions predicates] (count-with solutions predicates nil 0))
+  ([solutions predicates initial] (count-with solutions predicates nil 0))
+  ([solutions predicates incrementer initial]
     (reduce (fn [count solution]
               (if (or (nil? predicates) (predicates solution))
                 (if-not (nil? incrementer) (incrementer solution count) (inc count))
                 count
                 ))
-      initial_count solutions) ))
+      initial solutions) ))
 
-(defn collect-with-conditions
+(defn calculate-with
+  "Perform a count on each data structure in a list if it matches
+  the conditions defined in the predicates function. The predicates
+  function may contain multiple conditions when used with (every-pred p1 p2)."
+  ([solutions predicates] (calculate-with solutions predicates nil 0))
+  ([solutions predicates initial] (calculate-with solutions predicates nil 0))
+  ([solutions predicates incrementer initial]
+    (reduce (fn [count solution]
+              (if (or (nil? predicates) (predicates solution))
+                (if-not (nil? incrementer) (incrementer solution count) (inc count))
+                count
+                ))
+      initial solutions) ))
+
+(defn collect-with
   "Build a collection of structued data objects that satisfy the conditions
   defined in 'predicates'. The predicates should be customized to use the
   data structure to filter."
   [solutions predicates]
   (if (nil? predicates)
     solutions
-    (filter #(predicates  %) solutions) ) )
+    (filter (fn [sol] (predicates  sol)) solutions) ) )
+
+(defn- generate-pivot-functions
+  "Create a list of functions given a list of values and add
+  meta-data to them with {:name 'pivot-by-'} "
+  [pivot_f values]
+  (map #(with-meta (pivot_f %) {:name (str "pivot-by-" %)}) values) )
+
+(defn- combine-functions-with-meta
+  "Carry the metadata :name forward from the pivot functions"
+  [preds metafs]
+  ;(map preds metafs)
+  (map #(with-meta (preds %) {:name (:name (meta %))}) metafs) )
+
+(defn pivot
+  "Build a matrix of predicate functions by combining base predicates (preds)
+  with a list of derived functions (pivot_f + pivot_data) and generate a map
+  of results."
+  [sols preds pivot_f pivot_data]
+  (let [fpivots (generate-pivot-functions pivot_f pivot_data)
+        combos (combine-functions-with-meta preds fpivots)]
+
+    (reduce
+      (fn [r f]
+        (assoc-in r [(:name (meta f))] (count-with sols f)) )
+        {} combos)
+    ) )

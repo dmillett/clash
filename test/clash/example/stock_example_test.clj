@@ -56,32 +56,32 @@
   (let [solutions (atomic-list-from-file simple-file better-message-parser)]
     ;(println solutions)
     (are [x y] (= x y)
-      0 (count-with-conditions @solutions #(= "XYZ" (-> % :stock)))
-      6 (count-with-conditions @solutions nil)
-      3 (count-with-conditions @solutions #(= "FOO" (-> % :stock)))
-      3 (count-with-conditions @solutions (name? "FOO"))
-      2 (count-with-conditions @solutions (name-action? "FOO" "Buy"))
-      1 (count-with-conditions @solutions (name-action-every-pred? "FOO" "Sell"))
+      0 (count-with @solutions #(= "XYZ" (-> % :stock)))
+      6 (count-with @solutions nil)
+      3 (count-with @solutions #(= "FOO" (-> % :stock)))
+      3 (count-with @solutions (name? "FOO"))
+      2 (count-with @solutions (name-action? "FOO" "Buy"))
+      1 (count-with @solutions (name-action-every-pred? "FOO" "Sell"))
       ; any? and all?
-      3 (count-with-conditions @solutions (all? (name? "FOO") (any? (action? "Sell") (action? "Buy"))) )
-      1 (count-with-conditions @solutions (all? (name? "FOO") (price-higher? 12.1) (price-lower? 12.7)))
+      3 (count-with @solutions (all? (name? "FOO") (any? (action? "Sell") (action? "Buy"))) )
+      1 (count-with @solutions (all? (name? "FOO") (price-higher? 12.1) (price-lower? 12.7)))
       ) ) )
 
 ;; Demonstrating custom increment
 (deftest test-count-with-conditions__with_incrementer
   (let [solutions (atomic-list-from-file simple-file better-message-parser)]
     (are [x y] (= x y)
-      3 (count-with-conditions @solutions (name? "FOO") 0)
-      1200 (count-with-conditions @solutions (name? "FOO") increment-with-stock-quanity 0)
-      2470 (count-with-conditions @solutions nil increment-with-stock-quanity 20)
+      3 (count-with @solutions (name? "FOO") 0)
+      1200 (count-with @solutions (name? "FOO") increment-with-stock-quanity 0)
+      2470 (count-with @solutions nil increment-with-stock-quanity 20)
       ) ) )
 
 ;; Collecting results
 (deftest test-collect-with-conditions
   (let [solutions (atomic-list-from-file simple-file better-message-parser)]
     (are [x y] (= x y)
-      0 (count (collect-with-conditions @solutions (name? "XYZ")) )
-      1 (count (collect-with-conditions @solutions (name-action-every-pred? "FOO" "Sell")))
-      2 (count (collect-with-conditions @solutions (name-action? "FOO" "Buy")))
-      6 (count (collect-with-conditions @solutions nil))
+      0 (count (collect-with @solutions (name? "XYZ")) )
+      1 (count (collect-with @solutions (name-action-every-pred? "FOO" "Sell")))
+      2 (count (collect-with @solutions (name-action? "FOO" "Buy")))
+      6 (count (collect-with @solutions nil))
       ) ) )

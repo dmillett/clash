@@ -32,11 +32,11 @@
 (deftest test-count-with-conditions__medium_complexity
   (are [x y] (= x y)
     true ((is-zoo? "ZOO") (first medium_complexity))
-    0 (count-with-conditions medium_complexity (is-zoo? "PIG"))
-    1 (count-with-conditions medium_complexity (is-zoo? "ZOO"))
-    1 (count-with-conditions medium_complexity is-fur-odd?)
-    0 (count-with-conditions medium_complexity (every-pred is-fur-odd? (is-zoo? "BAR")))
-    1 (count-with-conditions medium_complexity (every-pred is-fur-odd? (is-zoo? "ZAP")))
+    0 (count-with medium_complexity (is-zoo? "PIG"))
+    1 (count-with medium_complexity (is-zoo? "ZOO"))
+    1 (count-with medium_complexity is-fur-odd?)
+    0 (count-with medium_complexity (every-pred is-fur-odd? (is-zoo? "BAR")))
+    1 (count-with medium_complexity (every-pred is-fur-odd? (is-zoo? "ZAP")))
     ) )
 
 (deftest test-with-all-predicates
@@ -110,4 +110,17 @@
       '(3 "bar" "foo") r2
       '(6 5 3 "bar" "foo") r3
       '() r4
+      ) ) )
+
+(def foo-numbers '(2 3 4 5 9 11 12 15 20 21 25 26 27))
+
+ (deftest test-pivot
+  (let [r1 (pivot foo-numbers (partial all? number?) divide-by-x? '(2 3 4))
+        ;r2 (pivot foo-numbers (all? number?) divide-by-x? '(2 3 4))
+        ]
+
+    (are [x y] (= x y)
+      3 (-> "pivot-by-4" r1)
+      6 (-> "pivot-by-3" r1)
+      5 (-> "pivot-by-2" r1)
       ) ) )
