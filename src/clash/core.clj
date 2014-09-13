@@ -10,8 +10,8 @@
   ^{:author "David Millett"
     :doc "Atomizing and interacting with oject memory stores from text files (logs, etc)."}
   clash.core
-  (:use [clojure.java.io :only (reader writer)])
-  )
+  (:require [clash.tools :as t])
+  (:use [clojure.java.io :only (reader writer)]) )
 
 ;; Calling (every? over every predicate evaluation seems to work with primitives, but not objects
 (defn all-preds?
@@ -259,19 +259,19 @@
 (defn- combine-functions-with-meta
   "Carry the metadata :name forward from the pivot functions"
   [preds metafs]
-  ;(map preds metafs)
   (map #(with-meta (preds %) {:name (:name (meta %))}) metafs) )
 
 (defn pivot
   "Build a matrix of predicate functions by combining base predicates (preds)
   with a list of derived functions (pivot_f + pivot_data) and generate a map
-  of results."
+  sorted by result values."
   [sols preds pivot_f pivot_data]
   (let [fpivots (generate-pivot-functions pivot_f pivot_data)
         combos (combine-functions-with-meta preds fpivots)]
 
-    (reduce
-      (fn [r f]
-        (assoc-in r [(:name (meta f))] (count-with sols f)) )
-        {} combos)
+    (t/sort-map-by-value
+      (reduce
+        (fn [r f]
+          (assoc-in r [(:name (meta f))] (count-with sols f)) )
+          {} combos) )
     ) )

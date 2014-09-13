@@ -34,6 +34,27 @@
     )
   )
 
+(deftest test-sort-map-by-value
+  (let [m1 {:a 1 :b 2 :c 3}
+        m2 {:a 1 :b 2 :c 1 :d 3 :e 2}
+        m3 {"a" 1 "b" 3 "c" 1}
+        r1 (sort-map-by-value m1)
+        r2 (sort-map-by-value m2)
+        r3 (sort-map-by-value m3)]
+
+    (are [x y] (= x y)
+      3 (count r1)
+      [:c 3] (first r1)
+      [:a 1] (last r1)
+
+      5 (count r2)
+      [:d 3] (first r2)
+      [:a 1] (last r2)
+
+      3 (count r3)
+      ["b" 3] (first r3)
+      ["a" 1] (last r3)
+      ) ) )
 
 
 
