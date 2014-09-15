@@ -258,20 +258,33 @@
 
 (defn- combine-functions-with-meta
   "Carry the metadata :name forward from the pivot functions"
-  [preds metafs]
-  (map #(with-meta (preds %) {:name (:name (meta %))}) metafs) )
+  [f preds metafs]
+  ; copy meta data from pivot functions when appending them to predicates
+  (map #(with-meta
+          (apply f (conj preds %))
+          {:name (:name (meta %))}) metafs) )
 
 (defn pivot
-  "Build a matrix of predicate functions by combining base predicates (preds)
-  with a list of derived functions (pivot_f + pivot_data) and generate a map
-  sorted by result values."
-  [sols preds pivot_f pivot_data]
-  (let [fpivots (generate-pivot-functions pivot_f pivot_data)
-        combos (combine-functions-with-meta preds fpivots)]
+  "Evaluate each value in a collection (col) with a base set of predicates (preds)
+  and a 'pivot' predicate with its list of corresponding pivot values. This function
+   returns a map sorted descending by pivot count. By default, (pivot) will use
+  the conditional all? (and), but any? (or) could also be used. For example:
 
-    (t/sort-map-by-value
-      (reduce
-        (fn [r f]
-          (assoc-in r [(:name (meta f))] (count-with sols f)) )
+  ; 6 is an even number dividable by 2, 3
+  ; 8 is an even number dividable by 2
+  ; 7 is an odd number (it does not satisfy any of the composite predicates)
+  user=> (pivot '(6 7 8) [number? even?] divisible-by? '(2 3))
+
+  {pivot-by-2 2, pivot-by-3 1}
+  "
+  ([col preds pivotf pivotd] (pivot col all? preds pivotf pivotd))
+  ([col f preds pivotf pivotd]
+    (let [fpivots (generate-pivot-functions pivotf pivotd)
+          combos (combine-functions-with-meta f preds fpivots)]
+
+      (t/sort-map-by-value
+        (reduce
+          (fn [r f]
+            (assoc-in r [(:name (meta f))] (count-with col f)) )
           {} combos) )
-    ) )
+      ) ) )

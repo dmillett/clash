@@ -114,10 +114,13 @@
 
 (def foo-numbers '(2 3 4 5 9 11 12 15 20 21 25 26 27))
 
- (deftest test-pivot
-  (let [r1 (pivot foo-numbers (partial all? number?) divide-by-x? '(2 3 4))
-        ;r2 (pivot foo-numbers (all? number?) divide-by-x? '(2 3 4))
+(deftest test-pivot
+  (let [r1 (pivot foo-numbers [number?] divide-by-x? '(2 3 4))
+        ;r1 (perf (pivot foo-numbers [number?] divide-by-x? '(2 3 4)) "(pivot a)")
         ]
+
+    ;(println "r1" r1)
+    ;(println "r2" r2)
 
     (are [x y] (= x y)
       3 (-> "pivot-by-4" r1)
