@@ -116,6 +116,7 @@
 
 (deftest test-pivot
   (let [r1 (pivot foo-numbers [number?] divide-by-x? '(2 3 4))
+        r2 (pivot foo-numbers [number?] divide-by-x? '(2 3 4) "is-number")
         ;r1 (perf (pivot foo-numbers [number?] divide-by-x? '(2 3 4)) "(pivot a)")
         ]
 
@@ -126,4 +127,8 @@
       3 (-> "pivot-by-4" r1)
       6 (-> "pivot-by-3" r1)
       5 (-> "pivot-by-2" r1)
+      ;
+      3 (-> "is-number_pivot-by-4" r2)
+      6 (-> "is-number_pivot-by-3" r2)
+      5 (-> "is-number_pivot-by-2" r2)
       ) ) )

@@ -253,8 +253,8 @@
 (defn- generate-pivot-functions
   "Create a list of functions given a list of values and add
   meta-data to them with {:name 'pivot-by-'} "
-  [pivot_f values]
-  (map #(with-meta (pivot_f %) {:name (str "pivot-by-" %)}) values) )
+  [pivot_f values msg]
+  (map #(with-meta (pivot_f %) {:name (str msg "-" %)}) values) )
 
 (defn- combine-functions-with-meta
   "Carry the metadata :name forward from the pivot functions"
@@ -273,13 +273,15 @@
   ; 6 is an even number dividable by 2, 3
   ; 8 is an even number dividable by 2
   ; 7 is an odd number (it does not satisfy any of the composite predicates)
-  user=> (pivot '(6 7 8) [number? even?] divisible-by? '(2 3))
+  user=> (pivot '(6 7 8) [number? even?] divisible-by? '(2 3) \"is-even-number \")
 
-  {pivot-by-2 2, pivot-by-3 1}
+  {is-even-number_pivot-by-2 2, is-even-number_pivot-by-3 1}
   "
-  ([col preds pivotf pivotd] (pivot col all? preds pivotf pivotd))
-  ([col f preds pivotf pivotd]
-    (let [fpivots (generate-pivot-functions pivotf pivotd)
+  ([col preds pivotf pivotd] (pivot col all? preds pivotf pivotd ""))
+  ([col preds pivotf pivotd msg] (pivot col all? preds pivotf pivotd msg))
+  ([col f preds pivotf pivotd msg]
+    (let [message (if (empty? msg) "pivot-by" (str msg "_pivot-by"))
+          fpivots (generate-pivot-functions pivotf pivotd message)
           combos (combine-functions-with-meta f preds fpivots)]
 
       (t/sort-map-by-value
