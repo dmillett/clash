@@ -65,7 +65,7 @@
     (is result5)
     ) )
 
-(defn divide-by-x?
+(defn divisible-by?
   [x]
   #(= 0 (mod % x)) )
 
@@ -73,9 +73,9 @@
   (let [result1 ((all? number? even?) 10)
         result2 ((all? number? odd?) 10)
         result3 ((any? number? even?) 11)
-        result4 ((all? number? even? (divide-by-x? 5)) 10)
+        result4 ((all? number? even? (divisible-by? 5)) 10)
         result5 ((any? number? odd? even?) 16)
-        result5 ((all? number? (any? (divide-by-x? 6) (divide-by-x? 4))) 16)]
+        result5 ((all? number? (any? (divisible-by? 6) (divisible-by? 4))) 16)]
 
     (is result1)
     (is (not result2))
@@ -115,8 +115,8 @@
 (def foo-numbers '(2 3 4 5 9 11 12 15 20 21 25 26 27))
 
 (deftest test-pivot
-  (let [r1 (pivot foo-numbers [number?] divide-by-x? '(2 3 4))
-        r2 (pivot foo-numbers [number?] divide-by-x? '(2 3 4) "is-number")
+  (let [r1 (pivot foo-numbers [number?] divisible-by? '(2 3 4))
+        r2 (pivot foo-numbers [number?] divisible-by? '(2 3 4) "is-number")
         ;r1 (perf (pivot foo-numbers [number?] divide-by-x? '(2 3 4)) "(pivot a)")
         ]
 
@@ -131,4 +131,41 @@
       3 (-> "is-number_pivot-by-4" r2)
       6 (-> "is-number_pivot-by-3" r2)
       5 (-> "is-number_pivot-by-2" r2)
+      ) ) )
+
+(def foo-numbers-mixed '(2 3 4 5 9 "a" 11 12 15 20 21 "b" 25 26 27))
+
+(deftest test-count-with
+  (let [r1 (count-with foo-numbers-mixed (all? number?))
+        r2 (count-with foo-numbers-mixed (all? number? even?))
+        r3 (count-with foo-numbers-mixed (all? number? even?) 37)]
+
+    (are [x y] (= x y)
+      13 r1
+      5  r2
+      42 r3
+      ) ) )
+
+(deftest test-pcount-with
+  (let [r1 (pcount-with foo-numbers-mixed (all? number?))
+        r2 (pcount-with (into [] foo-numbers-mixed) (all? number?))
+        r3 (pcount-with foo-numbers-mixed (all? number? even?))
+        r4 (pcount-with (into [] foo-numbers-mixed) (all? number? even?))
+        r5 (pcount-with (into [] foo-numbers-mixed) (all? number? even?) 37)]
+
+    (are [x y] (= x y)
+      13 r1
+      13 r2
+      5 r3
+      5 r4
+      42 r5
+      ) ) )
+
+(deftest test-collect-with
+  (let [r1 (collect-with foo-numbers-mixed (all? number?))
+        r2 (collect-with foo-numbers-mixed (all? number? even?))]
+
+    (are [x y] (= x y)
+      13 (count r1)
+      5 (count r2)
       ) ) )

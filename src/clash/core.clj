@@ -10,7 +10,8 @@
   ^{:author "David Millett"
     :doc "Atomizing and interacting with oject memory stores from text files (logs, etc)."}
   clash.core
-  (:require [clash.tools :as t])
+  (:require [clojure.core.reducers :as r]
+            [clash.tools :as t])
   (:use [clojure.java.io :only (reader writer)]) )
 
 ;; Calling (every? over every predicate evaluation seems to work with primitives, but not objects
@@ -218,7 +219,7 @@
   the conditions defined in the predicates function. The predicates
   function may contain multiple conditions when used with (every-pred p1 p2)."
   ([solutions predicates] (count-with solutions predicates nil 0))
-  ([solutions predicates initial] (count-with solutions predicates nil 0))
+  ([solutions predicates initial] (count-with solutions predicates nil initial))
   ([solutions predicates incrementer initial]
     (reduce (fn [count solution]
               (if (or (nil? predicates) (predicates solution))
@@ -226,6 +227,22 @@
                 count
                 ))
       initial solutions) ))
+
+(defn pcount-with
+  "Perform a count on each data structure in a list use (reducers/fold) if it matches
+  the conditions defined in the predicates function. The predicates function may
+  contain multiple conditions when used with (every-pred p1 p2). This function currently
+  hard codes the number of threads to 4."
+  ([solutions predicates] (pcount-with solutions predicates nil 0))
+  ([solutions predicates initial] (pcount-with solutions predicates nil initial))
+  ([solutions predicates incrementer initial]
+    (+ initial
+      (r/fold 4 + (fn [count solution]
+                    (if (or (nil? predicates) (predicates solution))
+                      (if-not (nil? incrementer) (incrementer solution count) (inc count))
+                      count
+                      )) solutions))
+    ))
 
 (defn calculate-with
   "Perform a count on each data structure in a list if it matches
@@ -265,10 +282,11 @@
           {:name (:name (meta %))}) metafs) )
 
 (defn pivot
-  "Evaluate each value in a collection (col) with a base set of predicates (preds)
-  and a 'pivot' predicate with its list of corresponding pivot values. This function
-   returns a map sorted descending by pivot count. By default, (pivot) will use
-  the conditional all? (and), but any? (or) could also be used. For example:
+  "Evaluation of each value in a collection (col) with a base set of
+  predicates (preds) and a 'pivot' predicate with its list of corresponding
+  pivot values. This function returns a map sorted descending by pivot count.
+  By default, (pivot) will use the conditional all? (and), but any? (or) could
+  also be used. For example:
 
   ; 6 is an even number dividable by 2, 3
   ; 8 is an even number dividable by 2
@@ -288,5 +306,33 @@
         (reduce
           (fn [r f]
             (assoc-in r [(:name (meta f))] (count-with col f)) )
+          {} combos) )
+      ) ) )
+
+(defn ppivot
+  "Parallel evaluation of each value in a collection (col) with a base set of
+  predicates (preds) and a 'pivot' predicate with its list of corresponding
+  pivot values. This function returns a map sorted descending by pivot count.
+  By default, (pivot) will use the conditional all? (and), but any? (or) could
+  also be used. For example:
+
+  ; 6 is an even number dividable by 2, 3
+  ; 8 is an even number dividable by 2
+  ; 7 is an odd number (it does not satisfy any of the composite predicates)
+  user=> (pivot '(6 7 8) [number? even?] divisible-by? '(2 3) \"is-even-number \")
+
+  {is-even-number_pivot-by-2 2, is-even-number_pivot-by-3 1}
+  "
+  ([col preds pivotf pivotd] (pivot col all? preds pivotf pivotd ""))
+  ([col preds pivotf pivotd msg] (pivot col all? preds pivotf pivotd msg))
+  ([col f preds pivotf pivotd msg]
+    (let [message (if (empty? msg) "pivot-by" (str msg "_pivot-by"))
+          fpivots (generate-pivot-functions pivotf pivotd message)
+          combos (combine-functions-with-meta f preds fpivots)]
+
+      (t/sort-map-by-value
+        (reduce
+          (fn [r f]
+            (assoc-in r [(:name (meta f))] (pcount-with col f)) )
           {} combos) )
       ) ) )
