@@ -169,3 +169,16 @@
       13 (count r1)
       5 (count r2)
       ) ) )
+
+(deftest test-pcollect-with
+  (let [r1 (pcollect-with foo-numbers-mixed (all? number?))
+        r2 (pcollect-with (into [] foo-numbers-mixed) (all? number?))
+        r3 (pcollect-with foo-numbers-mixed (all? number? even?))
+        r4 (pcollect-with (into [] foo-numbers-mixed) (all? number? even?))]
+
+    (are [x y] (= x y)
+      13 (count r1)
+      13 (count (concat r2))
+      5 (count r3)
+      5 (count r4)
+      ) ) )

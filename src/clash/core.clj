@@ -210,7 +210,6 @@
     (into structure (deref (atomic-list-from-file input predicate transformer parser max)))
     ) )
 
-
 ;;
 ;; To pass along more than one condition, use (every-pred p1 p2 p3)
 ;; Example: (def even3 (every-pred even? #(mod % 3)))
@@ -231,17 +230,16 @@
 (defn pcount-with
   "Perform a count on each data structure in a list use (reducers/fold) if it matches
   the conditions defined in the predicates function. The predicates function may
-  contain multiple conditions when used with (every-pred p1 p2). This function currently
-  hard codes the number of threads to 4."
+  contain multiple conditions when used with (every-pred p1 p2)."
   ([solutions predicates] (pcount-with solutions predicates nil 0))
   ([solutions predicates initial] (pcount-with solutions predicates nil initial))
   ([solutions predicates incrementer initial]
     (+ initial
-      (r/fold 4 + (fn [count solution]
-                    (if (or (nil? predicates) (predicates solution))
-                      (if-not (nil? incrementer) (incrementer solution count) (inc count))
-                      count
-                      )) solutions))
+      (r/fold + (fn [count solution]
+                  (if (or (nil? predicates) (predicates solution))
+                    (if-not (nil? incrementer) (incrementer solution count) (inc count))
+                    count
+                    )) solutions))
     ))
 
 (defn calculate-with
@@ -266,6 +264,17 @@
   (if (nil? predicates)
     solutions
     (filter (fn [sol] (predicates  sol)) solutions) ) )
+
+(defn pcollect-with
+  "In parallel, build a collection of structued data objects
+  that satisfy the conditions defined in 'predicates'. The predicates should
+  be customized to use the data structure to filter."
+  [solutions predicates]
+  (if (nil? predicates)
+    solutions
+    ; Curiously, specifying the number 'n' threads, created lists of lists
+    (r/fold t/fold-conj (fn [x y] (if (predicates y) (conj x y) x)) solutions)
+    ) )
 
 (defn- generate-pivot-functions
   "Create a list of functions given a list of values and add

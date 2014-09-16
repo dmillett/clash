@@ -99,4 +99,9 @@
                                [(get m k1) k1]) ) )
     m) )
 
+(defn fold-conj
+  "Acts like (conj) but intended for reducers/fold and zero arity."
+  ([] '())
+  ([a b] (conj a b)) )
+
 
