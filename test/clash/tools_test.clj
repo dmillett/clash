@@ -56,5 +56,19 @@
       ["a" 1] (last r3)
       ) ) )
 
+(deftest test-compare-map-with
+  (let [m1 {:a 1 :b 2 :c 3 "d" 4}
+        m2 {:a 2 :b 4 :c 5 "d" 7}
+        f #(/ %1 (double %2))
+        r1 (compare-map-with m1 m2 f)]
+
+    ;(println r1)
+
+    (are [x y] (= x y)
+      0.5 (:a r1)
+      0.5 (:b r1)
+      0.6 (:c r1)
+      ) ) )
+
 
 

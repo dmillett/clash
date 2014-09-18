@@ -104,4 +104,12 @@
   ([] '())
   ([a b] (conj a b)) )
 
-
+(defn compare-map-with
+  "Compare values in two maps with a specific 2 arg function. Currently this assumes
+  identical keysets in each map. todo: fix for missing keys (set default value)"
+  [m1 m2 f]
+  (reduce
+    (fn [result [k v]]
+      ; Should compare when the value is not nil
+      (assoc-in result [k] (when (not (nil? v)) (f v (-> k m2))) ) )
+    {} m1) )
