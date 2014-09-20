@@ -128,7 +128,10 @@
       2 (-> "r2-pivot_3|7" r2)
       ) ) )
 
-(def mc (range 1 50001))
+; reducers/fold requires [] for multi-threads
+(def sc (into [] (range 1 1001)))
+; Usually takes <= 0.8 seconds for a million data points
+(def mc (into [] (range 1 1000001)))
 
 (deftest test-ppivot-matrix
   (let [r1 (ppivot-matrix hundred [number? even?] [divisible-by?] (list (range 2 5)) "r1")
@@ -147,5 +150,5 @@
       7 (-> "r2-pivot_2|7" r2)
       2 (-> "r2-pivot_3|7" r2)
       ;
-      ;8333 (-> "r3-pivot_3|6" r3)
+      ;166666 (-> "r3-pivot_3|6" r3)
       ) ) )
