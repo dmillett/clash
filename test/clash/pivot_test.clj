@@ -35,8 +35,8 @@
       ) ) )
 
 (deftest test-ppivot
-  (let [r1 (ppivot foo-numbers [number?] divisible-by? '(2 3 4))
-        r2 (ppivot foo-numbers [number?] divisible-by? '(2 3 4) "is-number")
+  (let [r1 (p-pivot foo-numbers [number?] divisible-by? '(2 3 4))
+        r2 (p-pivot foo-numbers [number?] divisible-by? '(2 3 4) "is-number")
         ;r1 (perf (pivot foo-numbers [number?] divide-by-x? '(2 3 4)) "(pivot a)")
         ]
 
@@ -128,15 +128,34 @@
       2 (-> "r2-pivot_3|7" r2)
       ) ) )
 
+(deftest test-pivot-matrix-x
+  (let [r1 (pivot-matrix-x hundred [number? even?] "r1" :pivots [divisible-by?] :values (list (range 2 5)))
+        r2 (pivot-matrix-x hundred [number? even?] "r2" :pivots [divisible-by? divisible-by?] :values [(range 2 5) (range 6 8)])
+        ]
+
+    (are [x y] (= x y)
+      3 (count r1)
+      49 (-> "r1-pivot_2" r1)
+      16 (-> "r1-pivot_3" r1)
+      24 (-> "r1-pivot_4" r1)
+      ;
+      6 (count r2)
+      16 (-> "r2-pivot_3|6" r2)
+      7 (-> "r2-pivot_2|7" r2)
+      2 (-> "r2-pivot_3|7" r2)
+      ) ) )
+
+
 ; reducers/fold requires [] for multi-threads
 (def sc (into [] (range 1 1001)))
-; Usually takes <= 0.8 seconds for a million data points
-(def mc (into [] (range 1 1000001)))
+; Usually takes <= 0.8 seconds for a million data points on 6 core AMD (3.4 ghz)
+(def lc (into [] (range 1 1000001)))
 
 (deftest test-ppivot-matrix
-  (let [r1 (ppivot-matrix hundred [number? even?] [divisible-by?] (list (range 2 5)) "r1")
-        r2 (ppivot-matrix hundred [number? even?] [divisible-by? divisible-by?] [(range 2 5) (range 6 8)] "r2")
-        ;r3 (t/perf (ppivot-matrix mc [number? even?] [divisible-by? divisible-by?] [(range 2 5) (range 6 8)] "r3") "")
+  (let [r1 (p-pivot-matrix hundred [number? even?] [divisible-by?] (list (range 2 5)) "r1")
+        r2 (p-pivot-matrix hundred [number? even?] [divisible-by? divisible-by?] [(range 2 5) (range 6 8)] "r2")
+;        r3 (t/perf (ppivot-matrix lc [number? even?] [divisible-by? divisible-by?] [(range 2 5) (range 6 8)] "r3") "")
+;        r4 (t/perf (pp-pivot-matrix lc [number? even?] [divisible-by? divisible-by?] [(range 2 7) (range 7 12)] "r4") "")
         ]
 
     (are [x y] (= x y)
@@ -150,5 +169,32 @@
       7 (-> "r2-pivot_2|7" r2)
       2 (-> "r2-pivot_3|7" r2)
       ;
-      ;166666 (-> "r3-pivot_3|6" r3)
+;      166666 (-> "r3-pivot_3|6" r3)
+      ;
+;      25 (count r4)
+;      ["r4-pivot_4|8" 125000] (first r4)
+      ) ) )
+
+(deftest test-pp-pivot-matrix
+  (let [r1 (pp-pivot-matrix hundred [number? even?] [divisible-by?] (list (range 2 5)) "r1")
+        r2 (pp-pivot-matrix hundred [number? even?] [divisible-by? divisible-by?] [(range 2 5) (range 6 8)] "r2")
+;        r3 (t/perf (pp-pivot-matrix lc [number? even?] [divisible-by? divisible-by?] [(range 2 5) (range 6 8)] "r3") "")
+;        r4 (t/perf (pp-pivot-matrix lc [number? even?] [divisible-by? divisible-by?] [(range 2 7) (range 7 12)] "r4") "")
+        ]
+
+    (are [x y] (= x y)
+      3 (count r1)
+      49 (-> "r1-pivot_2" r1)
+      16 (-> "r1-pivot_3" r1)
+      24 (-> "r1-pivot_4" r1)
+      ;
+      6 (count r2)
+      16 (-> "r2-pivot_3|6" r2)
+      7 (-> "r2-pivot_2|7" r2)
+      2 (-> "r2-pivot_3|7" r2)
+      ;
+;      166666 (-> "r3-pivot_3|6" r3)
+      ;
+;      25 (count r4)
+;      ["r4-pivot_4|8" 125000] (first r4)
       ) ) )

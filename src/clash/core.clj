@@ -227,12 +227,12 @@
                 ))
       initial solutions) ))
 
-(defn pcount-with
+(defn p-count-with
   "Perform a count on each data structure in a list use (reducers/fold) if it matches
   the conditions defined in the predicates function. The predicates function may
   contain multiple conditions when used with (every-pred p1 p2)."
-  ([solutions predicates] (pcount-with solutions predicates nil 0))
-  ([solutions predicates initial] (pcount-with solutions predicates nil initial))
+  ([solutions predicates] (p-count-with solutions predicates nil 0))
+  ([solutions predicates initial] (p-count-with solutions predicates nil initial))
   ([solutions predicates incrementer initial]
     (+ initial
       (r/fold + (fn [count solution]
@@ -265,7 +265,7 @@
     solutions
     (filter (fn [sol] (predicates  sol)) solutions) ) )
 
-(defn pcollect-with
+(defn p-collect-with
   "In parallel, build a collection of structued data objects
   that satisfy the conditions defined in 'predicates'. The predicates should
   be customized to use the data structure to filter."
@@ -275,23 +275,3 @@
     ; Curiously, specifying the number 'n' threads, created lists of lists
     (r/fold t/fold-conj (fn [x y] (if (predicates y) (conj x y) x)) solutions)
     ) )
-
-;(defn build-single-pivot
-;  "Create a list of functions given a list of values and add
-;  meta-data to them with {:name 'pivot-'} "
-;  [pivotf values msg]
-;  (map #(with-meta (pivotf %) {:name (str msg "-" %)}) values) )
-;
-;(defn build-pivot-functions
-;  "Build a list of pivot predicates for multiple pivots. In this case, each
-;  param is a sequence. The corresponding index of each sequence are (map)
-;  together to form a list."
-;  [pivotfs pivotsd msg]
-;  (loop [result '() fs pivotfs data pivotsd]
-;    (if (empty? fs)
-;      result
-;      (recur
-;        (concat result (map #(with-meta (first fs) {:name (str msg "-" %)}) (first data)))
-;        (rest fs)
-;        (rest data)) )
-;    ) )

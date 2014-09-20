@@ -54,7 +54,7 @@
           {} combos) )
       ) ) )
 
-(defn ppivot
+(defn p-pivot
   "Parallel evaluation of each value in a collection (col) with a base set of
   predicates (preds) and a 'pivot' predicate with its list of corresponding
   pivot values. This function returns a map sorted descending by pivot count.
@@ -78,9 +78,29 @@
       (t/sort-map-by-value
         (reduce
           (fn [r fx]
-            (assoc-in r [(:name (meta fx))] (c/pcount-with col fx)) )
+            (assoc-in r [(:name (meta fx))] (c/p-count-with col fx)) )
           {} combos) )
       ) ) )
+
+(defn pivot-compare
+  "Compare the results (maps) of two pivots with a specific function. For
+  example, perhaps it is helpful to compare the ratio of values from col1/col2.
+  The output is sorted in descending order."
+  [col1 col2 preds pivotf pivotd msg compf]
+  (let [a (pivot col1 preds pivotf pivotd msg)
+        b (pivot col2 preds pivotf pivotd msg)]
+    (t/sort-map-by-value (t/compare-map-with a b compf))
+    ) )
+
+(defn p-pivot-compare
+  "Compare the results (maps) of two pivots with a specific function. For
+  example, perhaps it is helpful to compare the ratio of values from col1/col2.
+  The output is sorted in descending order."
+  [col1 col2 preds pivotf pivotd msg compf]
+  (let [a (p-pivot col1 preds pivotf pivotd msg)
+        b (p-pivot col2 preds pivotf pivotd msg)]
+    (t/sort-map-by-value (t/compare-map-with a b compf))
+    ) )
 
 ;; **************************************************************************************
 
@@ -93,7 +113,8 @@
     (map #(with-meta (pivotf %) {:name (str name %) :base_msg msg :pivot %}) values)
     ) )
 
-(defn- build-text-matrix
+(defn- build-text-matrix-meta
+  "Determine what the combined meta data from each function should look like."
   [a b delim mk]
   (cond
     (and (not (nil? (mk (meta a)))) (not (nil? (mk (meta b)))) ) (str (mk (meta a)) delim (mk (meta b)))
@@ -103,16 +124,18 @@
     ) )
 
 (defn- merge-meta-matrix
-  ""
+  "Combine meta data from multiple functions into single string.
+  'msg'-pivot_x|y|z"
   [a b delim]
-  (let [bases (build-text-matrix a b delim :base_msg)
-        pivots (build-text-matrix a b delim :pivot)
-        names (build-text-matrix a b delim :name)]
+  (let [bases (build-text-matrix-meta a b delim :base_msg)
+        pivots (build-text-matrix-meta a b delim :pivot)
+        names (build-text-matrix-meta a b delim :name)]
 
     {:name (str bases "-pivot_" pivots)}
     ) )
 
 (defn- meta-name-text-matrix
+  "Build the meta :name field for a function."
   ([txt a] (meta-name-text-matrix txt a nil))
   ([txt a delim]
     (if delim
@@ -121,6 +144,8 @@
       ) ) )
 
 (defn conj-meta-matrix
+  "Use conj to combine values with a collection and to include the meta data from
+  the old collection and values to the resulting collection."
   ([col v] (with-meta (conj col v) (merge-meta-matrix col v "|")) )
   ([col v & values]
     (loop [c col
@@ -200,7 +225,25 @@
         ) )
     ) )
 
-(defn ppivot-matrix
+(defn pivot-matrix-x
+  "Evaluate a multi-dimensional array of predicates with their base predicates over
+  a collection. The predicate evaluation against the collection is single threaded.
+  Similar to (pivot-matrix), Ex:
+  (pivot-matrix-x col [number?] 'foo' :pivots [divisible-by?] :values [(range 2 5)])"
+  [col base_preds msg & {:keys [pivots values] :or {pivots [] values []}}]
+  (let [message (if (empty? msg) "pivot-test" msg)
+        pivot_groups (build-pivot-groups-matrix pivots values message)
+        flat_matrix (build-matrix c/all? base_preds pivot_groups)]
+
+    (t/sort-map-by-value
+      (reduce
+        (fn [result fx]
+          (assoc-in result [(:name (meta fx))] (c/count-with col fx)) )
+        {} flat_matrix) )
+    ) )
+
+
+(defn p-pivot-matrix
   "Evaluate a multi-dimensional array of predicates with their base predicates over
   a collection. The predicate evaluation against the collection is in parallel (reducers/fold)."
   ([col base_preds pivotfs pivotds] (pivot-matrix col base_preds pivotfs pivotds ""))
@@ -212,8 +255,51 @@
       (t/sort-map-by-value
         (reduce
           (fn [result fx]
-            (assoc-in result [(:name (meta fx))] (c/pcount-with col fx)) )
+            (assoc-in result [(:name (meta fx))] (c/p-count-with col fx)) )
           {} flat_matrix)
         ) )
     ) )
 
+(defn- fold-merge-with-plus
+  "Acts like (merge-with), but satisfies zero arity for recuers/fold"
+  ([] {})
+  ([& maps] (merge-with + maps)) )
+
+(defn pp-pivot-matrix
+  "Evaluate a multi-dimensional array of predicates with their base predicates over
+  a collection. The predicate evaluation against the collection is in parallel (reducers/fold).
+  This might be beneficial when the flattened cartesian product has a large count
+  (maybe > 50 predicate groups) and the workstation has a large number of cores."
+  ([col base_preds pivotfs pivotds] (pivot-matrix col base_preds pivotfs pivotds ""))
+  ([col base_preds pivotfs pivotds msg]
+    (let [message (if (empty? msg) "pivot-test" msg)
+          pivot_groups (build-pivot-groups-matrix pivotfs pivotds message)
+          flat_matrix (build-matrix c/all? base_preds pivot_groups)]
+
+      (t/sort-map-by-value
+        (r/fold fold-merge-with-plus
+          (fn [result fx]
+            (assoc-in result [(:name (meta fx))] (c/p-count-with col fx)) )
+          flat_matrix)
+        ) )
+    ) )
+
+(defn pivot-matrix-compare
+  "Compare the results (maps) of two pivots with a specific function. For
+  example, perhaps it is helpful to compare the ratio of values from col1/col2.
+  The output is sorted in descending order."
+  [col1 col2 preds pivotf pivotd msg compf]
+  (let [a (pivot-matrix col1 preds pivotf pivotd msg)
+        b (pivot-matrix col2 preds pivotf pivotd msg)]
+    (t/sort-map-by-value (t/compare-map-with a b compf))
+    ) )
+
+(defn p-pivot-matrix-compare
+  "Compare the results (maps) of two pivots with a specific function. For
+  example, perhaps it is helpful to compare the ratio of values from col1/col2.
+  The output is sorted in descending order."
+  [col1 col2 preds pivotf pivotd msg compf]
+  (let [a (p-pivot-matrix col1 preds pivotf pivotd msg)
+        b (p-pivot-matrix col2 preds pivotf pivotd msg)]
+    (t/sort-map-by-value (t/compare-map-with a b compf))
+    ) )

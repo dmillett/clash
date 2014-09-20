@@ -127,11 +127,11 @@
       ) ) )
 
 (deftest test-pcount-with
-  (let [r1 (pcount-with foo-numbers-mixed (all? number?))
-        r2 (pcount-with (into [] foo-numbers-mixed) (all? number?))
-        r3 (pcount-with foo-numbers-mixed (all? number? even?))
-        r4 (pcount-with (into [] foo-numbers-mixed) (all? number? even?))
-        r5 (pcount-with (into [] foo-numbers-mixed) (all? number? even?) 37)]
+  (let [r1 (p-count-with foo-numbers-mixed (all? number?))
+        r2 (p-count-with (into [] foo-numbers-mixed) (all? number?))
+        r3 (p-count-with foo-numbers-mixed (all? number? even?))
+        r4 (p-count-with (into [] foo-numbers-mixed) (all? number? even?))
+        r5 (p-count-with (into [] foo-numbers-mixed) (all? number? even?) 37)]
 
     (are [x y] (= x y)
       13 r1
@@ -151,10 +151,10 @@
       ) ) )
 
 (deftest test-pcollect-with
-  (let [r1 (pcollect-with foo-numbers-mixed (all? number?))
-        r2 (pcollect-with (into [] foo-numbers-mixed) (all? number?))
-        r3 (pcollect-with foo-numbers-mixed (all? number? even?))
-        r4 (pcollect-with (into [] foo-numbers-mixed) (all? number? even?))]
+  (let [r1 (p-collect-with foo-numbers-mixed (all? number?))
+        r2 (p-collect-with (into [] foo-numbers-mixed) (all? number?))
+        r3 (p-collect-with foo-numbers-mixed (all? number? even?))
+        r4 (p-collect-with (into [] foo-numbers-mixed) (all? number? even?))]
 
     (are [x y] (= x y)
       13 (count r1)
