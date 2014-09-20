@@ -7,7 +7,7 @@
 ;   You must not remove this notice, or any other, from this software.
 
 (ns
-  ^{:author "David Millett"
+  ^{:author "dmillett"
     :doc "Atomizing and interacting with oject memory stores from text files (logs, etc)."}
   clash.core
   (:require [clojure.core.reducers :as r]
@@ -276,114 +276,22 @@
     (r/fold t/fold-conj (fn [x y] (if (predicates y) (conj x y) x)) solutions)
     ) )
 
-(defn build-single-pivot
-  "Create a list of functions given a list of values and add
-  meta-data to them with {:name 'pivot-'} "
-  [pivotf values msg]
-  (map #(with-meta (pivotf %) {:name (str msg "-" %)}) values) )
-
-(defn build-pivot-functions
-  "Build a list of pivot predicates for multiple pivots. In this case, each
-  param is a sequence. The corresponding index of each sequence are (map)
-  together to form a list."
-  [pivotfs pivotsd msg]
-  (loop [result '() fs pivotfs data pivotsd]
-    (if (empty? fs)
-      result
-      (recur
-        (concat result (map #(with-meta (first fs) {:name (str msg "-" %)}) (first data)))
-        (rest fs)
-        (rest data)) )
-    ) )
-
-(defn build-pivot-functions2
-  "Build a list of pivot predicates for multiple pivots. In this case, each
-  param is a sequence. The corresponding index of each sequence are (map)
-  together to form a list."
-  [pivotfs pivotsd msg]
-  (loop [result '() fs pivotfs data pivotsd]
-    (if (empty? fs)
-      result
-      (recur
-        (conj result (build-single-pivot (first fs) (first data) msg))
-        (rest fs)
-        (rest data)) )
-    ) )
-
-(defn- combine-functions-with-meta
-  "Carry the metadata :name forward from the pivot functions"
-  [f preds metafs]
-  ; copy meta data from pivot functions when appending them to predicates
-  (map #(with-meta
-          (apply f (conj preds %))
-          {:name (:name (meta %))}) metafs) )
-
-(defn pivot
-  "Evaluation of each value in a collection (col) with a base set of
-  predicates (preds) and a 'pivot' predicate with its list of corresponding
-  pivot values. This function returns a map sorted descending by pivot count.
-  By default, (pivot) will use the conditional all? (and), but any? (or) could
-  also be used. For example:
-
-  ; 6 is an even number dividable by 2, 3
-  ; 8 is an even number dividable by 2
-  ; 7 is an odd number (it does not satisfy any of the composite predicates)
-  user=> (pivot '(6 7 8) [number? even?] divisible-by? '(2 3) \"is-even-number \")
-
-  {is-even-number_pivot-by-2 2, is-even-number_pivot-by-3 1}
-  "
-  ([col preds pivotf pivotd] (pivot col all? preds pivotf pivotd ""))
-  ([col preds pivotf pivotd msg] (pivot col all? preds pivotf pivotd msg))
-  ([col f preds pivotf pivotd msg]
-    (let [message (if (empty? msg) "pivot" (str msg "_pivot"))
-          fpivots (build-single-pivot pivotf pivotd message)
-          combos (combine-functions-with-meta f preds fpivots)]
-
-      (t/sort-map-by-value
-        (reduce
-          (fn [r f]
-            (assoc-in r [(:name (meta f))] (count-with col f)) )
-          {} combos) )
-      ) ) )
-
-(defn ppivot
-  "Parallel evaluation of each value in a collection (col) with a base set of
-  predicates (preds) and a 'pivot' predicate with its list of corresponding
-  pivot values. This function returns a map sorted descending by pivot count.
-  By default, (pivot) will use the conditional all? (and), but any? (or) could
-  also be used. For example:
-
-  ; 6 is an even number dividable by 2, 3
-  ; 8 is an even number dividable by 2
-  ; 7 is an odd number (it does not satisfy any of the composite predicates)
-  user=> (pivot '(6 7 8) [number? even?] divisible-by? '(2 3) \"is-even-number \")
-
-  {is-even-number_pivot-by-2 2, is-even-number_pivot-by-3 1}
-  "
-  ([col preds pivotf pivotd] (pivot col all? preds pivotf pivotd ""))
-  ([col preds pivotf pivotd msg] (pivot col all? preds pivotf pivotd msg))
-  ([col f preds pivotf pivotd msg]
-    (let [message (if (empty? msg) "pivot" (str msg "_pivot"))
-          fpivots (build-single-pivot pivotf pivotd message)
-          combos (combine-functions-with-meta f preds fpivots)]
-
-      (t/sort-map-by-value
-        (reduce
-          (fn [r f]
-            (assoc-in r [(:name (meta f))] (pcount-with col f)) )
-          {} combos) )
-      ) ) )
-
-
-;;
-; arg1 arg2, key: value              defaults
-; [& {:keys [pivotfs pivotds] :or {pivotfs [all?], pivotds '()} }]
+;(defn build-single-pivot
+;  "Create a list of functions given a list of values and add
+;  meta-data to them with {:name 'pivot-'} "
+;  [pivotf values msg]
+;  (map #(with-meta (pivotf %) {:name (str msg "-" %)}) values) )
 ;
-; (pivot-matrix some_numbers [number?] :pivotfs [divisible-by?] :pivotds '(2 3 5))
-;;
-(defn pivot-matrix
-  ([col base_preds pivotfs pivotds] (pivot-matrix col base_preds pivotfs pivotds ""))
-  ([col base_preds pivotfs pivotds msg]
-
-    )
-  )
+;(defn build-pivot-functions
+;  "Build a list of pivot predicates for multiple pivots. In this case, each
+;  param is a sequence. The corresponding index of each sequence are (map)
+;  together to form a list."
+;  [pivotfs pivotsd msg]
+;  (loop [result '() fs pivotfs data pivotsd]
+;    (if (empty? fs)
+;      result
+;      (recur
+;        (concat result (map #(with-meta (first fs) {:name (str msg "-" %)}) (first data)))
+;        (rest fs)
+;        (rest data)) )
+;    ) )
