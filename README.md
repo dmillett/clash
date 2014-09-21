@@ -45,18 +45,18 @@ Build on these functions with domain specific structure
 ; Analyze data with defined predicates (filters with 'and'/'or' functionality)
 ; Incrementers can extract information and update cumulative results
 ; Count or total specific pieces of data per 'solution'
-(count-with-conditions solutions predicates)
-(count-with-conditions solutions predicates initial_count incrementer)
+(count-with solutions predicates)
+(count-with solutions predicates initial_count incrementer)
 
 ; Build a result set with via filters, etc for each 'solution'
-(collect-with-conditions solutions predicates)
+(collect-with solutions predicates)
 ```
 ### Examples
 1. src/clash/example/stock_example.clj
 2. test/clash/example/stock_example_test.clj
 3. test/resources/simple-structured.log
 
-#### data 
+#### sample log data 
 ```
 # time|application|version|logging_level|log_message
 05042013-13:24:12.000|sample-server|1.0.0|info|Buy,FOO,500,12.00
@@ -103,6 +103,7 @@ user=> (count @sols2)
 user=> (first @sols2)
 {:price "2.30", :quantity "50", :stock "BAR", :action "Sell", :trade_time "05042013-13:24:13.123"}
 ```
+
 #### single conditions and incrementers
 ```clojure
 ; in the context of a map composed of 'structure' keys
@@ -125,9 +126,10 @@ user=> (count-with-conditions @sols2 (name? "FOO") increment-with-stock-quanity 
 1200
 
 ; Collecting a sequence of all matching solutions
-user=> (count (collect-with-conditions @sols2 (name-action? "FOO" "Buy")))
+user=> (count (collect-with @sols2 (name-action? "FOO" "Buy")))
 2
 ```
+
 #### multiple conditions (all?) and (any?) to filter data
 ```clojure
 (defn price-higher?
@@ -141,13 +143,14 @@ user=> (count (collect-with-conditions @sols2 (name-action? "FOO" "Buy")))
   #(> max (read-string (-> % :price)) ) )
 
 ; Using (all?)
-user=> (count-with-conditions @sols2 (all? (name? "FOO") (price-higher? 12.1) (price-lower? 12.7) ) )
+user=> (count-with @sols2 (all? (name? "FOO") (price-higher? 12.1) (price-lower? 12.7) ) )
 1
 
 ; Using (all?) and (any?) together
-user=> (count-with-conditions @sols2 (all? (name? "FOO") (any? (price-higher? 12.20) (price-lower? 12.20)) ) )
+user=> (count-with @sols2 (all? (name? "FOO") (any? (price-higher? 12.20) (price-lower? 12.20)) ) )
 2
 ```
+
 ### Evaluate a predicate over a collection until true
 (until?) is usually more performant than (empty? (filter pred coll)) or (every?) because it short circuits
 the evaluation and does not build a collection. This is potentially useful when evaluating nested collections
@@ -244,8 +247,9 @@ elapsed time in nano seconds (ns), milliseconds (ms) or seconds(s).
 
 ### notes
 * requires "/bin/sh" functionality
-* built with leiningen2 (thanks technomancy)
-* clojure 1.5.1 (thank rich, et al)
+* works best with java 1.8
+* built with leiningen (thanks technomancy)
+* clojure 1.6 (thank rich, et al)
 * requires custom heap values and init in project.clj (sample forthcoming)
 
 ## License

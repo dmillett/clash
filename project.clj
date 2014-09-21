@@ -1,7 +1,8 @@
 (defproject clash "0.11-SNAPSHOT"
   :description "A clojure library that encapsulates shell functionality for commands
   like 'grep' and 'cut'. This is useful for search or indexing large text files."
-  :dependencies [[org.clojure/clojure "1.5.1"]]
+  :dependencies [[org.clojure/clojure "1.6.0"]
+                 [org.clojure/math.combinatorics "0.0.8"]]
   :jvm-opts ["-Xms256m" "-Xmx512m"]
   :repl-options {:init (do
                          (load-file "src/clash/tools.clj")
