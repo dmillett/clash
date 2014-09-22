@@ -10,7 +10,7 @@
                          (load-file "test/clash/core_test.clj")
                          (use 'clash.tools)
                          (use 'clash.core)
-
+                         (use 'clash.pivot)
                          (defn load-local-resource
                            [logfile]
                            (str (System/getProperty "user.dir") logfile))

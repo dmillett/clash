@@ -203,13 +203,6 @@
                   (combine-functions-matrix f base (conj-meta-matrix [] a b c d e)) )
       ) ) )
 
-;;; todo: (cartesian-product & seq)
-;(defn build-matrix2
-;  [f base pgs]
-;  (let [cp (cmb/cartesian-product pgs)]
-;    (combine-functions-with-meta f base (map #(conj-meta-matrix [] %) cp))
-;    ) )
-
 (defn- s-pivot-matrix
   "Evaluate a multi-dimensional array of predicates with their base predicates over
   a collection. The predicate evaluation against the collection is single threaded."
@@ -258,7 +251,7 @@
   ([col base_preds pivotfs pivotds msg]
     (let [message (if (empty? msg) "pivot-test" msg)
           pivot_groups (build-pivot-groups-matrix pivotfs pivotds message)
-          flat_matrix (build-matrix c/all? base_preds pivot_groups)]
+          flat_matrix (into [] (build-matrix c/all? base_preds pivot_groups))]
 
       (t/sort-map-by-value
         (r/fold fold-merge-with-plus
