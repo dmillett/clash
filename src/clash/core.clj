@@ -273,5 +273,5 @@
   (if (nil? predicates)
     solutions
     ; Curiously, specifying the number 'n' threads, created lists of lists
-    (r/fold t/fold-conj (fn [x y] (if (predicates y) (conj x y) x)) solutions)
+    (r/fold concat (fn [x y] (if (predicates y) (conj x y) x)) solutions)
     ) )

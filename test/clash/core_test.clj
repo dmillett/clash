@@ -158,7 +158,7 @@
 
     (are [x y] (= x y)
       13 (count r1)
-      13 (count (concat r2))
+      13 (count r2)
       5 (count r3)
       5 (count r4)
       ) ) )

@@ -114,7 +114,7 @@
 ; reducers/fold requires [] for multi-threads
 (def sc (into [] (range 1 1001)))
 ; Usually takes <= 0.8 seconds for a million data points on 6 core AMD (3.4 ghz)
-(def lc (into [] (range 1 1000001)))
+;(def lc (into [] (range 1 1000001)))
 
 (deftest test-pivot-matrix
   (let [even-numbers [number? even?]
@@ -125,6 +125,8 @@
         r4p (pivot-matrix hundred even-numbers "r2" :p divyX2 :v [(range 2 5) (range 6 8)] :plevel 2)
         r5pp (pivot-matrix hundred even-numbers "r1" :p [divisible-by?] :v (list (range 2 5)) :plevel 3)
         r6pp (pivot-matrix hundred even-numbers "r2" :p divyX2 :v [(range 2 5) (range 6 8)] :plevel 3)
+
+        ;r7p (t/perf (pivot-matrix lc even-numbers "r2lc" :p divyX2 :v [(range 2 11) (range 7 18)] :plevel 2) "")
         ]
 
     (are [x y] (= x y)
