@@ -19,8 +19,8 @@
 (def foo-numbers '(2 3 4 5 9 11 12 15 20 21 25 26 27))
 
 (deftest test-pivot
-  (let [r1 (pivot foo-numbers [number?] divisible-by? '(2 3 4))
-        r2 (pivot foo-numbers [number?] divisible-by? '(2 3 4) "is-number")
+  (let [r1 (pivot foo-numbers "" :b [number?] :p divisible-by? :v [2 3 4])
+        r2 (pivot foo-numbers "is-number" :b [number?] :p divisible-by?  :v [2 3 4])
         ;r1 (perf (pivot foo-numbers [number?] divide-by-x? '(2 3 4)) "(pivot a)")
         ]
 
@@ -119,14 +119,14 @@
 (deftest test-pivot-matrix
   (let [even-numbers [number? even?]
         divyX2 [divisible-by? divisible-by?]
-        r1 (pivot-matrix hundred [number? even?] "r1" :p [divisible-by?] :v (list (range 2 5)))
-        r2 (pivot-matrix hundred even-numbers "r2" :p [divisible-by? divisible-by?] :v [(range 2 5) (range 6 8)])
-        r3p (pivot-matrix hundred even-numbers "r1" :p [divisible-by?] :v (list (range 2 5)) :plevel 2)
-        r4p (pivot-matrix hundred even-numbers "r2" :p divyX2 :v [(range 2 5) (range 6 8)] :plevel 2)
-        r5pp (pivot-matrix hundred even-numbers "r1" :p [divisible-by?] :v (list (range 2 5)) :plevel 3)
-        r6pp (pivot-matrix hundred even-numbers "r2" :p divyX2 :v [(range 2 5) (range 6 8)] :plevel 3)
+        r1 (pivot-matrix hundred "r1"  :b [number? even?] :p [divisible-by?] :v (list (range 2 5)))
+        r2 (pivot-matrix hundred "r2" :b even-numbers :p [divisible-by? divisible-by?] :v [(range 2 5) (range 6 8)])
+        r3p (pivot-matrix hundred "r1" :b even-numbers :p [divisible-by?] :v (list (range 2 5)) :plevel 2)
+        r4p (pivot-matrix hundred "r2" :b even-numbers :p divyX2 :v [(range 2 5) (range 6 8)] :plevel 2)
+        r5pp (pivot-matrix hundred "r1" :b even-numbers :p [divisible-by?] :v (list (range 2 5)) :plevel 3)
+        r6pp (pivot-matrix hundred "r2" :b even-numbers :p divyX2 :v [(range 2 5) (range 6 8)] :plevel 3)
 
-        ;r7p (t/perf (pivot-matrix lc even-numbers "r2lc" :p divyX2 :v [(range 2 11) (range 7 18)] :plevel 2) "")
+        ;r7p (t/perf (pivot-matrix lc "r2lc" :b even-numbers :p divyX2 :v [(range 2 11) (range 7 18)] :plevel 2) "")
         ]
 
     (are [x y] (= x y)

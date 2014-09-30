@@ -27,33 +27,20 @@
           (apply f (conj preds %))
           {:name (:name (meta %))}) metafs) )
 
-(defn pivot
-  "Evaluation of each value in a collection (col) with a base set of
-  predicates (preds) and a 'pivot' predicate with its list of corresponding
-  pivot values. This function returns a map sorted descending by pivot count.
-  By default, (pivot) will use the conditional all? (and), but any? (or) could
-  also be used. For example:
-
-  ; 6 is an even number dividable by 2, 3
-  ; 8 is an even number dividable by 2
-  ; 7 is an odd number (it does not satisfy any of the composite predicates)
-  user=> (pivot '(6 7 8) [number? even?] divisible-by? '(2 3) \"is-even-number \")
-
-  {is-even-number_pivot-by-2 2, is-even-number_pivot-by-3 1}
-  "
-  ([col preds pivotf pivotd] (pivot col c/all? preds pivotf pivotd ""))
-  ([col preds pivotf pivotd msg] (pivot col c/all? preds pivotf pivotd msg))
+(defn s-pivot
+  ([col preds pivotf pivotd] (s-pivot col c/all? preds pivotf pivotd ""))
+  ([col preds pivotf pivotd msg] (s-pivot col c/all? preds pivotf pivotd msg))
   ([col f preds pivotf pivotd msg]
     (let [message (if (empty? msg) "pivot" (str msg "_pivot"))
           fpivots (pivot-group-from-single pivotf pivotd message)
           combos (combine-functions-with-meta f preds fpivots)]
 
       (t/sort-map-by-value
-        (reduce ; surprised I did not see a collision here between the 'f' variables
+        (reduce
           (fn [r fx]
             (assoc-in r [(:name (meta fx))] (c/count-with col fx)) )
           {} combos) )
-      ) ) )
+      ) )  )
 
 (defn p-pivot
   "Parallel evaluation of each value in a collection (col) with a base set of
@@ -69,8 +56,8 @@
 
   {is-even-number_pivot-by-2 2, is-even-number_pivot-by-3 1}
   "
-  ([col preds pivotf pivotd] (pivot col c/all? preds pivotf pivotd ""))
-  ([col preds pivotf pivotd msg] (pivot col c/all? preds pivotf pivotd msg))
+  ([col preds pivotf pivotd] (p-pivot col c/all? preds pivotf pivotd ""))
+  ([col preds pivotf pivotd msg] (p-pivot col c/all? preds pivotf pivotd msg))
   ([col f preds pivotf pivotd msg]
     (let [message (if (empty? msg) "pivot" (str msg "_pivot"))
           fpivots (pivot-group-from-single pivotf pivotd message)
@@ -83,7 +70,28 @@
           {} combos) )
       ) ) )
 
-(defn pivot-compare
+(defn pivot
+  "Evaluation of each value in a collection (col) with a base set of
+  predicates (preds) and a 'pivot' predicate with its list of corresponding
+  pivot values. This function returns a map sorted descending by pivot count.
+  By default, (pivot) will use the conditional all? (and), but any? (or) could
+  also be used. For example:
+
+  ; 6 is an even number dividable by 2, 3
+  ; 8 is an even number dividable by 2
+  ; 7 is an odd number (it does not satisfy any of the composite predicates)
+  (pivot '(6 7 8) 'is-even-number' :b [number? even?] :p divisible-by? :v '(2 3))
+  or
+  (pivot '(6 7 8) 'is-even-number' :b [number? even?] :p divisible-by? :v '(2 3) :plevel 2)
+  {is-even-number_pivot-by-2 2, is-even-number_pivot-by-3 1}
+  "
+  [col msg & {:keys [b p v plevel] :or {b [] p [] v [] plevel 1}}]
+  (cond
+    (= 1 plevel) (s-pivot col c/all? b p v msg)
+    (= 2 plevel) (p-pivot col c/all? b p v msg)
+    ) )
+
+(defn- s-pivot-compare
   "Compare the results (maps) of two pivots with a specific function. For
   example, perhaps it is helpful to compare the ratio of values from col1/col2.
   The output is sorted in descending order."
@@ -93,7 +101,7 @@
     (t/sort-map-by-value (t/compare-map-with a b compf))
     ) )
 
-(defn p-pivot-compare
+(defn- p-pivot-compare
   "Compare the results (maps) of two pivots with a specific function. For
   example, perhaps it is helpful to compare the ratio of values from col1/col2.
   The output is sorted in descending order."
@@ -101,6 +109,17 @@
   (let [a (p-pivot col1 preds pivotf pivotd msg)
         b (p-pivot col2 preds pivotf pivotd msg)]
     (t/sort-map-by-value (t/compare-map-with a b compf))
+    ) )
+
+(defn pivot-compare
+  "Compare the results (maps) of two pivots with a specific function. For
+  example, perhaps it is helpful to compare the ratio of values from col1/col2.
+  The output is sorted in descending order. The default parallelism is 1 (single threaded).
+  Specify :plevel 2 for parallel operation (r/fold)."
+  [col1 col2 msg {:keys [b p v plevel] :or {b [] p [] v [] plevel 1}}]
+  (cond
+    (= 1 plevel) (s-pivot-compare col1 col2 b p v msg)
+    (= 2 plevel) (p-pivot-compare col1 col2 b p v msg)
     ) )
 
 ;; **************************************************************************************
@@ -282,11 +301,11 @@
   'plevel 3' is multi-threaded for list of predicate groups & applying predicates to a collection
              (note: more beneficial for a large cartesian structure or a good multi-cpu workstation)
   )"
-  [col base_preds msg & {:keys [p v plevel] :or {p [] v [] plevel 1}}]
+  [col msg & {:keys [b p v plevel] :or {b [] p [] v [] plevel 1}}]
   (cond
-    (= 1 plevel) (s-pivot-matrix col base_preds p v msg)
-    (= 2 plevel) (p-pivot-matrix col base_preds p v msg)
-    (= 3 plevel) (pp-pivot-matrix col base_preds p v msg)
+    (= 1 plevel) (s-pivot-matrix col b p v msg)
+    (= 2 plevel) (p-pivot-matrix col b p v msg)
+    (= 3 plevel) (pp-pivot-matrix col b p v msg)
     ) )
 
 
