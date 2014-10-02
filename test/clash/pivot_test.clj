@@ -73,25 +73,7 @@
       5 (:pivot (meta (last (last r2))))
       ) ) )
 
-(deftest test-conj-meta-matrix
-  (let [a (with-meta '() {})
-        b (with-meta '("foo") {:base_msg "foo" :pivot "f"})
-        c (with-meta '("bar") {:base_msg "foo" :pivot "b"})
-        d (with-meta divisible-by? {:base_msg "foo" :pivot "A"})
-        e (with-meta divisible-by? {:base_msg "foo" :pivot "B"})
-        r1 (conj-meta-matrix a b)
-        r2 (conj-meta-matrix a b c)
-        r3 (conj-meta-matrix '() b c)
-        r4 (conj-meta-matrix [] d e)]
-
-    (are [x y] (= x y)
-      "foo-pivot_f" (:name (meta r1))
-      "foo-pivot_f|b" (:name (meta r2))
-      "foo-pivot_f|b" (:name (meta r3))
-      "foo-pivot_A|B" (:name (meta r4))
-      ) ) )
-
-(deftest test-build-matrix
+(deftest test-build-matrix2
   (let [base [number?]
         l1 (list '(2 3 4))
         l2 (list '(2 3) '(4 5))
@@ -101,20 +83,25 @@
         pg3 (build-pivot-groups-matrix [divisible-by? divisible-by? divisible-by?] l3 "pg3")
         r1 (build-matrix c/all? base pg1)
         r2 (build-matrix c/all? base pg2)
-        r3 (build-matrix c/all? base pg3)]
+        r3 (build-matrix c/all? base pg3)
+        ]
 
     (are [x y] (= x y)
-      1 1
       3 (count r1)
+      "pg1-pivots_[2]" (:name (meta (nth r1 0)))
+      "pg1-pivots_[4]" (:name (meta (nth r1 2)))
       4 (count r2)
+      "pg2-pivots_[2|4]" (:name (meta (nth r2 0)))
+      "pg2-pivots_[3|5]" (:name (meta (nth r2 3)))
       12 (count r3)
+      "pg3-pivots_[2|4|7]" (:name (meta (nth r3 0)))
+      "pg3-pivots_[3|6|8]" (:name (meta (nth r3 11)))
       ) ) )
 
 (def hundred (range 1 100))
 ; reducers/fold requires [] for multi-threads
 (def sc (into [] (range 1 1001)))
 ; Usually takes <= 0.8 seconds for a million data points on 6 core AMD (3.4 ghz)
-;(def lc (into [] (range 1 1000001)))
 
 (deftest test-pivot-matrix
   (let [even-numbers [number? even?]
@@ -126,19 +113,21 @@
         r5pp (pivot-matrix hundred "r1" :b even-numbers :p [divisible-by?] :v (list (range 2 5)) :plevel 3)
         r6pp (pivot-matrix hundred "r2" :b even-numbers :p divyX2 :v [(range 2 5) (range 6 8)] :plevel 3)
 
-        ;r7p (t/perf (pivot-matrix lc "r2lc" :b even-numbers :p divyX2 :v [(range 2 11) (range 7 18)] :plevel 2) "")
+        ; performance testing
+        ;lc (into [] (range 1 1000001))
+        ;r7p (t/perf (pivot-matrix lc "r2lc" :b even-numbers :p divyX2 :v [(range 2 11) (range 7 18)] :plevel 3) "")
         ]
 
     (are [x y] (= x y)
       3 (count r1)
-      49 (-> "r1-pivot_2" r1)
-      16 (-> "r1-pivot_3" r1)
-      24 (-> "r1-pivot_4" r1)
+      49 (-> "r1-pivots_[2]" r1)
+      16 (-> "r1-pivots_[3]" r1)
+      24 (-> "r1-pivots_[4]" r1)
       ;
       6 (count r2)
-      16 (-> "r2-pivot_3|6" r2)
-      7 (-> "r2-pivot_2|7" r2)
-      2 (-> "r2-pivot_3|7" r2)
+      16 (-> "r2-pivots_[3|6]" r2)
+      7 (-> "r2-pivots_[2|7]" r2)
+      2 (-> "r2-pivots_[3|7]" r2)
       ;
       r3p r1
       r4p r2

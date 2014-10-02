@@ -133,59 +133,28 @@
     (map #(with-meta (pivotf %) {:name (str name %) :base_msg msg :pivot %}) values)
     ) )
 
-(defn- build-text-matrix-meta
-  "Determine what the combined meta data from each function should look like."
-  [a b delim mk]
-  (cond
-    (and (not (nil? (mk (meta a)))) (not (nil? (mk (meta b)))) ) (str (mk (meta a)) delim (mk (meta b)))
-    (not (nil? (mk (meta a)))) (str (mk (meta a)))
-    (nil? (mk (meta a)))  (str (mk (meta b)))
-    :else nil
-    ) )
-
-(defn- merge-meta-matrix
-  "Combine meta data from multiple functions into single string.
-  'msg'-pivot_x|y|z"
-  [a b delim]
-  (let [bases (build-text-matrix-meta a b delim :base_msg)
-        pivots (build-text-matrix-meta a b delim :pivot)
-        names (build-text-matrix-meta a b delim :name)]
-
-    {:name (str bases "-pivot_" pivots)}
-    ) )
-
-(defn- meta-name-text-matrix
-  "Build the meta :name field for a function."
-  ([txt a] (meta-name-text-matrix txt a nil))
-  ([txt a delim]
-    (if delim
-      (str txt (:pivot (meta a)) delim)
-      (str txt (:pivot (meta a)))
+(defn- build-pg-meta
+  "Build a composite meta data string for a predicate group of functions. This
+  uses the :base_msg (should be the same for all functions) and then appends
+  '-pivots_[x|y]' where 'x' is :pivot for function 1 and 'y' is the :pivot for function 2."
+  [pg delim]
+  (loop [p pg
+         text (str (:base_msg (meta (first p))) "-pivots_[")]
+    (if (empty? p)
+      (str (subs text 0 (dec (count text))) "]")
+      (recur (next p) (str text (:pivot (meta (first p))) delim))
       ) ) )
 
-(defn conj-meta-matrix
-  "Use conj to combine values with a collection and to include the meta data from
-  the old collection and values to the resulting collection."
-  ([col v] (with-meta (conj col v) (merge-meta-matrix col v "|")) )
-  ([col v & values]
-    (loop [c col
-           nxt v
-           rst values
-           mtext (str (:base_msg (meta nxt)) "-pivot_")]
-
-      (if-not rst
-        (with-meta (conj c nxt) {:name (meta-name-text-matrix mtext nxt)})
-        (recur (conj c nxt) (first rst) (next rst) (meta-name-text-matrix mtext nxt "|"))
-        ) )
-    ) )
-
-(defn- combine-functions-matrix
-  "Carry the metadata :name forward from the pivot functions"
-  [f preds pivots]
-  ; copy meta data from pivot functions when appending them to predicates
-  (let [mt (:name (meta pivots))
-        params (into [] (concat preds pivots))]
-    (with-meta (apply f params) {:name mt}) ) )
+(defn build-matrix
+  "A function (all?) followed by a vector of base predicates and a list of list of predicate
+  functions (predicate groups)."
+  [f base pgs]
+  ; make a list of the cartesian products from the predicate groups
+  (let [cartesian (apply cmb/cartesian-product pgs)]
+    (for [pg cartesian]
+      ; apply f, e.g. (all?), to the combintation of base_preds + predicate group
+      (with-meta (apply f (into [] (concat base pg))) {:name (build-pg-meta pg "|")})
+      ) ) )
 
 (defn build-pivot-groups-matrix
   "Build a list of pivot predicates for multiple pivots. In this case, each
@@ -202,25 +171,6 @@
         (rest fs)
         (rest data)) )
     ) )
-
-;; todo: replace with combinatorics (cartesian-product)
-(defn build-matrix
-  "Build a single list of predicate groups that comprise a flattened
-  matrix for each collection of pivots within pivot_groups. This supports
-  up to 4 different predicate groups. Perhaps this should be a macro?"
-  [f base pgs]
-  (let [cnt (count pgs)]
-    (cond
-      (= 1 cnt) (map #(with-meta (apply f (conj base %)) {:name (:name (meta %))}) (first pgs))
-      (= 2 cnt) (for [a (nth pgs 0) b (nth pgs 1)]
-                  (combine-functions-matrix f base (conj-meta-matrix [] a b) ) )
-      (= 3 cnt) (for [a (nth pgs 0) b (nth pgs 1) c (nth pgs 2)]
-                  (combine-functions-matrix f base (conj-meta-matrix [] a b c)) )
-      (= 4 cnt) (for [a (nth pgs 0) b (nth pgs 1) c (nth pgs 2) d (nth pgs 3)]
-                  (combine-functions-matrix f base (conj-meta-matrix [] a b c d)) )
-      (= 5 cnt) (for [a (nth pgs 0) b (nth pgs 1) c (nth pgs 2) d (nth pgs 3) e (nth pgs 4)]
-                  (combine-functions-matrix f base (conj-meta-matrix [] a b c d e)) )
-      ) ) )
 
 (defn- s-pivot-matrix
   "Evaluate a multi-dimensional array of predicates with their base predicates over
