@@ -18,7 +18,7 @@ grep/cut implementations.
  * Determine initial trends
 
 Tested with:
-* Log files with 40,000 - 500,000 complex entries (15 seconds to load into memory)
+* Log files with 40,000 - 800,000 complex entries (15 seconds to load into memory)
 * Log files with 8,000,000 simple entries (30 seconds to load into memory)
 * Compatible with core.reducers
 * Most 'count' and 'collect' functions take between 20 ms and 1.5 seconds
@@ -63,13 +63,24 @@ Build on these functions with domain specific structure
 ; Compare cartesian predicate results when applied to 2 different collections
 (pivot-matrix-compare col1 col2 msg compf :b common_preds :p pivot_preds :v pivot_values)
 
+;; Generate a list of predicate groups to apply to a collection 
+; --> (all? number? even? (divisible-by? 2))
+; --> (all? number? even? (divisible-by? 3))
+; --> (all? number? even? (divisible-by? 4))
+;; Where :b 'common predicates' and :p [f1] is paired with :v [v1]
+
 user=> (def hundred (range 1 100))
-; Where :b 'common predicates' and :p [f1] is paired with :v [v1]
 user=> (pivot-matrix hundred "r1"  :b [number? even?] :p [divisible-by?] :v [(range 2 5)])
 {r1-pivots_[2] 49, r1-pivots_[4] 24, r1-pivots_[3] 16}
 
-; Where :p [f1 f2] is paired with its corresponding :v [v1 v2]
-; How many numbers between 1 - 100 are divisible by 3 and 6, or 2 and 6, or 3 and 7, etc
+;; Generate a cartesian product combination of predicate groups:
+; --> (all? number? even? (divisible-by? 2) (divisible-by? 6))
+; --> (all? number? even? (divisible-by? 2) (divisible-by? 7)) 
+; --> (all? number? even? (divisible-by? 3) (divisible-by? 6))
+; --> (all? number? even? (divisible-by? 3) (divisible-by? 7)) 
+; --> (all? number? even? (divisible-by? 4) (divisible-by? 6))
+; --> (all? number? even? (divisible-by? 4) (divisible-by? 7)) 
+;; Where :p [f1 f2] is paired with its corresponding :v [v1 v2]
 user=> (pivot-matrix hundred "r2" :b even-numbers :p [divisible-by? divisible-by?] :v [(range 2 5) (range 6 8)])
 {r2-pivots_[3|6] 16, r2-pivots_[2|6] 16, r2-pivots_[4|6] 8, r2-pivots_[2|7] 7, r2-pivots_[4|7] 3, r2-pivots_[3|7] 2}
 ```
