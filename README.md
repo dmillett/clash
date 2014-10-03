@@ -67,6 +67,7 @@ user=> (def hundred (range 1 100))
 user=> (pivot-matrix hundred "r1"  :b [number? even?] :p [divisible-by?] :v [(range 2 5)])
 {r1-pivots_[2] 49, r1-pivots_[4] 24, r1-pivots_[3] 16}
 
+; How many numbers between 1 - 100 are divisible by 3 and 6, or 2 and 6, or 3 and 7, etc
 user=> (pivot-matrix hundred "r2" :b even-numbers :p [divisible-by? divisible-by?] :v [(range 2 5) (range 6 8)])
 {r2-pivots_[3|6] 16, r2-pivots_[2|6] 16, r2-pivots_[4|6] 8, r2-pivots_[2|7] 7, r2-pivots_[4|7] 3, r2-pivots_[3|7] 2}
 ```
@@ -137,7 +138,7 @@ user=> (count-with-conditions @solutions (name-action? "FOO" "Search"))
   "Increments a count based on the :quantity for each solution in the collection"
   (fn [solution count] (+ count (read-string (-> solution :quantity))) ) )  
     
-; Incrementing count based on stock quantity for each structure
+; Incrementing count based on quantity for each structure
 user=> (count-with-conditions @sols (name? "FOO") increment-with-quanity 0)
 9
 
