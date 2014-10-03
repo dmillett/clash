@@ -60,7 +60,7 @@
 
 (deftest test-count-with-conditions
   (let [solutions (atomic-list-from-file web-log-file into-memory-parser)]
-    (println (first solutions))
+    ;(println (first @solutions))
     (are [x y] (= x y)
       0 (count-with @solutions #(= "XYZ" (-> % :name)))
       7 (count-with @solutions nil)

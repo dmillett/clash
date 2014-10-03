@@ -107,6 +107,7 @@
         ;r7p (t/perf (pivot-matrix lc "r2lc" :b even-numbers :p divyX2 :v [(range 2 11) (range 7 18)] :plevel 3) "")
         ]
 
+    ;(println r2)
     (are [x y] (= x y)
       3 (count r1)
       49 (-> "r1-pivots_[2]" r1)

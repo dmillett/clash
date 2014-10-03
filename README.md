@@ -51,21 +51,41 @@ Build on these functions with domain specific structure
 ; Build a result set with via filters, etc for each 'solution'
 (collect-with solutions predicates)
 ```
-### Examples
-1. src/clash/example/stock_example.clj
-2. test/clash/example/stock_example_test.clj
-3. test/resources/simple-structured.log
+### Apply a cartesian product of predicate groups to a collection
 
-#### sample log data 
+```clojure
+; Create a list of partial predicate groups to evaluate over a collection
+(pivot col msg :b common_pred :p pivot_preds :v pivot_values :plevel 2)
+
+; Create a cartesian product of partial predicates to evaluate over a collection
+(pivot-matrix col msg :b common_pred :p pivot_preds :v pivot_values :plevel 2)
+
+; Compare cartesian predicate results when applied to 2 different collections
+(pivot-matrix-compare col1 col2 msg compf :b common_preds :p pivot_preds :v pivot_values)
+
+user=> (def hundred (range 1 100))
+user=> (pivot-matrix hundred "r1"  :b [number? even?] :p [divisible-by?] :v [(range 2 5)])
+{r1-pivots_[2] 49, r1-pivots_[4] 24, r1-pivots_[3] 16}
+
+user=> (pivot-matrix hundred "r2" :b even-numbers :p [divisible-by? divisible-by?] :v [(range 2 5) (range 6 8)])
+{r2-pivots_[3|6] 16, r2-pivots_[2|6] 16, r2-pivots_[4|6] 8, r2-pivots_[2|7] 7, r2-pivots_[4|7] 3, r2-pivots_[3|7] 2}
 ```
-# time|application|version|logging_level|log_message
-05042013-13:24:12.000|sample-server|1.0.0|info|Buy,FOO,500,12.00
-05042013-13:24:12.010|sample-server|1.0.0|info|Buy,FOO,200,12.20
-05042013-13:24:12.130|sample-server|1.0.0|info|Buy,BAR,1000,2.25
+### Examples
+1. src/clash/example/web_shop_example.clj
+2. test/clash/example/web_shop_example_test.clj
+3. test/resources/web-shop.log
+
+#### sample log data (web-shop.log) 
+```
+# time|application|version|logging_level|log_message (Action, Name, Quantity, Unit Price)
+05042013-13:24:12.000|sample-server|1.0.0|info|Search,FOO,5,15.00
+05042013-13:24:12.010|sample-server|1.0.0|info|Search,FOO,2,15.00
+05042013-13:24:12.130|sample-server|1.0.0|info|Search,BAR,10,2.25
 05042013-13:24:12.130|sample-server|1.0.0|info|NullPointerException: not enough defense programming
-05042013-13:24:12.450|sample-server|1.0.0|info|Sell,FOO,500,12.72
-05042013-13:24:13.005|sample-server|1.0.0|info|Buy,ZOO,200,9.24
-05042013-13:24:13.123|sample-server|1.0.0|info|Sell,BAR,50,2.30
+05042013-13:24:12.450|sample-server|1.0.0|info|Price,FOO,2,15.00
+05042013-13:24:12.750|sample-server|1.0.0|info|Price,BAR,10,2.25
+05042013-13:24:13.005|sample-server|1.0.0|info|Search,ZOO,25,13.99
+05042013-13:24:13.123|sample-server|1.0.0|info|Purchase,BAR,10,2.25
 ```
 #### define object structure, regex, and parser for sample text
 ```clojure
@@ -96,54 +116,55 @@ user=> (count @sols)
 7
 
 user=> (first @sols)
-{:price "2.30", :quantity "50", :stock "BAR", :action "Sell", :trade_time "05042013-13:24:13.123"}
+{:unit_price 2.25, :quantity 10, :name BAR, :action Purchase, :time 05042013-13:24:13.123}
 ```
 
 #### single conditions and incrementers
 ```clojure
 ; in the context of a map composed of 'structure' keys
 (defn name-action?
-  "A predicate to check 'stock' name and 'action' against the current solution."
-  [stock action]
-  #(and (= stock (-> % :stock)) (= action (-> % :action))) )
-    
+  "A predicate to check :name and :action against the current solution.
+  This also works with: (all? (name?) (action?))"
+  [name action]
+  (fn [line] (and (= name (-> line :name)) (= action (-> line :action)))) )
+
 ; A count of all "Buy" actions of stock "FOO"
-user=> (count-with-conditions @solutions (name-action? "FOO" "Buy"))
+user=> (count-with-conditions @solutions (name-action? "FOO" "Search"))
 2    
 
-; A running total of the :stock_price when 'predicates are true    
-(def increment-with-stock-quanity
-  "A running total for stock 'quantity' and 'count'."
-  (fn [solution count] (+ count (read-string (-> solution :quantity))) ) )
+; A running total of a specific key field  
+(def increment-with-quanity
+  "Increments a count based on the :quantity for each solution in the collection"
+  (fn [solution count] (+ count (read-string (-> solution :quantity))) ) )  
     
 ; Incrementing count based on stock quantity for each structure
-user=> (count-with-conditions @sols2 (name? "FOO") increment-with-stock-quanity 0)
-1200
+user=> (count-with-conditions @sols (name? "FOO") increment-with-quanity 0)
+9
 
 ; Collecting a sequence of all matching solutions
-user=> (count (collect-with @sols2 (name-action? "FOO" "Buy")))
-2
+user=> (count (collect-with @sols (name-action? "BAR" "Purchase")))
+1
 ```
 
 #### multiple conditions (all?) and (any?) to filter data
 ```clojure
 (defn price-higher?
-  "If a stock price is higher than X."
+  "If the unit price is higher than X."
   [min]
-  #(< min (read-string (-> % :price)) ) )
+  (fn [line] (< min (read-string (-> line :unit_price)))) )
 
 (defn price-lower?
-  "If a stock price is lower than X."
+  "If the unit price is lower than X."
   [max]
-  #(> max (read-string (-> % :price)) ) )
+  (fn [line] (> max (read-string (-> line :unit_price)))) )
 
 ; Using (all?)
-user=> (count-with @sols2 (all? (name? "FOO") (price-higher? 12.1) (price-lower? 12.7) ) )
+user=> (count-with @sols (all? (price-higher? 12.10) (price-lower? 14.50) ) )
 1
 
 ; Using (all?) and (any?) together
-user=> (count-with @sols2 (all? (name? "FOO") (any? (price-higher? 12.20) (price-lower? 12.20)) ) )
-2
+user=> (count-with @sols (all? (any? (price-higher? 12.20) (price-lower? 16.20)) ) )
+4
 ```
 
 ### Evaluate a predicate over a collection until true

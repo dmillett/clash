@@ -259,9 +259,10 @@
 (defn pivot-matrix-compare
   "Compare the results (maps) of two pivots with a specific function. For
   example, perhaps it is helpful to compare the ratio of values from col1/col2.
-  The output is sorted in descending order."
-  [col1 col2 msg compf preds pivotf pivotd]
-  (let [a (pivot-matrix col1 msg :b preds :p pivotf :v pivotd :plevel 2)
-        b (pivot-matrix col2 msg :b preds :p pivotf :v pivotd :plevel 2)]
+  The output is sorted in descending order.
+  (pivot-matrix-compare col1 col2 msg compf :b common_pred :p pivot_preds :v pivot_values)"
+  [col1 col2 msg compf & {:keys [b p v plevel] :or {b [] p [] v [] plevel 2}}]
+  (let [a (pivot-matrix col1 msg :b b :p p :v v :plevel plevel)
+        b (pivot-matrix col2 msg :b b :p p :v v :plevel plevel)]
     (t/sort-map-by-value (t/compare-map-with a b compf))
     ) )
