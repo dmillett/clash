@@ -12,14 +12,14 @@
             [clash.tools :as t])
   )
 
-(defn pivot-group-from-single
+(defn- pivot-group-from-single
   "Create a list of functions given a list of values and add
   meta-data to them with {:base_msg 'msg' :name 'X'}"
   [pivotf values msg]
   (map #(with-meta (pivotf %) {:name (str msg "-" %)}) values) )
 
 
-(defn combine-functions-with-meta
+(defn- combine-functions-with-meta
   "Carry the metadata :name forward from the pivot functions"
   [f preds metafs]
   ; copy meta data from pivot functions when appending them to predicates
@@ -27,7 +27,7 @@
           (apply f (conj preds %))
           {:name (:name (meta %))}) metafs) )
 
-(defn s-pivot
+(defn- s-pivot
   ([col preds pivotf pivotd] (s-pivot col c/all? preds pivotf pivotd ""))
   ([col preds pivotf pivotd msg] (s-pivot col c/all? preds pivotf pivotd msg))
   ([col f preds pivotf pivotd msg]
@@ -42,7 +42,7 @@
           {} combos) )
       ) )  )
 
-(defn p-pivot
+(defn- p-pivot
   "Parallel evaluation of each value in a collection (col) with a base set of
   predicates (preds) and a 'pivot' predicate with its list of corresponding
   pivot values. This function returns a map sorted descending by pivot count.
@@ -145,7 +145,7 @@
       (recur (next p) (str text (:pivot (meta (first p))) delim))
       ) ) )
 
-(defn build-matrix
+(defn- build-matrix
   "A function (all?) followed by a vector of base predicates and a list of list of predicate
   functions (predicate groups)."
   [f base pgs]
@@ -156,7 +156,7 @@
       (with-meta (apply f (into [] (concat base pg))) {:name (build-pg-meta pg "|")})
       ) ) )
 
-(defn build-pivot-groups-matrix
+(defn- build-pivot-groups-matrix
   "Build a list of pivot predicates for multiple pivots. In this case, each
   param is a sequence. The corresponding index of each sequence are (map)
   together to form a list."
@@ -175,36 +175,34 @@
 (defn- s-pivot-matrix
   "Evaluate a multi-dimensional array of predicates with their base predicates over
   a collection. The predicate evaluation against the collection is single threaded."
-  ([col base_preds pivotfs pivotds] (s-pivot-matrix col base_preds pivotfs pivotds ""))
-  ([col base_preds pivotfs pivotds msg]
-    (let [message (if (empty? msg) "pivot-test" msg)
-          pivot_groups (build-pivot-groups-matrix pivotfs pivotds message)
-          flat_matrix (build-matrix c/all? base_preds pivot_groups)]
+  [col msg base_preds pivotfs pivotds]
+  (let [message (if (empty? msg) "pivot-test" msg)
+        pivot_groups (build-pivot-groups-matrix pivotfs pivotds message)
+        flat_matrix (build-matrix c/all? base_preds pivot_groups)]
 
-      (t/sort-map-by-value
-        (reduce
-          (fn [result fx]
-            (assoc-in result [(:name (meta fx))] (c/count-with col fx)) )
-           {} flat_matrix)
-        ) )
-    ) )
+    (t/sort-map-by-value
+      (reduce
+        (fn [result fx]
+          (assoc-in result [(:name (meta fx))] (c/count-with col fx)) )
+         {} flat_matrix)
+      ) )
+  )
 
 (defn- p-pivot-matrix
   "Evaluate a multi-dimensional array of predicates with their base predicates over
   a collection. The predicate evaluation against the collection is in parallel (reducers/fold)."
-  ([col base_preds pivotfs pivotds] (p-pivot-matrix col base_preds pivotfs pivotds ""))
-  ([col base_preds pivotfs pivotds msg]
-    (let [message (if (empty? msg) "pivot-test" msg)
-          pivot_groups (build-pivot-groups-matrix pivotfs pivotds message)
-          flat_matrix (build-matrix c/all? base_preds pivot_groups)]
+  [col msg base_preds pivotfs pivotds]
+  (let [message (if (empty? msg) "pivot-test" msg)
+        pivot_groups (build-pivot-groups-matrix pivotfs pivotds message)
+        flat_matrix (build-matrix c/all? base_preds pivot_groups)]
 
-      (t/sort-map-by-value
-        (reduce
-          (fn [result fx]
-            (assoc-in result [(:name (meta fx))] (c/p-count-with col fx)) )
-          {} flat_matrix)
-        ) )
-    ) )
+    (t/sort-map-by-value
+      (reduce
+        (fn [result fx]
+          (assoc-in result [(:name (meta fx))] (c/p-count-with col fx)) )
+        {} flat_matrix)
+      ) )
+    )
 
 (defn- fold-merge-with-plus
   "Acts like (merge-with), but satisfies zero arity for recuers/fold"
@@ -216,19 +214,18 @@
   a collection. The predicate evaluation against the collection is in parallel (reducers/fold).
   This might be beneficial when the flattened cartesian product has a large count
   (maybe > 50 predicate groups) and the workstation has a large number of cores."
-  ([col base_preds pivotfs pivotds] (pp-pivot-matrix col base_preds pivotfs pivotds ""))
-  ([col base_preds pivotfs pivotds msg]
-    (let [message (if (empty? msg) "pivot-test" msg)
-          pivot_groups (build-pivot-groups-matrix pivotfs pivotds message)
-          flat_matrix (into [] (build-matrix c/all? base_preds pivot_groups))]
+  [col msg base_preds pivotfs pivotds]
+  (let [message (if (empty? msg) "pivot-test" msg)
+        pivot_groups (build-pivot-groups-matrix pivotfs pivotds message)
+        flat_matrix (into [] (build-matrix c/all? base_preds pivot_groups))]
 
-      (t/sort-map-by-value
-        (r/fold fold-merge-with-plus
-          (fn [result fx]
-            (assoc-in result [(:name (meta fx))] (c/p-count-with col fx)) )
-          flat_matrix)
-        ) )
-    ) )
+    (t/sort-map-by-value
+      (r/fold fold-merge-with-plus
+        (fn [result fx]
+          (assoc-in result [(:name (meta fx))] (c/p-count-with col fx)) )
+        flat_matrix)
+      ) )
+    )
 
 (defn pivot-matrix
   "Evaluate a multi-dimensional array of predicates with their base predicates over
@@ -243,7 +240,7 @@
 
   ; predicate group [number? even? (divisible-by? 3) (divisible-by? 5)] will get applied to
   ; 'numbers-col' in parallel with (reducers/fold)
-  (pivot-matrix-x number-col even-numbers 'fizz-buzz' :p pivot-functions :v pivot-values :plevel 2)
+  (pivot-matrix-x number-col 'fizz-buzz' :b even-numbers :p pivot-functions :v pivot-values :plevel 2)
 
   Notes:
   'plevel 1' is single threaded for everything
@@ -253,28 +250,18 @@
   )"
   [col msg & {:keys [b p v plevel] :or {b [] p [] v [] plevel 1}}]
   (cond
-    (= 1 plevel) (s-pivot-matrix col b p v msg)
-    (= 2 plevel) (p-pivot-matrix col b p v msg)
-    (= 3 plevel) (pp-pivot-matrix col b p v msg)
+    (= 1 plevel) (s-pivot-matrix col msg b p v)
+    (= 2 plevel) (p-pivot-matrix col msg b p v)
+    (= 3 plevel) (pp-pivot-matrix col msg b p v)
     ) )
 
 
-;(defn pivot-matrix-compare
-;  "Compare the results (maps) of two pivots with a specific function. For
-;  example, perhaps it is helpful to compare the ratio of values from col1/col2.
-;  The output is sorted in descending order."
-;  [col1 col2 preds pivotf pivotd msg compf]
-;  (let [a (pivot-matrix col1 preds pivotf pivotd msg)
-;        b (pivot-matrix col2 preds pivotf pivotd msg)]
-;    (t/sort-map-by-value (t/compare-map-with a b compf))
-;    ) )
-;
-;(defn p-pivot-matrix-compare
-;  "Compare the results (maps) of two pivots with a specific function. For
-;  example, perhaps it is helpful to compare the ratio of values from col1/col2.
-;  The output is sorted in descending order."
-;  [col1 col2 preds pivotf pivotd msg compf]
-;  (let [a (p-pivot-matrix col1 preds pivotf pivotd msg)
-;        b (p-pivot-matrix col2 preds pivotf pivotd msg)]
-;    (t/sort-map-by-value (t/compare-map-with a b compf))
-;    ) )
+(defn pivot-matrix-compare
+  "Compare the results (maps) of two pivots with a specific function. For
+  example, perhaps it is helpful to compare the ratio of values from col1/col2.
+  The output is sorted in descending order."
+  [col1 col2 msg compf preds pivotf pivotd]
+  (let [a (pivot-matrix col1 msg :b preds :p pivotf :v pivotd :plevel 2)
+        b (pivot-matrix col2 msg :b preds :p pivotf :v pivotd :plevel 2)]
+    (t/sort-map-by-value (t/compare-map-with a b compf))
+    ) )

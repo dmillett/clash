@@ -1,0 +1,9 @@
+# time|application|version|logging_level|log_message (Action, Name, Quantity, Unit Price)
+05042013-13:24:12.000|sample-server|1.0.0|info|Search,FOO,5,15.00
+05042013-13:24:12.010|sample-server|1.0.0|info|Search,FOO,2,15.00
+05042013-13:24:12.130|sample-server|1.0.0|info|Search,BAR,10,2.25
+05042013-13:24:12.130|sample-server|1.0.0|info|NullPointerException: not enough defense programming
+05042013-13:24:12.450|sample-server|1.0.0|info|Price,FOO,2,15.00
+05042013-13:24:12.750|sample-server|1.0.0|info|Price,BAR,10,2.25
+05042013-13:24:13.005|sample-server|1.0.0|info|Search,ZOO,25,13.99
+05042013-13:24:13.123|sample-server|1.0.0|info|Purchase,BAR,10,2.25

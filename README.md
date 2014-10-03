@@ -69,38 +69,33 @@ Build on these functions with domain specific structure
 ```
 #### define object structure, regex, and parser for sample text
 ```clojure
-;; A log line example from (simple-structured.log)
-(def line "05042013-13:24:12.000|sample-server|1.0.0|info|Buy,FOO,500,12.00")
+; time|application|version|logging_level|log_message (Action, Name, Quantity, Unit Price)
+(def line "05042013-13:24:12.000|sample-server|1.0.0|info|Search,FOO,5,15.00") 
  
-; Defrecords offer a 12%-15% performance improvement during parsing
-(def simple-stock-structure [:trade_time :action :stock :quantity :price])
-(def detailed-stock-pattern #"(\d{8}-\d{2}:\d{2}:\d{2}.\d{3})\|.*\|(\w*),(\w*),(\d*),(.*)")
+; Defrecords offer a 12%-15% performance improvement during parsing vs maps
+(def simple-structure [:time :action :name :quantity :unit_price])
 
-; Parse log line into 'simple-stock-structure' via 'detailed-stock-pattern'
-(defn better-message-parser
-  "An exact parsing of line text into 'simple-stock-structure' using
-  'detailed-stock-pattern'."
-  [line]
-  (tt/regex-group-into-map line simple-stock-structure detailed-stock-pattern) )
+; 10022013-13:24:12.000|sample-server|1.0.0|info|Search,FOO,5,15.00
+(def detailed-pattern #"(\d{8}-\d{2}:\d{2}:\d{2}.\d{3})\|.*\|(\w*),(\w*),(\d*),(.*)")
+
+(defn into-memory-parser
+  "An exact parsing of line text into 'simple-structure' using
+  'detailed-pattern'."
+  [text_line]
+  (tt/regex-group-into-map text_line simple-structure detailed-pattern) )  
 ```
 #### Load the examples
 ```
 lein repl
 ```
 ```clojure
-; First pass with a general, simpler parser (and regex) - reads every line
-user=> (def sols (atomic-list-from-file simple-file simple-message-parser))
+; With exact parser (and regex) - reads specific lines
+user=> (def sols (atomic-list-from-file web-log-file into-memory-parser))
 #'user/sols
 user=> (count @sols)
-8
+7
 
-; Second pass with a more exact parser (and regex) - reads specific lines
-user=> (def sols2 (atomic-list-from-file simple-file better-message-parser))
-#'user/sols2
-user=> (count @sols2)
-6
-
-user=> (first @sols2)
+user=> (first @sols)
 {:price "2.30", :quantity "50", :stock "BAR", :action "Sell", :trade_time "05042013-13:24:13.123"}
 ```
 
