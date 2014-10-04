@@ -12,12 +12,15 @@
             [clash.tools :as t])
   )
 
-(defn- pivot-group-from-single
+(defn- single-pivot-group
   "Create a list of functions given a list of values and add
-  meta-data to them with {:base_msg 'msg' :name 'X'}"
+  meta-data to them with {:base_msg 'msg' :name 'X'}. Any partial function
+  that requires multiple params (initially) should satisfie (coll?)"
   [pivotf values msg]
-  (map #(with-meta (pivotf %) {:name (str msg "-" %)}) values) )
-
+  (if (coll? (first values))
+    (map #(with-meta (apply pivotf %) {:name (str msg "-" %)}) values)
+    (map #(with-meta (pivotf %) {:name (str msg "-" %)}) values)
+  ) )
 
 (defn- combine-functions-with-meta
   "Carry the metadata :name forward from the pivot functions"
@@ -32,7 +35,7 @@
   ([col preds pivotf pivotd msg] (s-pivot col c/all? preds pivotf pivotd msg))
   ([col f preds pivotf pivotd msg]
     (let [message (if (empty? msg) "pivot" (str msg "_pivot"))
-          fpivots (pivot-group-from-single pivotf pivotd message)
+          fpivots (single-pivot-group pivotf pivotd message)
           combos (combine-functions-with-meta f preds fpivots)]
 
       (t/sort-map-by-value
@@ -60,7 +63,7 @@
   ([col preds pivotf pivotd msg] (p-pivot col c/all? preds pivotf pivotd msg))
   ([col f preds pivotf pivotd msg]
     (let [message (if (empty? msg) "pivot" (str msg "_pivot"))
-          fpivots (pivot-group-from-single pivotf pivotd message)
+          fpivots (single-pivot-group pivotf pivotd message)
           combos (combine-functions-with-meta f preds fpivots)]
 
       (t/sort-map-by-value
@@ -84,8 +87,11 @@
   or
   (pivot '(6 7 8) 'is-even-number' :b [number? even?] :p divisible-by? :v '(2 3) :plevel 2)
   {is-even-number_pivot-by-2 2, is-even-number_pivot-by-3 1}
+
+  If a pivot predicate (:p) has multiple arity, then the corresponding pivot values (:v) collection
+  should also have multiple values, e.g:  :v '([2 3] [4 5])
   "
-  [col msg & {:keys [b p v plevel] :or {b [] p [] v [] plevel 1}}]
+  [col msg & {:keys [b p v plevel] :or {b [] p nil v [] plevel 1}}]
   (cond
     (= 1 plevel) (s-pivot col c/all? b p v msg)
     (= 2 plevel) (p-pivot col c/all? b p v msg)
@@ -130,8 +136,10 @@
   [pivotf values msg]
   (let [name (str msg "-pivot_")]
     ; :name will get recalculated later when > 1 pivot groups exist
-    (map #(with-meta (pivotf %) {:name (str name %) :base_msg msg :pivot %}) values)
-    ) )
+    (if (coll? (first values))
+      (map #(with-meta (apply pivotf %) {:name (str name %) :base_msg msg :pivot %}) values)
+      (map #(with-meta (pivotf %) {:name (str name %) :base_msg msg :pivot %}) values)
+      ) ) )
 
 (defn- build-pg-meta
   "Build a composite meta data string for a predicate group of functions. This
@@ -233,14 +241,8 @@
   Ex:
   (pivot-matrix-x col [number?] 'foo' :plevel 2 :pivots [divisible-by?] :values [(range 2 5)]
 
-  (def even-numbers [number? even?])
-  (def pivot-functions [divisible-by? divisible-by?])
-  (def pivot-values [(range 3 6) (range 5 7)])
-  (def number-col (range 1 - 1000001))
-
-  ; predicate group [number? even? (divisible-by? 3) (divisible-by? 5)] will get applied to
-  ; 'numbers-col' in parallel with (reducers/fold)
-  (pivot-matrix-x number-col 'fizz-buzz' :b even-numbers :p pivot-functions :v pivot-values :plevel 2)
+  If a pivot predicate (:p) has multiple arity, then the corresponding pivot values (:v) collection
+  should also have multiple values, e.g:  :v '([2 3] [4 5])
 
   Notes:
   'plevel 1' is single threaded for everything

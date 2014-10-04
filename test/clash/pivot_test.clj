@@ -14,7 +14,12 @@
 
 (defn- divisible-by?
   [x]
-  (fn [n] (if (number? n) (= 0 (mod n x)) false) ) )
+  (fn [n] (zero? (mod n x)) ) )
+
+(defn- foo-divide?
+  "2 arg nonsensical division function."
+  [d i]
+  (fn [n] (zero? (mod n (+ d i)))))
 
 (def foo-numbers '(2 3 4 5 9 11 12 15 20 21 25 26 27))
 
@@ -22,7 +27,8 @@
   (let [r1 (pivot foo-numbers "" :b [number?] :p divisible-by? :v [2 3 4])
         r2 (pivot foo-numbers "foo" :b [number?] :p divisible-by?  :v [2 3 4])
         r3 (pivot foo-numbers "foo" :b [number?] :p divisible-by? :v [2 3 4] :plevel 2)
-        ;r1 (perf (pivot foo-numbers [number?] divide-by-x? '(2 3 4)) "(pivot a)")
+        r4 (pivot foo-numbers "foo2" :b [number?] :p foo-divide? :v [[2 3] [4 5]])
+        ;r5 (perf (pivot foo-numbers [number?] divide-by-x? '(2 3 4)) "(pivot a)")
         ]
 
     (are [x y] (= x y)
@@ -37,6 +43,9 @@
       3 (-> "foo_pivot-4" r3)
       6 (-> "foo_pivot-3" r3)
       5 (-> "foo_pivot-2" r3)
+      ;
+      4 (-> "foo2_pivot-[2 3]" r4)
+      2 (-> "foo2_pivot-[4 5]" r4)
       ) ) )
 
 (def foo-numbers-mixed '(2 3 4 5 9 "a" 11 12 15 20 21 "b" 25 26 27))
@@ -101,13 +110,13 @@
         r4p (pivot-matrix hundred "r2" :b even-numbers :p divyX2 :v [(range 2 5) (range 6 8)] :plevel 2)
         r5pp (pivot-matrix hundred "r1" :b even-numbers :p [divisible-by?] :v (list (range 2 5)) :plevel 3)
         r6pp (pivot-matrix hundred "r2" :b even-numbers :p divyX2 :v [(range 2 5) (range 6 8)] :plevel 3)
+        r7 (pivot-matrix hundred "r3" :b even-numbers :p [divisible-by? foo-divide?] :v [(range 2 5) '([2 4] [4 5])])
 
         ; performance testing
         ;lc (into [] (range 1 1000001))
-        ;r7p (t/perf (pivot-matrix lc "r2lc" :b even-numbers :p divyX2 :v [(range 2 11) (range 7 18)] :plevel 3) "")
+        ;r8 (t/perf (pivot-matrix lc "r2lc" :b even-numbers :p divyX2 :v [(range 2 11) (range 7 18)] :plevel 3) "")
         ]
 
-    ;(println r2)
     (are [x y] (= x y)
       3 (count r1)
       49 (-> "r1-pivots_[2]" r1)
@@ -119,6 +128,10 @@
       7 (-> "r2-pivots_[2|7]" r2)
       2 (-> "r2-pivots_[3|7]" r2)
       ;
+      6 (count r7)
+      16 (-> "r3-pivots_[3|[2 4]]" r7)
+      8 (-> "r3-pivots_[4|[2 4]]" r7)
+      2 (-> "r3-pivots_[4|[4 5]]" r7)
       r3p r1
       r4p r2
       r5pp r1

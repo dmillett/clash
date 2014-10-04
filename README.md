@@ -68,7 +68,6 @@ Build on these functions with domain specific structure
 ; --> (all? number? even? (divisible-by? 3))
 ; --> (all? number? even? (divisible-by? 4))
 ;; Where :b 'common predicates' and :p [f1] is paired with :v [v1]
-
 user=> (def hundred (range 1 100))
 user=> (pivot-matrix hundred "r1"  :b [number? even?] :p [divisible-by?] :v [(range 2 5)])
 {r1-pivots_[2] 49, r1-pivots_[4] 24, r1-pivots_[3] 16}
@@ -81,6 +80,7 @@ user=> (pivot-matrix hundred "r1"  :b [number? even?] :p [divisible-by?] :v [(ra
 ; --> (all? number? even? (divisible-by? 4) (divisible-by? 6))
 ; --> (all? number? even? (divisible-by? 4) (divisible-by? 7)) 
 ;; Where :p [f1 f2] is paired with its corresponding :v [v1 v2]
+user=> (def even-numbers [number? even?])
 user=> (pivot-matrix hundred "r2" :b even-numbers :p [divisible-by? divisible-by?] :v [(range 2 5) (range 6 8)])
 {r2-pivots_[3|6] 16, r2-pivots_[2|6] 16, r2-pivots_[4|6] 8, r2-pivots_[2|7] 7, r2-pivots_[4|7] 3, r2-pivots_[3|7] 2}
 ```
