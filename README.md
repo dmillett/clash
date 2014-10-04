@@ -2,7 +2,11 @@
 A clojure project for quick interactive analysis of structured text files (ex: logs, csv, etc.), within
 the REPL. After parsing structured text into an in memory data structure as an *atom*, clash facilitates
 counting and collecting results from the data structure based on specified predicates and incrementing
-functions. This is valuable for quickly analyzing data that is not persisted in databases.
+functions. This is valuable for quickly analyzing data that is not persisted in databases or Hadoop.
+
+It can also be used in an ad-hoc analysis of multiple data sets to measure how a cartesian product of predicates
+evaluates against two different data sets. For example, in a web shopping experience: "How many times are
+products within a specific price range + type searched? priced? or purchased?" 
 
 Clash also includes clojure-shell (bash, csh, zsh, ec) functionality that incorporates most of the speed 
 advantages of commands like 'grep' and 'cut' individually or piped together. The results of unpiped/piped
@@ -42,7 +46,7 @@ Build on these functions with domain specific structure
 ; Build filters with conditionals and predicates (fail fast)
 ((all? predicate1? (any? pred2? pred3?) pred4?) solution_data)
 
-; true for the first item in the collection is satisfied, otherwise false
+; true when the first item in a collection is satisfied, otherwise false
 (until? predicate? collection)
 
 ; Collect all of the items in a collection until 'predicate' is satisfied
@@ -56,8 +60,21 @@ Build on these functions with domain specific structure
 
 ; Build a result set with via filters, etc for each 'solution'
 (collect-with solutions predicates)
+
+; like (count-with) & (collect-with), but uses fold (use a [], not a '())
+(p-count-with solutions predicates)
+(p-collect-with)
+
 ```
 ### Apply a cartesian product of predicate groups to a collection
+This generates a list of predicate function groups (partials) that are applied to
+a collection of data (single or multi-threaded). Each predicate group is the result
+of a cartesian product from partial functions and their corresponding values (see example
+below). This results in a map that contains the count for each predicate group 'match' in
+descending order.
+
+The predicate functions should be contextually relevant for the collection of data
+(e.g. don't use numeric predicates with a list of strings).
 
 ```clojure
 ; Create a list of partial predicate groups to evaluate over a collection
