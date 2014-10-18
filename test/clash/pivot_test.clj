@@ -110,7 +110,7 @@
         r4p (pivot-matrix hundred "r2" :b even-numbers :p divyX2 :v [(range 2 5) (range 6 8)] :plevel 2)
         r5pp (pivot-matrix hundred "r1" :b even-numbers :p [divisible-by?] :v (list (range 2 5)) :plevel 3)
         r6pp (pivot-matrix hundred "r2" :b even-numbers :p divyX2 :v [(range 2 5) (range 6 8)] :plevel 3)
-        r7 (pivot-matrix hundred "r3" :b even-numbers :p [divisible-by? foo-divide?] :v [(range 2 5) '([2 4] [4 5])])
+        r7 (pivot-matrix hundred "r7" :b even-numbers :p [divisible-by? foo-divide?] :v [(range 2 5) '([2 4] [4 5])])
 
         ; performance testing
         ;lc (into [] (range 1 1000001))
@@ -119,21 +119,37 @@
 
     (are [x y] (= x y)
       3 (count r1)
-      49 (-> "r1-pivots_[2]" r1)
-      16 (-> "r1-pivots_[3]" r1)
-      24 (-> "r1-pivots_[4]" r1)
+      49 (get-in r1 ["r1-pivots_[2]" :value])
+      16 (get-in r1 ["r1-pivots_[3]" :value])
+      24 (get-in r1 ["r1-pivots_[4]" :value])
       ;
       6 (count r2)
-      16 (-> "r2-pivots_[3|6]" r2)
-      7 (-> "r2-pivots_[2|7]" r2)
-      2 (-> "r2-pivots_[3|7]" r2)
+      16 (get-in r2 ["r2-pivots_[3|6]" :value])
+      7 (get-in r2 ["r2-pivots_[2|7]" :value])
+      2 (get-in r2 ["r2-pivots_[3|7]" :value])
       ;
       6 (count r7)
-      16 (-> "r3-pivots_[3|[2 4]]" r7)
-      8 (-> "r3-pivots_[4|[2 4]]" r7)
-      2 (-> "r3-pivots_[4|[4 5]]" r7)
-      r3p r1
-      r4p r2
-      r5pp r1
-      r6pp r2
+      16 (get-in r7 ["r7-pivots_[3|[2 4]]" :value])
+      8 (get-in r7 ["r7-pivots_[4|[2 4]]" :value])
+      2 (get-in r7 ["r7-pivots_[4|[4 5]]" :value])
+      ;
+      3 (count r3p)
+      49 (get-in r3p ["r1-pivots_[2]" :value])
+      16 (get-in r3p ["r1-pivots_[3]" :value])
+      24 (get-in r3p ["r1-pivots_[4]" :value])
+      ;
+      6 (count r4p)
+      16 (get-in r4p ["r2-pivots_[3|6]" :value])
+      7 (get-in r4p ["r2-pivots_[2|7]" :value])
+      2 (get-in r4p ["r2-pivots_[3|7]" :value])
+      ;
+      3 (count r5pp)
+      49 (get-in r5pp ["r1-pivots_[2]" :value])
+      16 (get-in r5pp ["r1-pivots_[3]" :value])
+      24 (get-in r5pp ["r1-pivots_[4]" :value])
+      ;
+      6 (count r6pp)
+      16 (get-in r6pp ["r2-pivots_[3|6]" :value])
+      7 (get-in r6pp ["r2-pivots_[2|7]" :value])
+      2 (get-in r6pp ["r2-pivots_[3|7]" :value])
       ) ) )

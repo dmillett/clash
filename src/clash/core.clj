@@ -213,6 +213,7 @@
 ;;
 ;; To pass along more than one condition, use (every-pred p1 p2 p3)
 ;; Example: (def even3 (every-pred even? #(mod % 3)))
+;; todo: make consistent with (pivot) and use :plevel key
 (defn count-with
   "Perform a count on each data structure in a list if it matches
   the conditions defined in the predicates function. The predicates
@@ -256,6 +257,7 @@
                 ))
       initial solutions) ))
 
+;; todo: make consistent with (pivot) and use :plevel key
 (defn collect-with
   "Build a collection of structued data objects that satisfy the conditions
   defined in 'predicates'. The predicates should be customized to use the

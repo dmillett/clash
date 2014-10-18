@@ -180,6 +180,18 @@
         (rest data)) )
     ) )
 
+; The name and function that produced a 'count' result
+(defrecord MatrixResult [value function])
+
+(defn sort-map-by-value2
+  "Sort by values descending (works when there are non-unique values too).
+  This compares the :value for each MatrixResult"
+  [m]
+  (into (sorted-map-by
+          (fn [k1 k2] (compare [(get-in m [k2 :value]) k2]
+                               [(get-in m [k1 :value]) k1]) ) )
+    m) )
+
 (defn- s-pivot-matrix
   "Evaluate a multi-dimensional array of predicates with their base predicates over
   a collection. The predicate evaluation against the collection is single threaded."
@@ -188,10 +200,10 @@
         pivot_groups (build-pivot-groups-matrix pivotfs pivotds message)
         flat_matrix (build-matrix c/all? base_preds pivot_groups)]
 
-    (t/sort-map-by-value
+    (sort-map-by-value2
       (reduce
         (fn [result fx]
-          (assoc-in result [(:name (meta fx))] (c/count-with col fx)) )
+          (assoc-in result [(:name (meta fx))] (MatrixResult. (c/count-with col fx) fx) ) )
          {} flat_matrix)
       ) )
   )
@@ -204,18 +216,17 @@
         pivot_groups (build-pivot-groups-matrix pivotfs pivotds message)
         flat_matrix (build-matrix c/all? base_preds pivot_groups)]
 
-    (t/sort-map-by-value
+    (sort-map-by-value2
       (reduce
         (fn [result fx]
-          (assoc-in result [(:name (meta fx))] (c/p-count-with col fx)) )
+          (assoc-in result [(:name (meta fx))] (MatrixResult. (c/p-count-with col fx) fx) ) )
         {} flat_matrix)
       ) )
     )
 
-(defn- fold-merge-with-plus
-  "Acts like (merge-with), but satisfies zero arity for recuers/fold"
+(defn- reducers-merge
   ([] {})
-  ([& maps] (merge-with + maps)) )
+  ([& maps] (merge maps)) )
 
 (defn- pp-pivot-matrix
   "Evaluate a multi-dimensional array of predicates with their base predicates over
@@ -227,10 +238,10 @@
         pivot_groups (build-pivot-groups-matrix pivotfs pivotds message)
         flat_matrix (into [] (build-matrix c/all? base_preds pivot_groups))]
 
-    (t/sort-map-by-value
-      (r/fold fold-merge-with-plus
-        (fn [result fx]
-          (assoc-in result [(:name (meta fx))] (c/p-count-with col fx)) )
+    (sort-map-by-value2
+      (r/fold reducers-merge
+        (fn [results fx]
+          (assoc-in results [(:name (meta fx))] (MatrixResult. (c/p-count-with col fx) fx) ) )
         flat_matrix)
       ) )
     )
