@@ -181,16 +181,28 @@
     ) )
 
 ; The name and function that produced a 'count' result
-(defrecord MatrixResult [value function])
+;(defrecord MatrixResult [value function])
 
-(defn sort-map-by-value2
+(defn- sort-pivot-map-by-value
   "Sort by values descending (works when there are non-unique values too).
   This compares the :value for each MatrixResult"
-  [m]
+  [m mkey]
   (into (sorted-map-by
-          (fn [k1 k2] (compare [(get-in m [k2 :value]) k2]
-                               [(get-in m [k1 :value]) k1]) ) )
+          (fn [k1 k2] (compare [(get-in m [k2 mkey]) k2]
+                               [(get-in m [k1 mkey]) k1]) ) )
     m) )
+
+(defn- compare-pivot-map-with
+  "Compare values in two maps with a specific 2 arg function. Currently this assumes
+  identical keysets in each map. todo: fix for missing keys (set default value)"
+  [m1 m2 f]
+  (reduce
+    (fn [result [k v]]
+      ; Should compare when the value is not nil
+      (assoc-in result [k] (when (not (nil? v))
+                             {:result (f (:count v) (get-in m2 [k :count])) :function (:function v)}
+                             ) ) )
+    {} m1) )
 
 (defn- s-pivot-matrix
   "Evaluate a multi-dimensional array of predicates with their base predicates over
@@ -200,13 +212,13 @@
         pivot_groups (build-pivot-groups-matrix pivotfs pivotds message)
         flat_matrix (build-matrix c/all? base_preds pivot_groups)]
 
-    (sort-map-by-value2
+    (sort-pivot-map-by-value
       (reduce
         (fn [result fx]
-          (assoc-in result [(:name (meta fx))] (MatrixResult. (c/count-with col fx) fx) ) )
+          (assoc-in result [(:name (meta fx))] {:count (c/count-with col fx) :function fx}) )
          {} flat_matrix)
-      ) )
-  )
+      :count)
+    ) )
 
 (defn- p-pivot-matrix
   "Evaluate a multi-dimensional array of predicates with their base predicates over
@@ -216,13 +228,13 @@
         pivot_groups (build-pivot-groups-matrix pivotfs pivotds message)
         flat_matrix (build-matrix c/all? base_preds pivot_groups)]
 
-    (sort-map-by-value2
+    (sort-pivot-map-by-value
       (reduce
         (fn [result fx]
-          (assoc-in result [(:name (meta fx))] (MatrixResult. (c/p-count-with col fx) fx) ) )
+          (assoc-in result [(:name (meta fx))] {:count (c/p-count-with col fx) :function fx}) )
         {} flat_matrix)
-      ) )
-    )
+      :count)
+    ) )
 
 (defn- reducers-merge
   ([] {})
@@ -238,13 +250,13 @@
         pivot_groups (build-pivot-groups-matrix pivotfs pivotds message)
         flat_matrix (into [] (build-matrix c/all? base_preds pivot_groups))]
 
-    (sort-map-by-value2
+    (sort-pivot-map-by-value
       (r/fold reducers-merge
         (fn [results fx]
-          (assoc-in results [(:name (meta fx))] (MatrixResult. (c/p-count-with col fx) fx) ) )
+          (assoc-in results [(:name (meta fx))] {:count (c/p-count-with col fx) :function fx}) )
         flat_matrix)
-      ) )
-    )
+      :count)
+    ) )
 
 (defn pivot-matrix
   "Evaluate a multi-dimensional array of predicates with their base predicates over
@@ -277,5 +289,19 @@
   [col1 col2 msg compf & {:keys [b p v plevel] :or {b [] p [] v [] plevel 2}}]
   (let [a (pivot-matrix col1 msg :b b :p p :v v :plevel plevel)
         b (pivot-matrix col2 msg :b b :p p :v v :plevel plevel)]
-    (t/sort-map-by-value (t/compare-map-with a b compf))
+    (sort-pivot-map-by-value (compare-pivot-map-with a b compf) :result)
     ) )
+
+(defn get-rs-from-matrix
+  "Get a result set by applying the underlying predicate group (partial function)
+  against a data collection. For example, for a pivot matrix with even? divisibly-by? (3 4 5),
+
+  (def hundred (range 1 100))
+  (def mtrx (pivot-matrix hundred \"foo\" :b [even?] :p [divisible-by?] :v [(range 2 6]))
+  (get-rs-from-matrix hundred mtrx \"foo-pivots_[5]\")
+
+  => (90 80 70 60 50 40 30 20 10)
+  "
+  [col matrix mkey]
+  (c/p-collect-with col (get-in matrix [mkey :function]))
+  )

@@ -66,6 +66,7 @@ Build on these functions with domain specific structure
 (p-collect-with)
 
 ```
+<<<<<<< HEAD
 ### Apply a cartesian product of predicate groups to a collection
 This generates a list of predicate function groups (partials) that are applied to
 a collection of data (single or multi-threaded). Each predicate group is the result
@@ -75,6 +76,10 @@ descending order.
 
 The predicate functions should be contextually relevant for the collection of data
 (e.g. don't use numeric predicates with a list of strings).
+
+Since it is hard for the JVM to keep the collections for large collections and predicate groups,
+only the count and underlying function are returned. Invidual result sets for any of the predicate
+groups may be obtained with (get-rs-from-matrix)
 
 ```clojure
 ; Create a list of partial predicate groups to evaluate over a collection
@@ -92,8 +97,11 @@ The predicate functions should be contextually relevant for the collection of da
 ; --> (all? number? even? (divisible-by? 4))
 ;; Where :b 'common predicates' and :p [f1] is paired with :v [v1]
 user=> (def hundred (range 1 100))
+; The count and the generated partial function used to derive that count
 user=> (pivot-matrix hundred "r1"  :b [number? even?] :p [divisible-by?] :v [(range 2 5)])
-{r1-pivots_[2] 49, r1-pivots_[4] 24, r1-pivots_[3] 16}
+{r1-pivots_[2] {:count 49, :function #<pf2>}, 
+r1-pivots_[4] {:count 24, :function #<pf4>}, 
+r1-pivots_[3] {:count 16, :function #<pf3>}}
 
 ;; Generate a cartesian product combination of predicate groups:
 ; --> (all? number? even? (divisible-by? 2) (divisible-by? 6))
@@ -104,8 +112,21 @@ user=> (pivot-matrix hundred "r1"  :b [number? even?] :p [divisible-by?] :v [(ra
 ; --> (all? number? even? (divisible-by? 4) (divisible-by? 7)) 
 ;; Where :p [f1 f2] is paired with its corresponding :v [v1 v2]
 user=> (def even-numbers [number? even?])
+; The count and the generated partial function used to derive that count
 user=> (pivot-matrix hundred "r2" :b even-numbers :p [divisible-by? divisible-by?] :v [(range 2 5) (range 6 8)])
-{r2-pivots_[3|6] 16, r2-pivots_[2|6] 16, r2-pivots_[4|6] 8, r2-pivots_[2|7] 7, r2-pivots_[4|7] 3, r2-pivots_[3|7] 2}
+{r2-pivots_[3|6] {:count: 16, :function #<pf36>} 
+r2-pivots_[2|6] {:count 16, :function #<pf26>}  
+r2-pivots_[4|6] {:count 8, :function #<pf46>}  
+r2-pivots_[2|7] {:count 7, :function #<pf27>}  
+r2-pivots_[4|7] {:count 3, :function #<pf47>}  
+r2-pivots_[3|7] {:count 2 ,:function #<pf37>}}
+
+; Get a result set for any of the predicate groups in a matrix
+(def hundred (range 1 100))
+(def mtrx (pivot-matrix hundred "foo" :b [even?] :p [divisible-by?] :v [(range 2 6)])
+(get-rs-from-matrix hundred mtrx "foo-pivots_[5]")
+
+=> (90 80 70 60 50 40 30 20 10)
 ```
 ### Examples
 1. src/clash/example/web_shop_example.clj

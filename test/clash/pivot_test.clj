@@ -119,37 +119,71 @@
 
     (are [x y] (= x y)
       3 (count r1)
-      49 (get-in r1 ["r1-pivots_[2]" :value])
-      16 (get-in r1 ["r1-pivots_[3]" :value])
-      24 (get-in r1 ["r1-pivots_[4]" :value])
+      49 (get-in r1 ["r1-pivots_[2]" :count])
+      16 (get-in r1 ["r1-pivots_[3]" :count])
+      24 (get-in r1 ["r1-pivots_[4]" :count])
       ;
       6 (count r2)
-      16 (get-in r2 ["r2-pivots_[3|6]" :value])
-      7 (get-in r2 ["r2-pivots_[2|7]" :value])
-      2 (get-in r2 ["r2-pivots_[3|7]" :value])
+      16 (get-in r2 ["r2-pivots_[3|6]" :count])
+      7 (get-in r2 ["r2-pivots_[2|7]" :count])
+      2 (get-in r2 ["r2-pivots_[3|7]" :count])
       ;
       6 (count r7)
-      16 (get-in r7 ["r7-pivots_[3|[2 4]]" :value])
-      8 (get-in r7 ["r7-pivots_[4|[2 4]]" :value])
-      2 (get-in r7 ["r7-pivots_[4|[4 5]]" :value])
+      16 (get-in r7 ["r7-pivots_[3|[2 4]]" :count])
+      8 (get-in r7 ["r7-pivots_[4|[2 4]]" :count])
+      2 (get-in r7 ["r7-pivots_[4|[4 5]]" :count])
       ;
       3 (count r3p)
-      49 (get-in r3p ["r1-pivots_[2]" :value])
-      16 (get-in r3p ["r1-pivots_[3]" :value])
-      24 (get-in r3p ["r1-pivots_[4]" :value])
+      49 (get-in r3p ["r1-pivots_[2]" :count])
+      16 (get-in r3p ["r1-pivots_[3]" :count])
+      24 (get-in r3p ["r1-pivots_[4]" :count])
       ;
       6 (count r4p)
-      16 (get-in r4p ["r2-pivots_[3|6]" :value])
-      7 (get-in r4p ["r2-pivots_[2|7]" :value])
-      2 (get-in r4p ["r2-pivots_[3|7]" :value])
+      16 (get-in r4p ["r2-pivots_[3|6]" :count])
+      7 (get-in r4p ["r2-pivots_[2|7]" :count])
+      2 (get-in r4p ["r2-pivots_[3|7]" :count])
       ;
       3 (count r5pp)
-      49 (get-in r5pp ["r1-pivots_[2]" :value])
-      16 (get-in r5pp ["r1-pivots_[3]" :value])
-      24 (get-in r5pp ["r1-pivots_[4]" :value])
+      49 (get-in r5pp ["r1-pivots_[2]" :count])
+      16 (get-in r5pp ["r1-pivots_[3]" :count])
+      24 (get-in r5pp ["r1-pivots_[4]" :count])
       ;
       6 (count r6pp)
-      16 (get-in r6pp ["r2-pivots_[3|6]" :value])
-      7 (get-in r6pp ["r2-pivots_[2|7]" :value])
-      2 (get-in r6pp ["r2-pivots_[3|7]" :value])
+      16 (get-in r6pp ["r2-pivots_[3|6]" :count])
+      7 (get-in r6pp ["r2-pivots_[2|7]" :count])
+      2 (get-in r6pp ["r2-pivots_[3|7]" :count])
       ) ) )
+
+(defn- ratio
+  "The ratio of (/ a b) for counts of predicate matches."
+  [a b]
+  (cond
+    (and (nil? a) (nil? b)) nil
+    (nil? a) 0
+    (nil? b) (/ a 1)
+    :else (read-string (format "%.3f" (/ a (float b))))
+    ) )
+
+(deftest test-pivot-matrix-compare
+  (let [r1 (pivot-matrix-compare (range 1 50) (range 50 120) "foo" ratio :b [number?] :p [divisible-by?] :v [(range 2 6)])]
+
+    ;(println r1)
+    (are [x y] (= x y)
+      4 (count r1)
+      0.706 (get-in r1 ["foo-pivots_[4]" :result])
+      0.696 (get-in r1 ["foo-pivots_[3]" :result])
+      0.686 (get-in r1 ["foo-pivots_[2]" :result])
+      0.643 (get-in r1 ["foo-pivots_[5]" :result])
+      )
+    ) )
+
+(deftest test-get-rs-from-matrix
+  (let [hundred (range 1 100)
+        m1 (pivot-matrix hundred "foo" :b [even?] :p [divisible-by?] :v [(range 2 6)])
+        r1 (get-rs-from-matrix hundred m1 "foo-pivots_[5]")]
+
+    (are [x y] (= x y)
+      9 (count r1)
+      '(90 80 70 60 50 40 30 20 10) r1
+      )
+    ) )
