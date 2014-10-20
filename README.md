@@ -65,7 +65,7 @@ Build on these functions with domain specific structure
 
 ; like (count-with) & (collect-with), but uses fold (use a [], not a '())
 (p-count-with solutions predicates)
-(p-collect-with)
+(p-collect-with solutions predicates)
 
 ```
 ### Apply a cartesian product of predicate groups to a collection
@@ -117,9 +117,9 @@ r1-pivots_[3] {:count 16}}
 ; --> (all? number? even? (divisible-by? 4) (divisible-by? 6))
 ; --> (all? number? even? (divisible-by? 4) (divisible-by? 7)) 
 ;; Where :p [f1 f2] is paired with its corresponding :v [v1 v2]
-user=> (def even-numbers [number? even?])
+(def even-numbers [number? even?])
 ; The count and the generated partial function (as meta data) used to derive that count
-user=> (pivot-matrix hundred "r2" :b even-numbers :p [divisible-by? divisible-by?] :v [(range 2 5) (range 6 8)])
+(pivot-matrix hundred "r2" :b even-numbers :p [divisible-by? divisible-by?] :v [(range 2 5) (range 6 8)])
 {r2-pivots_[3|6] {:count: 16} 
 r2-pivots_[2|6] {:count 16}  
 r2-pivots_[4|6] {:count 8}  
@@ -129,10 +129,16 @@ r2-pivots_[3|7] {:count 2}}
 
 ; Get a result set for any of the predicate groups in a matrix
 (def hundred (range 1 100))
-(def mtrx (pivot-matrix hundred "foo" :b [even?] :p [divisible-by?] :v [(range 2 6)])
-(get-rs-from-matrix hundred mtrx "foo-pivots_[5]")
+(def mtrx (pivot-matrix hundred "foo" :b [even?] :p [divisible-by?] :v [(range 2 6)]))
+(pprint mtrx)
+user=> {foo-pivots_[2] {:count 49},
+foo-pivots_[3] {:count 24},
+foo-pivots_[4] {:count 16},
+foo-pivots_[5] {:count 9}}
 
-=> (90 80 70 60 50 40 30 20 10)
+; All of the even numbers divisible by 5 for 1 - 100
+(get-rs-from-matrix hundred mtrx "foo-pivots_[5]")
+user=> (90 80 70 60 50 40 30 20 10)
 ```
 ### Examples
 1. src/clash/example/web_shop_example.clj
