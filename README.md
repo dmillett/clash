@@ -20,6 +20,8 @@ grep/cut implementations.
  * Existing log/text file data for patterns and ML
  * Experiment and identify optimal data queries for larger scale Hadoop style analysis
  * Determine initial trends
+4. Generate matrix of predicate groups and count matches against a collection
+5. Retrieve result set from matrix for a generate predicate group
 
 Tested with:
 * Log files with 40,000 - 800,000 complex entries (15 seconds to load into memory)
@@ -66,7 +68,6 @@ Build on these functions with domain specific structure
 (p-collect-with)
 
 ```
-<<<<<<< HEAD
 ### Apply a cartesian product of predicate groups to a collection
 This generates a list of predicate function groups (partials) that are applied to
 a collection of data (single or multi-threaded). Each predicate group is the result
@@ -80,6 +81,11 @@ The predicate functions should be contextually relevant for the collection of da
 Since it is hard for the JVM to keep the collections for large collections and predicate groups,
 only the count and underlying function are returned. Invidual result sets for any of the predicate
 groups may be obtained with (get-rs-from-matrix)
+
+For example a collection 1 - 100,000
+1. Identify how many are divisible-by? 2, 3, 4, 5, 6, etc
+2. Identify how many are also even?
+3. Get the values from the collection for even? and (divisible-by? 5)
 
 ```clojure
 ; Create a list of partial predicate groups to evaluate over a collection
@@ -97,11 +103,11 @@ groups may be obtained with (get-rs-from-matrix)
 ; --> (all? number? even? (divisible-by? 4))
 ;; Where :b 'common predicates' and :p [f1] is paired with :v [v1]
 user=> (def hundred (range 1 100))
-; The count and the generated partial function used to derive that count
+; The count and the generated partial function (as meta data) used to derive that count
 user=> (pivot-matrix hundred "r1"  :b [number? even?] :p [divisible-by?] :v [(range 2 5)])
-{r1-pivots_[2] {:count 49, :function #<pf2>}, 
-r1-pivots_[4] {:count 24, :function #<pf4>}, 
-r1-pivots_[3] {:count 16, :function #<pf3>}}
+{r1-pivots_[2] {:count 49}, 
+r1-pivots_[4] {:count 24}, 
+r1-pivots_[3] {:count 16}}
 
 ;; Generate a cartesian product combination of predicate groups:
 ; --> (all? number? even? (divisible-by? 2) (divisible-by? 6))
@@ -112,14 +118,14 @@ r1-pivots_[3] {:count 16, :function #<pf3>}}
 ; --> (all? number? even? (divisible-by? 4) (divisible-by? 7)) 
 ;; Where :p [f1 f2] is paired with its corresponding :v [v1 v2]
 user=> (def even-numbers [number? even?])
-; The count and the generated partial function used to derive that count
+; The count and the generated partial function (as meta data) used to derive that count
 user=> (pivot-matrix hundred "r2" :b even-numbers :p [divisible-by? divisible-by?] :v [(range 2 5) (range 6 8)])
-{r2-pivots_[3|6] {:count: 16, :function #<pf36>} 
-r2-pivots_[2|6] {:count 16, :function #<pf26>}  
-r2-pivots_[4|6] {:count 8, :function #<pf46>}  
-r2-pivots_[2|7] {:count 7, :function #<pf27>}  
-r2-pivots_[4|7] {:count 3, :function #<pf47>}  
-r2-pivots_[3|7] {:count 2 ,:function #<pf37>}}
+{r2-pivots_[3|6] {:count: 16} 
+r2-pivots_[2|6] {:count 16}  
+r2-pivots_[4|6] {:count 8}  
+r2-pivots_[2|7] {:count 7}  
+r2-pivots_[4|7] {:count 3}  
+r2-pivots_[3|7] {:count 2}}
 
 ; Get a result set for any of the predicate groups in a matrix
 (def hundred (range 1 100))

@@ -200,7 +200,7 @@
     (fn [result [k v]]
       ; Should compare when the value is not nil
       (assoc-in result [k] (when (not (nil? v))
-                             {:result (f (:count v) (get-in m2 [k :count])) :function (:function v)}
+                             (with-meta {:result (f (:count v) (get-in m2 [k :count]))} {:function (:function v)})
                              ) ) )
     {} m1) )
 
@@ -215,7 +215,7 @@
     (sort-pivot-map-by-value
       (reduce
         (fn [result fx]
-          (assoc-in result [(:name (meta fx))] {:count (c/count-with col fx) :function fx}) )
+          (assoc-in result [(:name (meta fx))] (with-meta {:count (c/count-with col fx)} {:function fx}) ) )
          {} flat_matrix)
       :count)
     ) )
@@ -231,7 +231,7 @@
     (sort-pivot-map-by-value
       (reduce
         (fn [result fx]
-          (assoc-in result [(:name (meta fx))] {:count (c/p-count-with col fx) :function fx}) )
+          (assoc-in result [(:name (meta fx))] (with-meta {:count (c/p-count-with col fx)} {:function fx}) ) )
         {} flat_matrix)
       :count)
     ) )
@@ -253,7 +253,7 @@
     (sort-pivot-map-by-value
       (r/fold reducers-merge
         (fn [results fx]
-          (assoc-in results [(:name (meta fx))] {:count (c/p-count-with col fx) :function fx}) )
+          (assoc-in results [(:name (meta fx))] (with-meta {:count (c/p-count-with col fx)} {:function fx}) ) )
         flat_matrix)
       :count)
     ) )
@@ -303,5 +303,5 @@
   => (90 80 70 60 50 40 30 20 10)
   "
   [col matrix mkey]
-  (c/p-collect-with col (get-in matrix [mkey :function]))
+  (c/p-collect-with col (:function (meta (get matrix mkey)) ) )
   )
