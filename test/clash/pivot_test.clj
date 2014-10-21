@@ -7,7 +7,8 @@
 ;   You must not remove this notice, or any other, from this software.
 
 (ns ^{:author dmillett} clash.pivot_test
-  (:require [clash.core :as c]
+  (:require [clojure.math.combinatorics :as cmb]
+            [clash.core :as c]
             [clash.tools :as t])
   (:use [clojure.test]
         [clash.pivot]))
@@ -104,6 +105,7 @@
 (deftest test-pivot-matrix
   (let [even-numbers [number? even?]
         divyX2 [divisible-by? divisible-by?]
+        cp (map #(into [] %) (cmb/cartesian-product (range 2 5) (range 5 8)))
         r1 (pivot-matrix hundred "r1"  :b [number? even?] :p [divisible-by?] :v [(range 2 5)])
         r2 (pivot-matrix hundred "r2" :b even-numbers :p [divisible-by? divisible-by?] :v [(range 2 5) (range 6 8)])
         r3p (pivot-matrix hundred "r1" :b even-numbers :p [divisible-by?] :v (list (range 2 5)) :plevel 2)
@@ -111,10 +113,11 @@
         r5pp (pivot-matrix hundred "r1" :b even-numbers :p [divisible-by?] :v (list (range 2 5)) :plevel 3)
         r6pp (pivot-matrix hundred "r2" :b even-numbers :p divyX2 :v [(range 2 5) (range 6 8)] :plevel 3)
         r7 (pivot-matrix hundred "r7" :b even-numbers :p [divisible-by? foo-divide?] :v [(range 2 5) '([2 4] [4 5])])
+        r8 (pivot-matrix hundred "r8" :b even-numbers :p [divisible-by? foo-divide?] :v [(range 2 4) cp])
 
         ; performance testing
         ;lc (into [] (range 1 1000001))
-        ;r8 (t/perf (pivot-matrix lc "r2lc" :b even-numbers :p divyX2 :v [(range 2 11) (range 7 18)] :plevel 3) "")
+        ;r9 (t/perf (pivot-matrix lc "r2lc" :b even-numbers :p divyX2 :v [(range 2 11) (range 7 18)] :plevel 3) "")
         ]
 
     (are [x y] (= x y)
@@ -152,6 +155,9 @@
       16 (get-in r6pp ["r2-pivots_[3|6]" :count])
       7 (get-in r6pp ["r2-pivots_[2|7]" :count])
       2 (get-in r6pp ["r2-pivots_[3|7]" :count])
+      ;
+      18 (count r8)
+      12 (get-in r8 ["r8-pivots_[2|[3 5]]" :count])
       ) ) )
 
 (defn- ratio
