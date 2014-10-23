@@ -280,6 +280,16 @@
     (= 3 plevel) (pp-pivot-matrix col msg b p v)
     ) )
 
+(defn pivot-matrix-e
+  "Identical to, but more explicit than (pivot-matrix). This expects the following form:
+
+  (pivot-matrix-e col msg :base [number? even?] :pivot [{:f divide-by? :v (range 2 5}
+                                                        {:f divide-by? :v (range 5 8}] :plevel 2)"
+  [col msg & {:keys [base pivot plevel] :or {base [] pivot [] plevel 1}}]
+  (let [p (map #(:f %) pivot)
+        v (map #(:v %) pivot)]
+    (pivot-matrix col msg :b base :p p :v v :plevel plevel)
+    ) )
 
 (defn pivot-matrix-compare
   "Compare the results (maps) of two pivots with a specific function. For
