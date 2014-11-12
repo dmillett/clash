@@ -236,12 +236,15 @@
   ([solutions predicates initial] (p-count-with solutions predicates nil initial))
   ([solutions predicates incrementer initial]
     (+ initial
-      (r/fold + (fn [count solution]
-                  (if (or (nil? predicates) (predicates solution))
-                    (if-not (nil? incrementer) (incrementer solution count) (inc count))
-                    count
-                    )) solutions))
-    ))
+      (r/fold
+        +
+        (fn [count solution]
+          (if (or (nil? predicates) (predicates solution))
+            (if-not (nil? incrementer) (incrementer solution count) (inc count))
+            count
+            ) )
+        solutions) )
+    ) )
 
 (defn calculate-with
   "Perform a count on each data structure in a list if it matches
@@ -257,23 +260,29 @@
                 ))
       initial solutions) ))
 
-;; todo: make consistent with (pivot) and use :plevel key
-(defn collect-with
-  "Build a collection of structued data objects that satisfy the conditions
-  defined in 'predicates'. The predicates should be customized to use the
-  data structure to filter."
-  [solutions predicates]
-  (if (nil? predicates)
-    solutions
-    (filter (fn [sol] (predicates  sol)) solutions) ) )
-
-(defn p-collect-with
-  "In parallel, build a collection of structued data objects
-  that satisfy the conditions defined in 'predicates'. The predicates should
-  be customized to use the data structure to filter."
-  [solutions predicates]
-  (if (nil? predicates)
-    solutions
-    ; Curiously, specifying the number 'n' threads, created lists of lists
-    (r/fold concat (fn [x y] (if (predicates y) (conj x y) x)) solutions)
+(defn- data-per-thread
+  "How many data elements per specified thread. If the number of specified threads
+  is greater than available cores, the available cores is used. The number of data
+  per core is then calculated by quotient + modulus of size/cores"
+  [size n]
+  (let [max (.availableProcessors (Runtime/getRuntime))
+        t (if (> n max) max n)]
+    (+ (quot size t) (rem size t))
     ) )
+
+(defn collect-with
+  "Build a collection/result set of data that satisfy the
+  conditions defined in 'predicates'. The predicates should
+  be relevant to use the data structure to filter. By default,
+  this will execute in parallel with reducers/fold. To specify
+  a single threaded execution: :plevel 1"
+  [solutions predicates & {:keys [plevel] :or [plevel 2]}]
+  (if (nil? predicates)
+    solutions
+    (if (= 1 plevel)
+      (filter (fn [sol] (predicates sol)) solutions)
+      (r/fold
+        concat
+        (fn [x y] (if (predicates y) (conj x y) x))
+        solutions)
+      ) ) )

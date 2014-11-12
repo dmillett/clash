@@ -150,7 +150,9 @@
          text (str (:base_msg (meta (first p))) "-pivots_[")]
     (if (empty? p)
       (str (subs text 0 (dec (count text))) "]")
-      (recur (next p) (str text (:pivot (meta (first p))) delim))
+      (recur
+        (next p)
+        (str text (:pivot (meta (first p))) delim))
       ) ) )
 
 (defn- build-matrix
@@ -313,5 +315,5 @@
   => (90 80 70 60 50 40 30 20 10)
   "
   [col matrix mkey]
-  (c/p-collect-with col (:function (meta (get matrix mkey)) ) )
+  (c/collect-with col (:function (meta (get matrix mkey)) ) )
   )

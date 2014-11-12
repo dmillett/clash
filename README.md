@@ -57,16 +57,15 @@ Build on these functions with domain specific structure
 ; Analyze data with defined predicates (filters with 'and'/'or' functionality)
 ; Incrementers can extract information and update cumulative results
 ; Count or total specific pieces of data per 'solution'
+; Use a vector instead of a list for r/fold parallelism
 (count-with solutions predicates)
 (count-with solutions predicates initial_count incrementer)
+(p-count-with solutions predicates)
 
 ; Build a result set with via filters, etc for each 'solution'
+; Use a vector instead of a list for r/fold parallelism
 (collect-with solutions predicates)
-
-; like (count-with) & (collect-with), but uses fold (use a [], not a '())
-(p-count-with solutions predicates)
-(p-collect-with solutions predicates)
-
+(collect-with solutions predicates :plevel 1)
 ```
 ### Apply a cartesian product of predicate groups to a collection
 This generates a list of predicate function groups (partials) that are applied to
@@ -89,6 +88,7 @@ For example a collection 1 - 100,000
 
 ```clojure
 ; Create a list of partial predicate groups to evaluate over a collection
+; Use a vector instead of a list for r/fold parallelism
 (pivot col msg :b common_pred :p pivot_preds :v pivot_values :plevel 2)
 
 ; Create a cartesian product of partial predicates to evaluate over a collection

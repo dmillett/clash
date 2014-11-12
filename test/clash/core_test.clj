@@ -142,8 +142,8 @@
       ) ) )
 
 (deftest test-collect-with
-  (let [r1 (collect-with foo-numbers-mixed (all? number?))
-        r2 (collect-with foo-numbers-mixed (all? number? even?))]
+  (let [r1 (collect-with foo-numbers-mixed (all? number?) :plevel 1)
+        r2 (collect-with foo-numbers-mixed (all? number? even?) :plevel 1)]
 
     (are [x y] (= x y)
       13 (count r1)
@@ -151,14 +151,16 @@
       ) ) )
 
 (deftest test-pcollect-with
-  (let [r1 (p-collect-with foo-numbers-mixed (all? number?))
-        r2 (p-collect-with (into [] foo-numbers-mixed) (all? number?))
-        r3 (p-collect-with foo-numbers-mixed (all? number? even?))
-        r4 (p-collect-with (into [] foo-numbers-mixed) (all? number? even?))]
+  (let [r1 (collect-with foo-numbers-mixed (all? number?))
+        r2 (collect-with (into [] foo-numbers-mixed) (all? number?))
+        r3 (collect-with (into [] foo-numbers-mixed) (all? number? even?))
+        r3s (collect-with foo-numbers-mixed (all? number? even?) :plevel 1)
+        r4 (collect-with (into [] foo-numbers-mixed) (all? number? even?))]
 
     (are [x y] (= x y)
       13 (count r1)
       13 (count r2)
       5 (count r3)
+      (sort r3) (sort r3s)
       5 (count r4)
       ) ) )
