@@ -32,11 +32,11 @@
 (deftest test-count-with-conditions__medium_complexity
   (are [x y] (= x y)
     true ((is-zoo? "ZOO") (first medium_complexity))
-    0 (count-with medium_complexity (is-zoo? "PIG"))
-    1 (count-with medium_complexity (is-zoo? "ZOO"))
-    1 (count-with medium_complexity is-fur-odd?)
-    0 (count-with medium_complexity (every-pred is-fur-odd? (is-zoo? "BAR")))
-    1 (count-with medium_complexity (every-pred is-fur-odd? (is-zoo? "ZAP")))
+    0 (s-count-with medium_complexity (is-zoo? "PIG"))
+    1 (s-count-with medium_complexity (is-zoo? "ZOO"))
+    1 (s-count-with medium_complexity is-fur-odd?)
+    0 (s-count-with medium_complexity (every-pred is-fur-odd? (is-zoo? "BAR")))
+    1 (s-count-with medium_complexity (every-pred is-fur-odd? (is-zoo? "ZAP")))
     ) )
 
 (deftest test-with-all-predicates
@@ -116,9 +116,9 @@
 (def foo-numbers-mixed '(2 3 4 5 9 "a" 11 12 15 20 21 "b" 25 26 27))
 
 (deftest test-count-with
-  (let [r1 (count-with foo-numbers-mixed (all? number?))
-        r2 (count-with foo-numbers-mixed (all? number? even?))
-        r3 (count-with foo-numbers-mixed (all? number? even?) 37)]
+  (let [r1 (s-count-with foo-numbers-mixed (all? number?))
+        r2 (s-count-with foo-numbers-mixed (all? number? even?))
+        r3 (s-count-with foo-numbers-mixed (all? number? even?) 37)]
 
     (are [x y] (= x y)
       13 r1

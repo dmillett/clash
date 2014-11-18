@@ -58,9 +58,8 @@ Build on these functions with domain specific structure
 ; Incrementers can extract information and update cumulative results
 ; Count or total specific pieces of data per 'solution'
 ; Use a vector instead of a list for r/fold parallelism
-(count-with solutions predicates)
-(count-with solutions predicates initial_count incrementer)
-(p-count-with solutions predicates)
+(count-with solutions predicate)
+(count-with solutions predicate :incrf + :initv 10 :plevel 1)
 
 ; Build a result set with via filters, etc for each 'solution'
 ; Use a vector instead of a list for r/fold parallelism
@@ -211,7 +210,7 @@ user=> (count-with-conditions @solutions (name-action? "FOO" "Search"))
   (fn [solution count] (+ count (read-string (-> solution :quantity))) ) )  
     
 ; Incrementing count based on quantity for each structure
-user=> (count-with-conditions @sols (name? "FOO") increment-with-quanity 0)
+user=> (count-with-conditions @sols (name? "FOO") :incrf increment-with-quanity)
 9
 
 ; Collecting a sequence of all matching solutions

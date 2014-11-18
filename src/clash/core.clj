@@ -210,24 +210,6 @@
     (into structure (deref (atomic-list-from-file input predicate transformer parser max)))
     ) )
 
-;;
-;; To pass along more than one condition, use (every-pred p1 p2 p3)
-;; Example: (def even3 (every-pred even? #(mod % 3)))
-;; todo: make consistent with (pivot) and use :plevel key
-(defn count-with
-  "Perform a count on each data structure in a list if it matches
-  the conditions defined in the predicates function. The predicates
-  function may contain multiple conditions when used with (every-pred p1 p2)."
-  ([solutions predicates] (count-with solutions predicates nil 0))
-  ([solutions predicates initial] (count-with solutions predicates nil initial))
-  ([solutions predicates incrementer initial]
-    (reduce (fn [count solution]
-              (if (or (nil? predicates) (predicates solution))
-                (if-not (nil? incrementer) (incrementer solution count) (inc count))
-                count
-                ))
-      initial solutions) ))
-
 (defn p-count-with
   "Perform a count on each data structure in a list use (reducers/fold) if it matches
   the conditions defined in the predicates function. The predicates function may
@@ -245,6 +227,38 @@
             ) )
         solutions) )
     ) )
+;;
+;; To pass along more than one condition, use (every-pred p1 p2 p3)
+;; Example: (def even3 (every-pred even? #(mod % 3)))
+;; todo: make consistent with (pivot) and use :plevel key
+(defn s-count-with
+  "Perform a count on each data structure in a list if it matches
+  the conditions defined in the predicates function. The predicates
+  function may contain multiple conditions when used with (every-pred p1 p2)."
+  ([solutions predicates] (s-count-with solutions predicates nil 0))
+  ([solutions predicates initial] (s-count-with solutions predicates nil initial))
+  ([solutions predicates incrementer initial]
+    (reduce (fn [count solution]
+              (if (or (nil? predicates) (predicates solution))
+                (if-not (nil? incrementer) (incrementer solution count) (inc count))
+                count
+                ))
+      initial solutions) ))
+
+;(defn count-with
+;  "Tally a count for all of the members of a collection that satisfy the predicate or
+;  predicate group. This function is parallel by default (:plevel 2) using reducers
+;  (requires [] for col). Single threaded is specified by :plevel 1. An incrementing function
+;  allows for the tallying a specific quantity withing a collection data member. The initial
+;  count value is zero.
+;
+;  (count-with (range 1 10) (all? number? even?) :plevel 1) => 4
+;  (count-with (range 1 10) (all? number? even?) :incrf + :plevel 1) => 20"
+;  [col pred & {:keys [incrf initv plevel] :or {incrf nil intiv 0 plevel 2}}]
+;  (if (= 2 plevel)
+;    (p-count-with col pred incrf initv)
+;    (s-count-with col pred incrf initv)
+;    ) )
 
 (defn calculate-with
   "Perform a count on each data structure in a list if it matches

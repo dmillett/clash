@@ -41,7 +41,7 @@
       (t/sort-map-by-value
         (reduce
           (fn [r fx]
-            (assoc-in r [(:name (meta fx))] (c/count-with col fx)) )
+            (assoc-in r [(:name (meta fx))] (c/s-count-with col fx)) )
           {} combos) )
       ) )  )
 
@@ -217,7 +217,7 @@
     (sort-pivot-map-by-value
       (reduce
         (fn [result fx]
-          (assoc-in result [(:name (meta fx))] (with-meta {:count (c/count-with col fx)} {:function fx}) ) )
+          (assoc-in result [(:name (meta fx))] (with-meta {:count (c/s-count-with col fx)} {:function fx}) ) )
          {} flat_matrix)
       :count)
     ) )

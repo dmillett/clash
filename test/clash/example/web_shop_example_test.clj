@@ -62,24 +62,24 @@
   (let [solutions (atomic-list-from-file web-log-file into-memory-parser)]
     ;(println (first @solutions))
     (are [x y] (= x y)
-      0 (count-with @solutions #(= "XYZ" (-> % :name)))
-      7 (count-with @solutions nil)
-      3 (count-with @solutions #(= "FOO" (-> % :name)))
-      3 (count-with @solutions (name? "FOO"))
-      2 (count-with @solutions (name-action? "FOO" "Search"))
+      0 (s-count-with @solutions #(= "XYZ" (-> % :name)))
+      7 (s-count-with @solutions nil)
+      3 (s-count-with @solutions #(= "FOO" (-> % :name)))
+      3 (s-count-with @solutions (name? "FOO"))
+      2 (s-count-with @solutions (name-action? "FOO" "Search"))
       ; any? and all?
-      2 (count-with @solutions (all? (name? "FOO") (any? (action? "Search") (action? "Purchase"))) )
-      4 (count-with @solutions (all? (price-higher? 13.00) (price-lower? 17.00)))
+      2 (s-count-with @solutions (all? (name? "FOO") (any? (action? "Search") (action? "Purchase"))) )
+      4 (s-count-with @solutions (all? (price-higher? 13.00) (price-lower? 17.00)))
       ) ) )
 
 ;; Demonstrating custom increment
 (deftest test-count-with-conditions__with_incrementer
   (let [solutions (atomic-list-from-file web-log-file into-memory-parser)]
     (are [x y] (= x y)
-      3 (count-with @solutions (name? "FOO") 0)
-      9 (count-with @solutions (name? "FOO") increment-with-quanity 0)
+      3 (s-count-with @solutions (name? "FOO") 0)
+      9 (s-count-with @solutions (name? "FOO") increment-with-quanity 0)
       ; count all quantities regardless of search, price, purchase
-      84 (count-with @solutions nil increment-with-quanity 20)
+      84 (s-count-with @solutions nil increment-with-quanity 20)
       ) ) )
 
 ;; Collecting results
