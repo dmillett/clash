@@ -24,11 +24,12 @@ grep/cut implementations.
 5. Retrieve result set from matrix for a generate predicate group
 
 Tested with:
-* Log files with 40,000 - 800,000 complex entries (15 seconds to load into memory)
-* Log files with 8,000,000 simple entries (30 seconds to load into memory)
+* Log files with 40,000 - 800,000 complex entries (15 seconds to load into memory with varying structure)
+* Log files with 8,000,000 simple entries (30 seconds to load into memory with varying structure)
 * Compatible with core.reducers
 * Most 'count' and 'collect' functions take between 20 ms and 1.5 seconds
 * Use **defrecord** offers ~10% performance improvement over map data structure
+* 400,000 generated filter groups against 560,000 complex data structures in 9 hours and < 4 gigs of JVM Heap
 
 *old 4 core pentium 4 with 8 gigs of RAM*
 
