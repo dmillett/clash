@@ -141,3 +141,20 @@
             result
             (select-keys (get-in mp kp) ks) ) )
         m maps)) ) )
+
+(defn map-freqs2
+  "Determines the frequency of specific keys for a list of maps."
+  ([maps] (map-freqs maps [] []) )
+  ([maps ks] (map-freqs maps [] ks) )
+  ([maps kp ks]
+    (let [m (apply merge (map #(hash-map % {}) ks))]
+      (reduce
+        (fn [result mp]
+          (merge-with
+            ; map, key path, function
+            #(if (nil? (get-in %1 %2))
+               (assoc-in %1 [%2] 1)
+               (update-in %1 [%2] inc) )
+            result
+            (select-keys (get-in mp kp) ks) ) )
+        m maps)) ) )

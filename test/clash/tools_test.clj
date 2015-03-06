@@ -77,7 +77,7 @@
 (deftest test-map-freqs
   (let [r1 (map-freqs mps1 [] [:a])
         r2 (map-freqs mps2 [:foo] [:b])
-        r3 (map-freqs mps1 [:c])]
+        r3 (map-freqs2 mps1)]
     (print r3)
     (are [x y] (= x y)
       nil (-> r1 :b)
