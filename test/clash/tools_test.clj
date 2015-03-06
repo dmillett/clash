@@ -71,4 +71,22 @@
       ) ) )
 
 
+(def mps1 [{:a 1 :b 2} {:a 3 :b 4 :c 5}])
+(def mps2 [{:foo {:a "x" :b "y"}} {:foo {:a "xx" :b "yy" :c "zz"}}])
+
+(deftest test-map-freqs
+  (let [r1 (map-freqs mps1 [] [:a])
+        r2 (map-freqs mps2 [:foo] [:b])
+        r3 (map-freqs mps1 [:c])]
+    (print r3)
+    (are [x y] (= x y)
+      nil (-> r1 :b)
+      nil (-> r1 :c)
+      {3 1, 1 1} (-> r1 :a)
+
+      nil (-> r2 :a)
+      nil (-> r2 :c)
+      {"y" 1 "yy" 1} (-> r2 :b)
+      ) ) )
+
 

@@ -26,7 +26,7 @@
 
 (defn str-contains?
   "Does a String contain a specific piece of text?"
-  [text, search]
+  [^java.lang.String text, ^java.lang.String search]
   (if (or (empty? text) (empty? search))
     false
     (.contains text search) ) )
@@ -62,7 +62,7 @@
 (defn create-shell-cut-with-keys
   "Build a shell 'cut' command with a specific delimiter and specified fields. This
   is more performant than using log-line-to-map to return a 'sub-map' of values"
-  [structure keys delim]
+  [^java.lang.String structure, keys, ^java.lang.String delim]
   (let [indices (map #(+ 1 (.indexOf structure %)) keys)
         cut (str "cut -d" \" delim \" " -f")]
     (if (empty? indices)

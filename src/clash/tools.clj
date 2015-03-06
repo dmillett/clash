@@ -113,3 +113,31 @@
       ; Should compare when the value is not nil
       (assoc-in result [k] (when (not (nil? v)) (f v (-> k m2))) ) )
     {} m1) )
+
+(defn increment
+  "Increment a number if not nil, otherwise 1."
+  [n]
+  (if (nil? n) 1 (inc n)))
+
+(defn- find-all-keys
+  "Find an initial keyset for a map"
+  [maps]
+  (loop [mp maps]
+    (if-not (and (nil? (first mp)) (empty? (first mp)))
+      (keys (first mp))
+      (recur (rest mp))
+    ) ) )
+
+(defn map-freqs
+  "Determines the frequency of specific keys for a list of maps."
+  ([maps] (map-freqs maps (find-all-keys maps)) )
+  ([maps ks] (map-freqs maps [] ks) )
+  ([maps kp ks]
+    (let [m (apply merge (map #(hash-map % {}) ks))]
+      (reduce
+        (fn [result mp]
+          (merge-with
+            #(update-in %1 [%2] increment)
+            result
+            (select-keys (get-in mp kp) ks) ) )
+        m maps)) ) )

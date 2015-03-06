@@ -4,6 +4,7 @@
   :dependencies [[org.clojure/clojure "1.6.0"]
                  [org.clojure/math.combinatorics "0.0.8"]]
   :jvm-opts ["-Xms256m" "-Xmx512m"]
+  :global-vars {*warn-on-reflection* true}
   :repl-options {:init (do
                          (load-file "src/clash/tools.clj")
                          (load-file "src/clash/core.clj")
