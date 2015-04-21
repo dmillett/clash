@@ -130,7 +130,6 @@
 
 (defn map-freqs
   "Determines the frequency of specific keys for a list of maps."
-  ([maps] (map-freqs maps (find-all-keys maps)) )
   ([maps ks] (map-freqs maps [] ks) )
   ([maps kp ks]
     (let [m (apply merge (map #(hash-map % {}) ks))]
@@ -142,19 +141,16 @@
             (select-keys (get-in mp kp) ks) ) )
         m maps)) ) )
 
-(defn map-freqs2
-  "Determines the frequency of specific keys for a list of maps."
-  ([maps] (map-freqs maps [] []) )
-  ([maps ks] (map-freqs maps [] ks) )
-  ([maps kp ks]
-    (let [m (apply merge (map #(hash-map % {}) ks))]
-      (reduce
-        (fn [result mp]
-          (merge-with
-            ; map, key path, function
-            #(if (nil? (get-in %1 %2))
-               (assoc-in %1 [%2] 1)
-               (update-in %1 [%2] inc) )
-            result
-            (select-keys (get-in mp kp) ks) ) )
-        m maps)) ) )
+;
+(defn value-frequencies-for-map
+  "Find out the frequency of values for each key for a map. This can be useful when
+  evaluating a collection of maps/defrecords."
+  ([m] (value-frequencies-for-map {} m))
+  ([target_map m]
+    (reduce
+      (fn [result [k v]]
+        (if (or (nil? (get-in result [k])) (nil? (get-in result [k v])))
+          (assoc-in result [k v] 1)
+          (update-in result [k v] inc)
+          ) )
+      target_map m) ) )

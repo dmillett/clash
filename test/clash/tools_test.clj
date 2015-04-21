@@ -70,15 +70,18 @@
       0.6 (:c r1)
       ) ) )
 
-
+;
+; {top key { nested-key : frequency } }
+; {:a {1 1, 3 1}, :b {2 1, 4 1}, :c {5 1}} ; :a-1 appears 1 time, :a-3 appears 1 time
 (def mps1 [{:a 1 :b 2} {:a 3 :b 4 :c 5}])
 (def mps2 [{:foo {:a "x" :b "y"}} {:foo {:a "xx" :b "yy" :c "zz"}}])
 
 (deftest test-map-freqs
   (let [r1 (map-freqs mps1 [] [:a])
         r2 (map-freqs mps2 [:foo] [:b])
-        r3 (map-freqs2 mps1)]
-    (print r3)
+        ;r3 (map-freqs2 mps1 [] [])
+        ]
+    ;(print r3)
     (are [x y] (= x y)
       nil (-> r1 :b)
       nil (-> r1 :c)
@@ -89,4 +92,14 @@
       {"y" 1 "yy" 1} (-> r2 :b)
       ) ) )
 
+(def mvs [{:a "a1" :b "b1" :c "c1"} {:a "a2" :b "b2"} {:a "a2" :b "b3" :c "c2" :d "d1"}])
 
+(deftest test-value-frequencies-for-map
+  (let [r1 (value-frequencies-for-map {:a "a1" :b "b1"})
+        r2 (value-frequencies-for-map {:a {"a1" 3}} {:a "a1" :b "b1"})]
+    (are [x y] (= x y)
+      1 (get-in r1 [:a "a1"])
+      1 (get-in r1 [:b "b1"])
+      1 (get-in r2 [:b "b1"])
+      4 (get-in r2 [:a "a1"])
+      ) ) )
