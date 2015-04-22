@@ -75,14 +75,14 @@
 (def mps1 [{:a 1 :b 2} {:a 3 :b 4 :c 5}])
 (def mps2 [{:foo {:a "x" :b "y"}} {:foo {:a "xx" :b "yy" :c "zz"}}])
 
-(deftest test-value-frequencies-for-map
-  (let [r1 (value-frequencies-for-map {:a "a1" :b "b1"})
-        r2 (value-frequencies-for-map {:a {"a1" 3}} {:a "a1" :b "b1"})
-        r3 (value-frequencies-for-map {:a {"a1" 3}} {:a "a1" :b {:c "c1"}} :kpath [:b])
-        r4 (value-frequencies-for-map {} {:a "a1" :b {:c "c1"}} :kpath [:b])
-        r5 (value-frequencies-for-map {} {:a "a1" :b {:c "c1"}} :kpath [:f])
+(deftest test-value-frequencies
+  (let [r1 (value-frequencies {:a "a1" :b "b1"})
+        r2 (value-frequencies {:a {"a1" 3}} {:a "a1" :b "b1"})
+        r3 (value-frequencies {:a {"a1" 3}} {:a "a1" :b {:c "c1"}} :kpath [:b])
+        r4 (value-frequencies {} {:a "a1" :b {:c "c1"}} :kpath [:b])
+        r5 (value-frequencies {} {:a "a1" :b {:c "c1"}} :kpath [:f])
         ; ignores a kset of ':a' since it does not exist at depth [:b :c]
-        r6 (value-frequencies-for-map {:a {"a1" 3}} {:a "a1" :b {:c {:d "d1" :e "e1"}}} :kpath [:b :c] :kset [:e :a])
+        r6 (value-frequencies {:a {"a1" 3}} {:a "a1" :b {:c {:d "d1" :e "e1"}}} :kpath [:b :c] :kset [:e :a])
         ]
 
     (are [x y] (= x y)
@@ -101,10 +101,10 @@
       1 (get-in r6 [:e "e1"])
       ) ) )
 
-(deftest test-merge-value-frequency-maps
+(deftest test-merge-value-frequency
   (let [m1 {:a {'x' 2}}
         m2 {:a {'x' 4} :b {'y' 2}}
-        r1 (merge-value-frequency-maps m1 m2)
+        r1 (merge-value-frequencies m1 m2)
         ]
     (are [x y] (= x y)
       2 (count r1)
@@ -114,10 +114,10 @@
 
 (def mvs [{:a "a1" :b "b1" :c "c1"} {:a "a2" :b "b2"} {:a "a2" :b "b3" :c "c2" :d "d1"}])
 
-(deftest test-collect-map-value-frequencies
-  (let [r1 (collect-map-value-frequencies mvs)
-        r2 (collect-map-value-frequencies mvs :kpath [:b])
-        r3 (collect-map-value-frequencies mvs :kset [:a :c])
+(deftest test-collect-value-frequencies
+  (let [r1 (collect-value-frequencies mvs)
+        r2 (collect-value-frequencies mvs :kpath [:b])
+        r3 (collect-value-frequencies mvs :kset [:a :c])
         ]
 
     (are [x y] (= x y)

@@ -114,13 +114,13 @@
       (assoc-in result [k] (when (not (nil? v)) (f v (-> k m2))) ) )
     {} m1) )
 
-(defn value-frequencies-for-map
+(defn value-frequencies
   "Find out the frequency of values for each key for a map. This can be useful when
   evaluating a collection of maps/defrecords. Specifying a :kpath will retrieve a map
   at depth, while :kset will limit the result to specific keys. For example:
-  (value-frequencies-for-map {:a a1}) => {:a {a1 1}}
-  (value-frequencies-for-map {} {:a 1 :b {:c1 1}} :kpath [:b]) => {:b {b1 1}}"
-  ([m] (value-frequencies-for-map {} m))
+  (value-frequencies {:a a1}) => {:a {a1 1}}
+  (value-frequencies {} {:a 1 :b {:c1 1}} :kpath [:b]) => {:b {b1 1}}"
+  ([m] (value-frequencies {} m))
   ([target_map m & {:keys [kpath kset] :or {kpath [] kset []}}]
     (let [kpmap (if (empty? kpath) m (get-in m kpath))
           mp (if (map? kpmap) kpmap {})
@@ -133,7 +133,7 @@
             ) )
         target_map submap) ) ) )
 
-(defn merge-value-frequency-maps
+(defn merge-value-frequencies
   "Merge two value frequency maps where the value frequency totals will be added
   together. Can be used with reducers. For example:
   (merge-value-frequency-maps {:a {a1 1}} {:a {a1 3}}) => {:a {a1 4}}"
@@ -143,15 +143,15 @@
     (merge-with #(merge-with + %1 %2) mleft mright) ) )
 
 ; todo: look at reducers here
-(defn collect-map-value-frequencies
+(defn collect-value-frequencies
   "Determine the cumulative value frequencies for a collection of maps."
   [map_collection & {:keys [kpath kset] :or {kpath [] kset []}}]
   (loop [result {}
          m map_collection]
     (if (or (nil? m) (empty? m))
       result
-      (recur (merge-value-frequency-maps
+      (recur (merge-value-frequencies
                result
-               (value-frequencies-for-map {} (first m) :kpath kpath :kset kset))
+               (value-frequencies {} (first m) :kpath kpath :kset kset))
         (rest m))
       ) ) )
