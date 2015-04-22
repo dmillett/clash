@@ -63,7 +63,6 @@
         r1 (compare-map-with m1 m2 f)]
 
     ;(println r1)
-
     (are [x y] (= x y)
       0.5 (:a r1)
       0.5 (:b r1)
@@ -76,30 +75,67 @@
 (def mps1 [{:a 1 :b 2} {:a 3 :b 4 :c 5}])
 (def mps2 [{:foo {:a "x" :b "y"}} {:foo {:a "xx" :b "yy" :c "zz"}}])
 
-(deftest test-map-freqs
-  (let [r1 (map-freqs mps1 [] [:a])
-        r2 (map-freqs mps2 [:foo] [:b])
-        ;r3 (map-freqs2 mps1 [] [])
-        ]
-    ;(print r3)
-    (are [x y] (= x y)
-      nil (-> r1 :b)
-      nil (-> r1 :c)
-      {3 1, 1 1} (-> r1 :a)
-
-      nil (-> r2 :a)
-      nil (-> r2 :c)
-      {"y" 1 "yy" 1} (-> r2 :b)
-      ) ) )
-
-(def mvs [{:a "a1" :b "b1" :c "c1"} {:a "a2" :b "b2"} {:a "a2" :b "b3" :c "c2" :d "d1"}])
-
 (deftest test-value-frequencies-for-map
   (let [r1 (value-frequencies-for-map {:a "a1" :b "b1"})
-        r2 (value-frequencies-for-map {:a {"a1" 3}} {:a "a1" :b "b1"})]
+        r2 (value-frequencies-for-map {:a {"a1" 3}} {:a "a1" :b "b1"})
+        r3 (value-frequencies-for-map {:a {"a1" 3}} {:a "a1" :b {:c "c1"}} :kpath [:b])
+        r4 (value-frequencies-for-map {} {:a "a1" :b {:c "c1"}} :kpath [:b])
+        r5 (value-frequencies-for-map {} {:a "a1" :b {:c "c1"}} :kpath [:f])
+        ; ignores a kset of ':a' since it does not exist at depth [:b :c]
+        r6 (value-frequencies-for-map {:a {"a1" 3}} {:a "a1" :b {:c {:d "d1" :e "e1"}}} :kpath [:b :c] :kset [:e :a])
+        ]
+
     (are [x y] (= x y)
       1 (get-in r1 [:a "a1"])
       1 (get-in r1 [:b "b1"])
       1 (get-in r2 [:b "b1"])
       4 (get-in r2 [:a "a1"])
+      2 (count r3)
+      3 (get-in r3 [:a "a1"])
+      1 (get-in r3 [:c "c1"])
+      1 (count r4)
+      1 (get-in r4 [:c "c1"])
+      0 (count r5)
+      2 (count r6)
+      3 (get-in r6 [:a "a1"])
+      1 (get-in r6 [:e "e1"])
+      ) ) )
+
+(deftest test-merge-value-frequency-maps
+  (let [m1 {:a {'x' 2}}
+        m2 {:a {'x' 4} :b {'y' 2}}
+        r1 (merge-value-frequency-maps m1 m2)
+        ]
+    (are [x y] (= x y)
+      2 (count r1)
+      6 (get-in r1 [:a 'x'])
+      2 (get-in r1 [:b 'y'])
+      ) ) )
+
+(def mvs [{:a "a1" :b "b1" :c "c1"} {:a "a2" :b "b2"} {:a "a2" :b "b3" :c "c2" :d "d1"}])
+
+(deftest test-collect-map-value-frequencies
+  (let [r1 (collect-map-value-frequencies mvs)
+        r2 (collect-map-value-frequencies mvs :kpath [:b])
+        r3 (collect-map-value-frequencies mvs :kset [:a :c])
+        ]
+
+    (are [x y] (= x y)
+      4 (count r1)
+      1 (get-in r1 [:d "d1"])
+      1 (get-in r1 [:c "c2"])
+      1 (get-in r1 [:c "c1"])
+      1 (get-in r1 [:b "b3"])
+      1 (get-in r1 [:b "b2"])
+      1 (get-in r1 [:b "b1"])
+      2 (get-in r1 [:a "a2"])
+      1 (get-in r1 [:a "a1"])
+      ; r2
+      0 (count r2)
+      ; r3
+      2 (count r3)
+      1 (get-in r3 [:c "c2"])
+      1 (get-in r3 [:c "c1"])
+      2 (get-in r3 [:a "a2"])
+      1 (get-in r3 [:a "a1"])
       ) ) )
