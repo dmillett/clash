@@ -120,7 +120,7 @@
   evaluating a collection of maps/defrecords. Specifying a :kpath will retrieve a map
   at depth, while :kset will limit the result to specific keys. For example:
   (value-frequencies {:a a1}) => {:a {a1 1}}
-  (value-frequencies {} {:a 1 :b {:c1 1}} :kpath [:b]) => {:b {b1 1}}"
+  (value-frequencies {} {:a 1 :b {:c1 1}} :kpath [:b]) => {:c {c1 1}}"
   ([m] (value-frequencies {} m))
   ([target_map m & {:keys [kset kpath] :or {kset [] kpath []}}]
     (let [kpmap (if (empty? kpath) m (get-in m kpath))
@@ -173,7 +173,7 @@
 
   ; Concurrently grab the nested map :c
   (collect-value-frequencies [{:a a1} {:a a1 :b b1, :c {:d d1}}] :kpath [:c] :plevel 2)
-   => {:c {d1 1}}"
+   => {:d {d1 1}}"
   [map_items & {:keys [kset kpath plevel] :or {kset [] kpath [] plevel 1}}]
   (if (= 1 plevel)
     (scollect-value-frequencies map_items :kset kset :kpath kpath)
