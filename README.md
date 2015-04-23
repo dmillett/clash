@@ -14,7 +14,7 @@ shell command are OS specific (non MS Windows), but offer better performance tha
 grep/cut implementations.
 
 ## Features & Benefits
-1. Quickly load small-large log or text file into an object structure 
+1. Quickly load small-large log or text file into a custom object structure 
 2. Very fast, condition based, result counts and retrievals 
 3. Quickly build and analyze text data withing Clojure REPL
  * Existing log/text file data for patterns and ML
@@ -34,7 +34,17 @@ Tested with:
 *old 4 core pentium 4 with 8 gigs of RAM*
 
 ## Usage
-These examples can be found in in the example namespace of this repository.
+There are tool, core, and pivot functions available to help evaluate generic data collections.
+Examples can be found in in the example namespace of this repository or in the unit tests.
+
+### Utility functions (tools.clj)
+1. (all? p1 p2 pn) - if all of the predicates are satisfied
+2. (any? p1 p2 pn) - if any of the predicates are satisfied
+3. (until? p [x y z w]) - evaluate the predicate until it is true
+4. (take-until p [x y z w]) - builds a collection until predicate is true. Compliments (take-while)
+5. (collect-value-frequencies map_collection) - determines the frequency of ever value in a collection of maps
+6. (sort-value-frequencies value_frequencies_map) - sort value frequencies in descending order
+
 ### Core functions to build upon
 Build on these functions with domain specific structure
 ```clojure
@@ -67,6 +77,7 @@ Build on these functions with domain specific structure
 (collect-with solutions predicates)
 (collect-with solutions predicates :plevel 1)
 ```
+
 ### Apply a cartesian product of predicate groups to a collection
 This generates a list of predicate function groups (partials) that are applied to
 a collection of data (single or multi-threaded). Each predicate group is the result

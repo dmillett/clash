@@ -31,8 +31,8 @@
           {:name (:name (meta %))}) metafs) )
 
 (defn- s-pivot
-  ([col preds pivotf pivotd] (s-pivot col c/all? preds pivotf pivotd ""))
-  ([col preds pivotf pivotd msg] (s-pivot col c/all? preds pivotf pivotd msg))
+  ([col preds pivotf pivotd] (s-pivot col t/all? preds pivotf pivotd ""))
+  ([col preds pivotf pivotd msg] (s-pivot col t/all? preds pivotf pivotd msg))
   ([col f preds pivotf pivotd msg]
     (let [message (if (empty? msg) "pivot" (str msg "_pivot"))
           fpivots (single-pivot-group pivotf pivotd message)
@@ -59,8 +59,8 @@
 
   {is-even-number_pivot-by-2 2, is-even-number_pivot-by-3 1}
   "
-  ([col preds pivotf pivotd] (p-pivot col c/all? preds pivotf pivotd ""))
-  ([col preds pivotf pivotd msg] (p-pivot col c/all? preds pivotf pivotd msg))
+  ([col preds pivotf pivotd] (p-pivot col t/all? preds pivotf pivotd ""))
+  ([col preds pivotf pivotd msg] (p-pivot col t/all? preds pivotf pivotd msg))
   ([col f preds pivotf pivotd msg]
     (let [message (if (empty? msg) "pivot" (str msg "_pivot"))
           fpivots (single-pivot-group pivotf pivotd message)
@@ -93,8 +93,8 @@
   "
   [col msg & {:keys [b p v plevel] :or {b [] p nil v [] plevel 1}}]
   (cond
-    (= 1 plevel) (s-pivot col c/all? b p v msg)
-    (= 2 plevel) (p-pivot col c/all? b p v msg)
+    (= 1 plevel) (s-pivot col t/all? b p v msg)
+    (= 2 plevel) (p-pivot col t/all? b p v msg)
     ) )
 
 (defn- s-pivot-compare
@@ -212,7 +212,7 @@
   [col msg base_preds pivotfs pivotds]
   (let [message (if (empty? msg) "pivot-test" msg)
         pivot_groups (build-pivot-groups-matrix pivotfs pivotds message)
-        flat_matrix (build-matrix c/all? base_preds pivot_groups)]
+        flat_matrix (build-matrix t/all? base_preds pivot_groups)]
 
     (sort-pivot-map-by-value
       (reduce
@@ -228,7 +228,7 @@
   [col msg base_preds pivotfs pivotds]
   (let [message (if (empty? msg) "pivot-test" msg)
         pivot_groups (build-pivot-groups-matrix pivotfs pivotds message)
-        flat_matrix (build-matrix c/all? base_preds pivot_groups)]
+        flat_matrix (build-matrix t/all? base_preds pivot_groups)]
 
     (sort-pivot-map-by-value
       (reduce
@@ -250,7 +250,7 @@
   [col msg base_preds pivotfs pivotds]
   (let [message (if (empty? msg) "pivot-test" msg)
         pivot_groups (build-pivot-groups-matrix pivotfs pivotds message)
-        flat_matrix (into [] (build-matrix c/all? base_preds pivot_groups))]
+        flat_matrix (into [] (build-matrix t/all? base_preds pivot_groups))]
 
     (sort-pivot-map-by-value
       (r/fold reducers-merge

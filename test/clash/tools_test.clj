@@ -118,6 +118,9 @@
   (let [r1 (collect-value-frequencies mvs)
         r2 (collect-value-frequencies mvs :kpath [:b])
         r3 (collect-value-frequencies mvs :kset [:a :c])
+        r4 (collect-value-frequencies mvs :plevel 2)
+        r5 (collect-value-frequencies mvs :kpath [:b] :plevel 2)
+        r6 (collect-value-frequencies mvs :kset [:a :c] :plevel 2)
         ]
 
     (are [x y] (= x y)
@@ -138,4 +141,91 @@
       1 (get-in r3 [:c "c1"])
       2 (get-in r3 [:a "a2"])
       1 (get-in r3 [:a "a1"])
+      ;
+      r4 r1
+      r5 r2
+      r6 r3
+      ) ) )
+
+(deftest test-sort-value-frequencies
+  (let [r1 (sort-value-frequencies {:a {"a1" 2 "a2" 5 "a3" 1}})
+        r2 (sort-value-frequencies (collect-value-frequencies mvs))]
+
+    (are [x y] (= x y)
+      '(5 2 1) (vals (get-in r1 [:a]))
+      '(2 1) (vals (get-in r2 [:a]))
+      '(1 1 1) (vals (get-in r2 [:b]))
+      ) ) )
+
+(deftest test-with-all-predicates
+  (let [result1 (all-preds? 5 even?)
+        result2 (all-preds? 4 even?)
+        result3 (all-preds? 4 number? even?)
+        result4 (all-preds? 4 number? odd?)
+        result5 (all-preds? 12 number? even? #(= 0 (mod % 6)))]
+    (is (not result1))
+    (is result2)
+    (is result3)
+    (is (not result4))
+    (is result5)
+    ) )
+
+(deftest test-with-any-predicates
+  (let [result1 (any-preds? 5 even?)
+        result2 (any-preds? 4 even?)
+        result3 (any-preds? 4 number? even?)
+        result4 (any-preds? 4 number? odd?)
+        result5 (any-preds? 12 number? even? #(= 0 (mod % 5)))]
+    (is (not result1))
+    (is result2)
+    (is result3)
+    (is result4)
+    (is result5)
+    ) )
+
+(defn- divisible-by?
+  [x]
+  (fn [n] (= 0 (mod n x))) )
+
+(deftest any-and-all?
+  (let [result1 ((all? number? even?) 10)
+        result2 ((all? number? odd?) 10)
+        result3 ((any? number? even?) 11)
+        result4 ((all? number? even? (divisible-by? 5)) 10)
+        result5 ((any? number? odd? even?) 16)
+        result5 ((all? number? (any? (divisible-by? 6) (divisible-by? 4))) 16)]
+
+    (is result1)
+    (is (not result2))
+    (is result3)
+    (is result4)
+    (is result5)
+    ) )
+
+(deftest test-until
+  (let [r1 (until? even? '("foo" "bar"))
+        r2 (until? number? '(1 2 3))
+        r3 (until? number? '("foo" 2 "bar"))
+        r4 (until? even? '("foo" 1 "bar" 3 4 "zoo"))
+        r5 (until? even? '("foo" 1 "bar" 3 5))]
+
+    (is (not r1))
+    (is r2)
+    (is r3)
+    (is r4)
+    (is (not r5))
+    ) )
+
+(deftest test-take-until
+  (let [r1 (take-until number? '(1 2 3))
+        r2 (take-until number? '("foo" "bar" 3 4))
+        r3 (take-until even? ["foo" "bar" 3 5 6 "zoo"])
+        r4 (take-until even? '("foo" "bar"))]
+
+    (are [x y] (= x y)
+
+      '(1) r1
+      '(3 "bar" "foo") r2
+      '(6 5 3 "bar" "foo") r3
+      '() r4
       ) ) )

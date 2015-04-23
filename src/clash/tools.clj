@@ -10,7 +10,8 @@
     ^{:author "David Millett"
       :doc "Some potentially useful tools with command.clj or other."}
   clash.tools
-  (:require [clojure.string :as str])
+  (:require [clojure.string :as str]
+            [clojure.core.reducers :as r])
   (:use [clojure.java.io :only (reader)])
   (:import [java.text.SimpleDateFormat]
            [java.text SimpleDateFormat])
@@ -121,7 +122,7 @@
   (value-frequencies {:a a1}) => {:a {a1 1}}
   (value-frequencies {} {:a 1 :b {:c1 1}} :kpath [:b]) => {:b {b1 1}}"
   ([m] (value-frequencies {} m))
-  ([target_map m & {:keys [kpath kset] :or {kpath [] kset []}}]
+  ([target_map m & {:keys [kset kpath] :or {kset [] kpath []}}]
     (let [kpmap (if (empty? kpath) m (get-in m kpath))
           mp (if (map? kpmap) kpmap {})
           submap (if (empty? kset) mp (select-keys mp kset))]
@@ -142,16 +143,123 @@
   ([mleft mright]
     (merge-with #(merge-with + %1 %2) mleft mright) ) )
 
-; todo: look at reducers here
-(defn collect-value-frequencies
-  "Determine the cumulative value frequencies for a collection of maps."
-  [map_collection & {:keys [kpath kset] :or {kpath [] kset []}}]
+(defn- scollect-value-frequencies
+  "Determine the cumulative value frequencies for a collection of maps. Single threaded"
+  [items & {:keys [kset kpath] :or {kset [] kpath []}}]
   (loop [result {}
-         m map_collection]
+         m items]
     (if (or (nil? m) (empty? m))
       result
-      (recur (merge-value-frequencies
-               result
-               (value-frequencies {} (first m) :kpath kpath :kset kset))
-        (rest m))
+      (recur (merge-value-frequencies result (value-frequencies {} (first m) :kpath kpath :kset kset)) (rest m))
+      ) ) )
+
+(defn- pcollect-value-frequencies
+  [items & {:keys [kset kpath] :or {kset [] kpath []}}]
+  (r/fold
+    merge-value-frequencies
+    (fn [result item] (merge-value-frequencies result (value-frequencies {} item :kset kset :kpath kpath) ) )
+    items
+    ) )
+
+(defn collect-value-frequencies
+  "Determine the value frequencies for a collection of map structures. For example:
+  ; Single threaded retrieve frequency values for all keys
+  (collect-value-frequencies [{:a a1} {:a a1 :b b1, :c {:d d1}}])
+   => {:a {a1 2} :b {b1 1} :c {{:d1 1} 1}}
+
+  ; Single threaded retrieve just the value frequency for :a
+  (collect-value-frequencies [{:a a1} {:a a1 :b b1, :c {:d d1}}] :kset [:a])
+   => {:a {a1 2}}
+
+  ; Concurrently grab the nested map :c
+  (collect-value-frequencies [{:a a1} {:a a1 :b b1, :c {:d d1}}] :kpath [:c] :plevel 2)
+   => {:c {d1 1}}"
+  [map_items & {:keys [kset kpath plevel] :or {kset [] kpath [] plevel 1}}]
+  (if (= 1 plevel)
+    (scollect-value-frequencies map_items :kset kset :kpath kpath)
+    (pcollect-value-frequencies map_items :kset kset :kpath kpath)
+    ) )
+
+(defn sort-value-frequencies
+  "Sort a 'value-frequency' map for each value by frequency (depending).
+  (sort-value-frequencies {:a {a1 2, a2 5, a3 1}})
+  => {:a {a2 5, a1 2, a3 1}}"
+  [vfreqs]
+  (reduce
+    (fn [result [k v]] (assoc-in result [k] (sort-map-by-value v)) )
+    {} vfreqs) )
+
+(defn all-preds?
+  "Pass value(s) to a list of predicates for evaluation. If all predicates return 'true',
+   then function returns 'true'. Otherwise function returns 'false'. Could not pass a function
+   list to (every-pred) successfully."
+  [values & predicates]
+  (loop [result true
+         preds predicates]
+    (if (or (not result) (empty? preds))
+      result
+      (recur ((first preds) values) (rest preds) )
+      ) ) )
+
+(defn any-preds?
+  "Pass value(s) and a list of predicates for evaluation. If any predicate returns 'true',
+  then function returns 'true'. Otherwise function returns 'false'."
+  [values & predicates]
+  (loop [result false
+         preds predicates]
+    (if (or result (empty? preds))
+      result
+      (recur ((first preds) values) (rest preds))
+      ) ) )
+
+(defn all?
+  "Pass value(s) implicitly and a list of predicates explicitly for evaluation.
+  If all predicates return 'true', then function returns 'true'. Otherwise
+  function returns 'false'. Could not pass a function list to (every-pred)
+  successfully. Ex: ((all? number? odd?) 10) --> false"
+  [& predicates]
+  (fn [item]
+    (loop [result true
+           preds predicates]
+      (if (or (not result) (empty? preds))
+        result
+        (recur ((first preds) item) (rest preds))
+        ) ) ) )
+
+(defn any?
+  "Pass value(s) implicitly and a list of predicates explicitly for evaluation.
+  If any predicate returns 'true', then function returns 'true'. Otherwise
+  function returns 'false'. Ex: ((any? number? odd?) 10) --> true"
+  [& predicates]
+  (fn [item]
+    (loop [result false
+           preds predicates]
+      (if (or result (empty? preds))
+        result
+        (recur ((first preds) item) (rest preds))
+        ) ) ) )
+
+(defn until?
+  "Returns 'true' for the first item in a collection that satisfies the predicate.
+  Otherwise returns 'false'"
+  [pred coll]
+  (loop [result false
+         items coll]
+    (cond
+      (empty? items) result
+      (try (pred (first items)) (catch Exception e false)) true
+      :else (recur result (rest items))
+      ) ) )
+
+(defn take-until
+  "A compliment to (take-while). Gather values of a collection into a list until
+  the predicate is satisfied. Otherwise returns an empty list."
+  [pred coll]
+  (loop [result '()
+         items coll]
+    (cond
+      (and (empty? items) (= (count coll) (count result))) '()
+      (empty? items) result
+      (try (pred (first items)) (catch Exception e false)) (conj result (first items))
+      :else (recur (conj result (first items)) (rest items))
       ) ) )
