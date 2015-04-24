@@ -38,12 +38,20 @@ There are tool, core, and pivot functions available to help evaluate generic dat
 Examples can be found in in the example namespace of this repository or in the unit tests.
 
 ### Utility functions (tools.clj)
-1. (all? p1 p2 pn) - if all of the predicates are satisfied
-2. (any? p1 p2 pn) - if any of the predicates are satisfied
-3. (until? p [x y z w]) - evaluate the predicate until it is true
-4. (take-until p [x y z w]) - builds a collection until predicate is true. Compliments (take-while)
-5. (collect-value-frequencies map_collection) - determines the frequency of ever value in a collection of maps
-6. (sort-value-frequencies value_frequencies_map) - sort value frequencies in descending order
+1. (all? p1 p2 pn) 
+   - if all of the predicates are satisfied (resembles 'every-pred')
+2. (any? p1 p2 pn) 
+   - if any of the predicates are satisfied (resembles 'some-fn')
+3. (until? p [x y z w]) 
+   - evaluate the predicate until it is true (resembles 'some')
+4. (take-until p [x y z w]) 
+   - builds a collection until predicate is true. Compliments 'take-while' (see clojure 1.7)
+5. (collect-value-frequencies map_collection) 
+   - determines the frequency of ever value in a collection of maps
+6. (collect-value-frequencies-for map_collection fx)
+   - Requires a custom function to retrieve nested map collections (and combinations).
+7. (sort-value-frequencies value_frequencies_map) 
+   - sort value frequencies in descending order  
 
 ### Core functions to build upon
 Build on these functions with domain specific structure
