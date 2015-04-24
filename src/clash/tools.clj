@@ -180,6 +180,15 @@
     (pcollect-value-frequencies map_items :kset kset :kpath kpath)
     ) )
 
+(defn collect-value-frequencies-for
+  "Apply a function to retrieve a list of sub-maps for a complex structure."
+  [map_items fx]
+  (r/fold
+    merge-value-frequencies
+    (fn [result item] (merge-value-frequencies result (collect-value-frequencies (fx item)) ))
+    map_items
+    ) )
+
 (defn sort-value-frequencies
   "Sort a 'value-frequency' map for each value by frequency (depending).
   (sort-value-frequencies {:a {a1 2, a2 5, a3 1}})
@@ -189,34 +198,11 @@
     (fn [result [k v]] (assoc-in result [k] (sort-map-by-value v)) )
     {} vfreqs) )
 
-(defn all-preds?
-  "Pass value(s) to a list of predicates for evaluation. If all predicates return 'true',
-   then function returns 'true'. Otherwise function returns 'false'. Could not pass a function
-   list to (every-pred) successfully."
-  [values & predicates]
-  (loop [result true
-         preds predicates]
-    (if (or (not result) (empty? preds))
-      result
-      (recur ((first preds) values) (rest preds) )
-      ) ) )
-
-(defn any-preds?
-  "Pass value(s) and a list of predicates for evaluation. If any predicate returns 'true',
-  then function returns 'true'. Otherwise function returns 'false'."
-  [values & predicates]
-  (loop [result false
-         preds predicates]
-    (if (or result (empty? preds))
-      result
-      (recur ((first preds) values) (rest preds))
-      ) ) )
-
 (defn all?
   "Pass value(s) implicitly and a list of predicates explicitly for evaluation.
   If all predicates return 'true', then function returns 'true'. Otherwise
   function returns 'false'. Could not pass a function list to (every-pred)
-  successfully. Ex: ((all? number? odd?) 10) --> false"
+  successfully. Ex: ((all? number? odd?) 10) --> false. Resembles (every-pred)"
   [& predicates]
   (fn [item]
     (loop [result true
@@ -229,7 +215,7 @@
 (defn any?
   "Pass value(s) implicitly and a list of predicates explicitly for evaluation.
   If any predicate returns 'true', then function returns 'true'. Otherwise
-  function returns 'false'. Ex: ((any? number? odd?) 10) --> true"
+  function returns 'false'. Ex: ((any? number? odd?) 10) --> true. Resembles (some-fn)"
   [& predicates]
   (fn [item]
     (loop [result false
@@ -241,7 +227,7 @@
 
 (defn until?
   "Returns 'true' for the first item in a collection that satisfies the predicate.
-  Otherwise returns 'false'"
+  Otherwise returns 'false'. Resembles (some)"
   [pred coll]
   (loop [result false
          items coll]
@@ -253,7 +239,8 @@
 
 (defn take-until
   "A compliment to (take-while). Gather values of a collection into a list until
-  the predicate is satisfied. Otherwise returns an empty list."
+  the predicate is satisfied. Otherwise returns an empty list. A lazy implementation
+  is slated for 1.7 (this one not be lazy)."
   [pred coll]
   (loop [result '()
          items coll]

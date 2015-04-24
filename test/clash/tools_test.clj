@@ -157,31 +157,19 @@
       '(1 1 1) (vals (get-in r2 [:b]))
       ) ) )
 
-(deftest test-with-all-predicates
-  (let [result1 (all-preds? 5 even?)
-        result2 (all-preds? 4 even?)
-        result3 (all-preds? 4 number? even?)
-        result4 (all-preds? 4 number? odd?)
-        result5 (all-preds? 12 number? even? #(= 0 (mod % 6)))]
-    (is (not result1))
-    (is result2)
-    (is result3)
-    (is (not result4))
-    (is result5)
-    ) )
+(def m1 {:a "a1" :b {:c [{:d "d1"} {:d "d1"} {:d "d2"}]}})
+(def m2 {:a {:e [{:f "f1"} {:f "f2"} {:f "f2"}]}})
 
-(deftest test-with-any-predicates
-  (let [result1 (any-preds? 5 even?)
-        result2 (any-preds? 4 even?)
-        result3 (any-preds? 4 number? even?)
-        result4 (any-preds? 4 number? odd?)
-        result5 (any-preds? 12 number? even? #(= 0 (mod % 5)))]
-    (is (not result1))
-    (is result2)
-    (is result3)
-    (is result4)
-    (is result5)
-    ) )
+(deftest test-collect-value-frequencies-for
+  (let [r1 (collect-value-frequencies-for [m1] #(get-in % [:b :c]))
+        ; Could use map with get-in instead of multiple (get-in)
+        r2 (collect-value-frequencies-for [m1 m2] #(concat (get-in % [:b :c]) (get-in % [:a :e])))]
+
+    (are [x y] (= x y)
+      {"d2" 1 "d1" 2} (:d r1)
+      {"d2" 1 "d1" 2} (:d r2)
+      {"f2" 2 "f1" 1} (:f r2)
+      ) ) )
 
 (defn- divisible-by?
   [x]
