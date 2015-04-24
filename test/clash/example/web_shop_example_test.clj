@@ -90,3 +90,11 @@
       2 (count (collect-with @solutions (name-action? "FOO" "Search")))
       7 (count (collect-with @solutions nil))
       ) ) )
+
+; edn file created with (data-to-file)
+(deftest test-write-data-to-edn-and-read-back
+  (let [solutions (file-into-structure web-log-file into-memory-parser [])
+        web_solutions_file (str tresource "/web-solutions")
+        solutions_from_file (data-from-file (str web_solutions_file ".edn"))]
+    (is (= solutions solutions_from_file))
+    ) )

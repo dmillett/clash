@@ -122,7 +122,6 @@
         r5 (collect-value-frequencies mvs :kpath [:b] :plevel 2)
         r6 (collect-value-frequencies mvs :kset [:a :c] :plevel 2)
         ]
-
     (are [x y] (= x y)
       4 (count r1)
       1 (get-in r1 [:d "d1"])
@@ -162,10 +161,9 @@
 
 (deftest test-collect-value-frequencies-for
   (let [r1 (collect-value-frequencies-for [m1] #(get-in % [:b :c]))
-        ; Could use map with get-in instead of multiple (get-in)
         r2 (collect-value-frequencies-for [m1 m2] #(concat (get-in % [:b :c]) (get-in % [:a :e])))
         r3 (collect-value-frequencies-for [m1] #(get-in % [:b :c]) :plevel 2)
-        r4 (collect-value-frequencies-for [m1 m2] #(concat (get-in % [:b :c]) (get-in % [:a :e])) :plevel 2)
+        r4 (collect-value-frequencies-for [m1 m2] (fn [m] (mapcat #(get-in m %) '([:b :c] [:a :e]))) :plevel 2)
         ]
 
     (are [x y] (= x y)

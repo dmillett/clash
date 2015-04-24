@@ -30,6 +30,7 @@ Tested with:
 * Most 'count' and 'collect' functions take between 20 ms and 1.5 seconds
 * Use **defrecord** offers ~10% performance improvement over map data structure
 * 400,000 generated filter groups against 560,000 complex data structures in 9 hours and < 4 gigs of JVM Heap
+* 95,000 similar maps with 8 keys each in ~0.6 seconds
 
 *old 4 core pentium 4 with 8 gigs of RAM*
 
@@ -37,44 +38,18 @@ Tested with:
 There are tool, core, and pivot functions available to help evaluate generic data collections.
 Examples can be found in in the example namespace of this repository or in the unit tests.
 
-### Utility functions (tools.clj)
-1. (all? p1 p2 pn) 
-   - if all of the predicates are satisfied (resembles 'every-pred')
-2. (any? p1 p2 pn) 
-   - if any of the predicates are satisfied (resembles 'some-fn')
-3. (until? p [x y z w]) 
-   - evaluate the predicate until it is true (resembles 'some')
-4. (take-until p [x y z w]) 
-   - builds a collection until predicate is true. Compliments 'take-while' (see clojure 1.7)
-5. (collect-value-frequencies map_collection) 
-   - determines the frequency of ever value in a collection of maps
-6. (collect-value-frequencies-for map_collection fx)
-   - Requires a custom function to retrieve nested map collections.
-7. (sort-value-frequencies value_frequencies_map) 
-   - sort value frequencies in descending order  
-
 ### Core functions to build upon
 Build on these functions with domain specific structure
 ```clojure
 ; Load objects from a file into memory (via defined regex and keyset)
 ; It's possible to transform text prior to parsing and apply predicates
+; core.reducers pmap and fold expect a vector for parallel operations
 (atomic-list-from-file filename parser)
 (atomic-map-from-file filename parser)
-
-; core.reducers pmap and fold expect a vector for parallel operations
 (file-into-structure filename parser [])
 
-; Build filters with conditionals and predicates (fail fast)
-((all? predicate1? (any? pred2? pred3?) pred4?) solution_data)
-
-; true when the first item in a collection is satisfied, otherwise false
-(until? predicate? collection)
-
-; Collect all of the items in a collection until 'predicate' is satisfied
-(take-until? predicate collection)
-
 ; Analyze data with defined predicates (filters with 'and'/'or' functionality)
-; Incrementers can extract information and update cumulative results
+; Incrementors can extract information and update cumulative results
 ; Count or total specific pieces of data per 'solution'
 ; Use a vector instead of a list for r/fold parallelism
 (count-with solutions predicate)
@@ -86,7 +61,73 @@ Build on these functions with domain specific structure
 (collect-with solutions predicates :plevel 1)
 ```
 
-### Apply a cartesian product of predicate groups to a collection
+###$ Utility functions (tools.clj)
+Potentially useful functions to help filter and sort data.
+
+```clojure
+; Build filters with conditionals and predicates (fail fast)
+; Resembles (every-pred) and (some-fn), but perhaps more readable?
+((all? number? even?) 10)
+=> true
+
+((any? number? even?) 11)
+=> true
+
+; true when the first item in a collection is satisfied, otherwise false
+; Resembles (some), but will not throw an error for this case:
+(until? number? '("foo" 2 "bar"))
+=> true
+
+; Collect all of the items in a collection until 'predicate' is satisfied
+; compliments (take-while), another implementation is due in clojure 1.7
+(take-until number? '("foo" "bar" 3 4))
+=> (3 "bar" "foo")
+
+; How many times do values repeat for specific keys across a collection of maps?
+(def mvs [{:a "a1" :b "b1"} {:a "a2" :b "b2"} {:a "a2" :c "c1"}])
+(collect-value-frequencies mvs)
+=> {:c {c1 1} :b {b2 1, b1 1}, :a {a2 2, a1 1}}
+
+; Concurrently get ':a' frequency values
+(collect-value-frequencies mvs :kset [:a] :plevel 2)
+=> {:a {a2 2, a1 1}} 
+
+; Pass a function in for nested collections of maps
+(def m1 {:a "a1" :b {:c [{:d "d1"} {:d "d1"} {:d "d2"}]}})
+(collect-value-frequencies-for [m1] #(get-in % [:b :c]))
+=> {:d {"d2" 1 "d1" 2}}
+
+; Sort inner key values (descending)
+(sort-value-frequencies {:a {"a1" 2 "a2" 5 "a3" 1}})
+=> {:a {"a2" 5 "a1" 2 "a3" 1}}
+```
+
+### define object structure, regex, and parser for sample text
+```clojure
+; time|application|version|logging_level|log_message (Action, Name, Quantity, Unit Price)
+(def line "05042013-13:24:12.000|sample-server|1.0.0|info|Search,FOO,5,15.00") 
+ 
+; Defrecords offer a 12%-15% performance improvement during parsing vs maps
+(def simple-structure [:time :action :name :quantity :unit_price])
+
+; 10022013-13:24:12.000|sample-server|1.0.0|info|Search,FOO,5,15.00
+(def detailed-pattern #"(\d{8}-\d{2}:\d{2}:\d{2}.\d{3})\|.*\|(\w*),(\w*),(\d*),(.*)")
+
+(defn into-memory-parser
+  "An exact parsing of line text into 'simple-structure' using
+  'detailed-pattern'."
+  [text_line]
+  (tt/regex-group-into-map text_line simple-structure detailed-pattern) )
+
+; Create a dataset from raw text file to work with   
+(def solutions (file-into-structure web-log-file into-memory-parser []))
+
+; Save dataset as .edn for future access
+(data-to-file solutions "/some/local/directory/solutions")    
+(data-from-file "/some/local/directory/solutions.edn")    
+```
+
+### Generate and apply filter groups to a collection (creates cartesian product)
 This generates a list of predicate function groups (partials) that are applied to
 a collection of data (single or multi-threaded). Each predicate group is the result
 of a cartesian product from partial functions and their corresponding values (see example
@@ -114,16 +155,15 @@ For example a collection 1 - 100,000
 (pivot-matrix col msg :b common_pred :p pivot_preds :v pivot_values :plevel 2)
 
 ; Compare cartesian predicate results when applied to 2 different collections
-(pivot-matrix-compare col1 col2 msg compf :b common_preds :p pivot_preds :v pivot_values)
+(pivot-matrix-compare col1 col2 msg comparef :b common_preds :p pivot_preds :v pivot_values)
 
 ;; Generate a list of predicate groups to apply to a collection 
 ; --> (all? number? even? (divisible-by? 2))
 ; --> (all? number? even? (divisible-by? 3))
 ; --> (all? number? even? (divisible-by? 4))
 ;; Where :b 'common predicates' and :p [f1] is paired with :v [v1]
-user=> (def hundred (range 1 100))
-; The count and the generated partial function (as meta data) used to derive that count
-user=> (pivot-matrix hundred "r1"  :b [number? even?] :p [divisible-by?] :v [(range 2 5)])
+;; The count and the generated partial function (as meta data) used to derive that count
+user=> (pivot-matrix (range 1 100) "r1"  :b [number? even?] :p [divisible-by?] :v [(range 2 5)])
 {"r1-pivots_[2]" {:count 49}, 
 "r1-pivots_[4]" {:count 24}, 
 "r1-pivots_[3]" {:count 16}}
@@ -136,9 +176,9 @@ user=> (pivot-matrix hundred "r1"  :b [number? even?] :p [divisible-by?] :v [(ra
 ; --> (all? number? even? (divisible-by? 4) (divisible-by? 6))
 ; --> (all? number? even? (divisible-by? 4) (divisible-by? 7)) 
 ;; Where :p [f1 f2] is paired with its corresponding :v [v1 v2]
+;; The count and the generated partial function (as meta data) used to derive that count
 (def even-numbers [number? even?])
-; The count and the generated partial function (as meta data) used to derive that count
-(pivot-matrix hundred "r2" :b even-numbers :p [divisible-by? divisible-by?] :v [(range 2 5) (range 6 8)])
+(pivot-matrix (range 1 100) "r2" :b even-numbers :p [divisible-by? divisible-by?] :v [(range 2 5) (range 6 8)])
 {"r2-pivots_[3|6]" {:count: 16}, 
 "r2-pivots_[2|6]" {:count 16},  
 "r2-pivots_[4|6]" {:count 8},  
@@ -147,10 +187,9 @@ user=> (pivot-matrix hundred "r1"  :b [number? even?] :p [divisible-by?] :v [(ra
 "r2-pivots_[3|7]" {:count 2}}
 
 ; Get a result set for any of the predicate groups in a matrix
-(def hundred (range 1 100))
-(def mtrx (pivot-matrix hundred "foo" :b [even?] :p [divisible-by?] :v [(range 2 6)]))
-(pprint mtrx)
-user=> {"foo-pivots_[2]" {:count 49},
+(def mtrx (pivot-matrix (range 1 100) "foo" :b [even?] :p [divisible-by?] :v [(range 2 6)]))
+user=> (pprint mtrx) 
+{"foo-pivots_[2]" {:count 49},
 "foo-pivots_[3]" {:count 24},
 "foo-pivots_[4]" {:count 16},
 "foo-pivots_[5]" {:count 9}}
@@ -160,7 +199,8 @@ user=> {"foo-pivots_[2]" {:count 49},
 user=> (90 80 70 60 50 40 30 20 10)
 
 ; For a more explicit/verbose (pivot-matrix), try:
-(pivot-matrix-e hundred "r2e" :base even-numbers :pivot [{:f div-by? :v (range 2 5)} {:f div-by? :v (range 5 8}])
+(pivot-matrix-e hundred "r2e" :base even-numbers :pivot [{:f divisible-by? :v (range 2 5)} 
+                                                         {:f divisible-by? :v (range 5 8}])
 ```
 ### Examples
 1. src/clash/example/web_shop_example.clj
@@ -179,23 +219,7 @@ user=> (90 80 70 60 50 40 30 20 10)
 05042013-13:24:13.005|sample-server|1.0.0|info|Search,ZOO,25,13.99
 05042013-13:24:13.123|sample-server|1.0.0|info|Purchase,BAR,10,2.25
 ```
-#### define object structure, regex, and parser for sample text
-```clojure
-; time|application|version|logging_level|log_message (Action, Name, Quantity, Unit Price)
-(def line "05042013-13:24:12.000|sample-server|1.0.0|info|Search,FOO,5,15.00") 
- 
-; Defrecords offer a 12%-15% performance improvement during parsing vs maps
-(def simple-structure [:time :action :name :quantity :unit_price])
 
-; 10022013-13:24:12.000|sample-server|1.0.0|info|Search,FOO,5,15.00
-(def detailed-pattern #"(\d{8}-\d{2}:\d{2}:\d{2}.\d{3})\|.*\|(\w*),(\w*),(\d*),(.*)")
-
-(defn into-memory-parser
-  "An exact parsing of line text into 'simple-structure' using
-  'detailed-pattern'."
-  [text_line]
-  (tt/regex-group-into-map text_line simple-structure detailed-pattern) )  
-```
 #### Load the examples
 ```
 lein repl
@@ -220,7 +244,7 @@ user=> (first @sols)
   [name action]
   (fn [line] (and (= name (-> line :name)) (= action (-> line :action)))) )
 
-; A count of all "Buy" actions of stock "FOO"
+; A count of all "Search" actions for "FOO"
 user=> (count-with-conditions @solutions (name-action? "FOO" "Search"))
 2    
 

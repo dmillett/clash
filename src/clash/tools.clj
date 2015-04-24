@@ -14,8 +14,18 @@
             [clojure.core.reducers :as r])
   (:use [clojure.java.io :only (reader)])
   (:import [java.text.SimpleDateFormat]
-           [java.text SimpleDateFormat])
-  )
+           [java.text SimpleDateFormat]))
+
+(defn data-to-file
+  "Dump a clojure data structure to an EDN file using (with-out-str). This
+  requires an existing directory or a filename inclusive of directory."
+  [data filename]
+  (spit (str filename ".edn") (with-out-str (pr data))) )
+
+(defn data-from-file
+  "Read the contents of a small file into its clojure data structure."
+  [filename]
+  (read-string (slurp filename)))
 
 (defn stb
   "Sh*t the bed message."
@@ -118,7 +128,9 @@
 (defn value-frequencies
   "Find out the frequency of values for each key for a map. This can be useful when
   evaluating a collection of maps/defrecords. Specifying a :kpath will retrieve a map
-  at depth, while :kset will limit the result to specific keys. For example:
+  at depth, while :kset will limit the result to specific keys. For these examples,
+  'a1', 'b1', 'd1' are strings.
+
   (value-frequencies {:a a1}) => {:a {a1 1}}
   (value-frequencies {} {:a 1 :b {:c1 1}} :kpath [:b]) => {:c {c1 1}}"
   ([m] (value-frequencies {} m))
@@ -136,7 +148,8 @@
 
 (defn merge-value-frequencies
   "Merge two value frequency maps where the value frequency totals will be added
-  together. Can be used with reducers. For example:
+  together. Can be used with reducers. For this examples, 'a1', 'b1', 'd1' are strings.
+
   (merge-value-frequency-maps {:a {a1 1}} {:a {a1 3}}) => {:a {a1 4}}"
   ([] {})
   ([m] m)
@@ -153,6 +166,7 @@
   )
 
 (defn- pcollect-value-frequencies
+  "Uses (reducers/fold) to build the result."
   [items & {:keys [kset kpath] :or {kset [] kpath []}}]
   (r/fold
     merge-value-frequencies
@@ -176,7 +190,6 @@
    => {:d {d1 1}}"
   [map_items & {:keys [kset kpath plevel] :or {kset [] kpath [] plevel 1}}]
   (if (= 1 plevel)
-    ; todo: bring p/scollect into this function.
     (scollect-value-frequencies map_items :kset kset :kpath kpath)
     (pcollect-value-frequencies map_items :kset kset :kpath kpath)
     ) )
@@ -190,10 +203,12 @@
   => {:d {d2 1 d1 2}}"
   [map_items fx & {:keys [kset kpath plevel] :or {kset [] kpath [] plevel 1}}]
   (if (= 1 plevel)
-    (reduce (fn [result item] (merge-value-frequencies result (collect-value-frequencies (fx item))) ) {} map_items)
+    (reduce (fn [result item] (merge-value-frequencies result
+                                (collect-value-frequencies (fx item) :kset kset :kpath kpath)) ) {} map_items)
     (r/fold
       merge-value-frequencies
-      (fn [result item] (merge-value-frequencies result (collect-value-frequencies (fx item)) ))
+      (fn [result item] (merge-value-frequencies result
+                          (collect-value-frequencies (fx item) :kset kset :kpath kpath) ))
       map_items
       ) ) )
 
