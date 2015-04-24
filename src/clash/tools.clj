@@ -144,15 +144,13 @@
     (merge-with #(merge-with + %1 %2) mleft mright) ) )
 
 (defn- scollect-value-frequencies
-  "Determine the cumulative value frequencies for a collection of maps. Single threaded.
-  todo: This should be handled by (reduce)."
+  "Determine the cumulative value frequencies for a collection of maps. Single threaded."
   [items & {:keys [kset kpath] :or {kset [] kpath []}}]
-  (loop [result {}
-         m items]
-    (if (or (nil? m) (empty? m))
-      result
-      (recur (merge-value-frequencies result (value-frequencies {} (first m) :kpath kpath :kset kset)) (rest m))
-      ) ) )
+  (reduce
+    (fn [result m]
+      (merge-value-frequencies result (value-frequencies {} m :kset kset :kpath kpath)) )
+    {} items)
+  )
 
 (defn- pcollect-value-frequencies
   [items & {:keys [kset kpath] :or {kset [] kpath []}}]
@@ -178,7 +176,7 @@
    => {:d {d1 1}}"
   [map_items & {:keys [kset kpath plevel] :or {kset [] kpath [] plevel 1}}]
   (if (= 1 plevel)
-    ; todo: bring p/scollect into this function. Rework scollect to use (reduce) instead of (loop recur)
+    ; todo: bring p/scollect into this function.
     (scollect-value-frequencies map_items :kset kset :kpath kpath)
     (pcollect-value-frequencies map_items :kset kset :kpath kpath)
     ) )
