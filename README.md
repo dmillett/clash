@@ -61,7 +61,32 @@ Build on these functions with domain specific structure
 (collect-with solutions predicates :plevel 1)
 ```
 
-###$ Utility functions (tools.clj)
+### define object structure, regex, and parser for sample text
+```clojure
+; time|application|version|logging_level|log_message (Action, Name, Quantity, Unit Price)
+(def line "05042013-13:24:12.000|sample-server|1.0.0|info|Search,FOO,5,15.00") 
+ 
+; Defrecords offer a 12%-15% performance improvement during parsing vs maps
+(def simple-structure [:time :action :name :quantity :unit_price])
+
+; 10022013-13:24:12.000|sample-server|1.0.0|info|Search,FOO,5,15.00
+(def detailed-pattern #"(\d{8}-\d{2}:\d{2}:\d{2}.\d{3})\|.*\|(\w*),(\w*),(\d*),(.*)")
+
+(defn into-memory-parser
+  "An exact parsing of line text into 'simple-structure' using
+  'detailed-pattern'."
+  [text_line]
+  (tt/regex-group-into-map text_line simple-structure detailed-pattern) )
+
+; Create a dataset from raw text file to work with   
+(def solutions (file-into-structure web-log-file into-memory-parser []))
+
+; Save dataset as .edn for future access
+(data-to-file solutions "/some/local/directory/solutions")    
+(data-from-file "/some/local/directory/solutions.edn")    
+```
+
+#### Utility functions (tools.clj)
 Potentially useful functions to help filter and sort data.
 
 ```clojure
@@ -100,31 +125,6 @@ Potentially useful functions to help filter and sort data.
 ; Sort inner key values (descending)
 (sort-value-frequencies {:a {"a1" 2 "a2" 5 "a3" 1}})
 => {:a {"a2" 5 "a1" 2 "a3" 1}}
-```
-
-### define object structure, regex, and parser for sample text
-```clojure
-; time|application|version|logging_level|log_message (Action, Name, Quantity, Unit Price)
-(def line "05042013-13:24:12.000|sample-server|1.0.0|info|Search,FOO,5,15.00") 
- 
-; Defrecords offer a 12%-15% performance improvement during parsing vs maps
-(def simple-structure [:time :action :name :quantity :unit_price])
-
-; 10022013-13:24:12.000|sample-server|1.0.0|info|Search,FOO,5,15.00
-(def detailed-pattern #"(\d{8}-\d{2}:\d{2}:\d{2}.\d{3})\|.*\|(\w*),(\w*),(\d*),(.*)")
-
-(defn into-memory-parser
-  "An exact parsing of line text into 'simple-structure' using
-  'detailed-pattern'."
-  [text_line]
-  (tt/regex-group-into-map text_line simple-structure detailed-pattern) )
-
-; Create a dataset from raw text file to work with   
-(def solutions (file-into-structure web-log-file into-memory-parser []))
-
-; Save dataset as .edn for future access
-(data-to-file solutions "/some/local/directory/solutions")    
-(data-from-file "/some/local/directory/solutions.edn")    
 ```
 
 ### Generate and apply filter groups to a collection (creates cartesian product)
