@@ -163,12 +163,17 @@
 (deftest test-collect-value-frequencies-for
   (let [r1 (collect-value-frequencies-for [m1] #(get-in % [:b :c]))
         ; Could use map with get-in instead of multiple (get-in)
-        r2 (collect-value-frequencies-for [m1 m2] #(concat (get-in % [:b :c]) (get-in % [:a :e])))]
+        r2 (collect-value-frequencies-for [m1 m2] #(concat (get-in % [:b :c]) (get-in % [:a :e])))
+        r3 (collect-value-frequencies-for [m1] #(get-in % [:b :c]) :plevel 2)
+        r4 (collect-value-frequencies-for [m1 m2] #(concat (get-in % [:b :c]) (get-in % [:a :e])) :plevel 2)
+        ]
 
     (are [x y] (= x y)
       {"d2" 1 "d1" 2} (:d r1)
       {"d2" 1 "d1" 2} (:d r2)
       {"f2" 2 "f1" 1} (:f r2)
+      r1 r3
+      r2 r4
       ) ) )
 
 (defn- divisible-by?

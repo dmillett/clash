@@ -49,7 +49,7 @@ Examples can be found in in the example namespace of this repository or in the u
 5. (collect-value-frequencies map_collection) 
    - determines the frequency of ever value in a collection of maps
 6. (collect-value-frequencies-for map_collection fx)
-   - Requires a custom function to retrieve nested map collections (and combinations).
+   - Requires a custom function to retrieve nested map collections.
 7. (sort-value-frequencies value_frequencies_map) 
    - sort value frequencies in descending order  
 

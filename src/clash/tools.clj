@@ -144,7 +144,8 @@
     (merge-with #(merge-with + %1 %2) mleft mright) ) )
 
 (defn- scollect-value-frequencies
-  "Determine the cumulative value frequencies for a collection of maps. Single threaded"
+  "Determine the cumulative value frequencies for a collection of maps. Single threaded.
+  todo: This should be handled by (reduce)."
   [items & {:keys [kset kpath] :or {kset [] kpath []}}]
   (loop [result {}
          m items]
@@ -162,32 +163,41 @@
     ) )
 
 (defn collect-value-frequencies
-  "Determine the value frequencies for a collection of map structures. For example:
-  ; Single threaded retrieve frequency values for all keys
+  "Determine the value frequencies for a collection of map structures. Use ':plevel 2' for
+  concurrent collection (reducers/fold). For these examples, 'a1', 'b1', 'd1' are strings.
+
   (collect-value-frequencies [{:a a1} {:a a1 :b b1, :c {:d d1}}])
    => {:a {a1 2} :b {b1 1} :c {{:d1 1} 1}}
 
-  ; Single threaded retrieve just the value frequency for :a
+  ; Retrieve value frequency for :a
   (collect-value-frequencies [{:a a1} {:a a1 :b b1, :c {:d d1}}] :kset [:a])
    => {:a {a1 2}}
 
-  ; Concurrently grab the nested map :c
+  ; Retrieve value frequency for depth path :c
   (collect-value-frequencies [{:a a1} {:a a1 :b b1, :c {:d d1}}] :kpath [:c] :plevel 2)
    => {:d {d1 1}}"
   [map_items & {:keys [kset kpath plevel] :or {kset [] kpath [] plevel 1}}]
   (if (= 1 plevel)
+    ; todo: bring p/scollect into this function. Rework scollect to use (reduce) instead of (loop recur)
     (scollect-value-frequencies map_items :kset kset :kpath kpath)
     (pcollect-value-frequencies map_items :kset kset :kpath kpath)
     ) )
 
 (defn collect-value-frequencies-for
-  "Apply a function to retrieve a list of sub-maps for a complex structure."
-  [map_items fx]
-  (r/fold
-    merge-value-frequencies
-    (fn [result item] (merge-value-frequencies result (collect-value-frequencies (fx item)) ))
-    map_items
-    ) )
+  "Apply a function (fx) to retrieve a list of sub-maps for a complex structure. Use ':plevel 2'
+   for concurrent collection (reducers/fold). Where 'a1', 'd1' and 'd2' are strings
+
+  (def m1 {:a a1 :b {:c [{:d d1} {:d d1} {:d d2}]}})
+  (collect-value-frequencies-for [m1] #(get-in % [:b :c]))
+  => {:d {d2 1 d1 2}}"
+  [map_items fx & {:keys [kset kpath plevel] :or {kset [] kpath [] plevel 1}}]
+  (if (= 1 plevel)
+    (reduce (fn [result item] (merge-value-frequencies result (collect-value-frequencies (fx item))) ) {} map_items)
+    (r/fold
+      merge-value-frequencies
+      (fn [result item] (merge-value-frequencies result (collect-value-frequencies (fx item)) ))
+      map_items
+      ) ) )
 
 (defn sort-value-frequencies
   "Sort a 'value-frequency' map for each value by frequency (depending).
