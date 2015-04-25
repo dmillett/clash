@@ -141,7 +141,8 @@ Since it is hard for the JVM to keep the collections for large collections and p
 only the count and underlying function are returned. Invidual result sets for any of the predicate
 groups may be obtained with (get-rs-from-matrix)
 
-For example a collection 1 - 100,000
+For example a collection 1 - 100,000:
+
 1. Identify how many are divisible-by? 2, 3, 4, 5, 6, etc
 2. Identify how many are also even?
 3. Get the values from the collection for even? and (divisible-by? 5)
@@ -163,7 +164,8 @@ For example a collection 1 - 100,000
 ; --> (all? number? even? (divisible-by? 4))
 ;; Where :b 'common predicates' and :p [f1] is paired with :v [v1]
 ;; The count and the generated partial function (as meta data) used to derive that count
-user=> (pivot-matrix (range 1 100) "r1"  :b [number? even?] :p [divisible-by?] :v [(range 2 5)])
+user=> (pivot-matrix (range 1 100) "r1"  :b [number? even?] :p [divisible-by?] 
+                                                            :v [(range 2 5)])
 {"r1-pivots_[2]" {:count 49}, 
 "r1-pivots_[4]" {:count 24}, 
 "r1-pivots_[3]" {:count 16}}
@@ -178,7 +180,8 @@ user=> (pivot-matrix (range 1 100) "r1"  :b [number? even?] :p [divisible-by?] :
 ;; Where :p [f1 f2] is paired with its corresponding :v [v1 v2]
 ;; The count and the generated partial function (as meta data) used to derive that count
 (def even-numbers [number? even?])
-(pivot-matrix (range 1 100) "r2" :b even-numbers :p [divisible-by? divisible-by?] :v [(range 2 5) (range 6 8)])
+(pivot-matrix (range 1 100) "r2" :b even-numbers :p [divisible-by? divisible-by?] 
+                                                 :v [(range 2 5) (range 6 8)])
 {"r2-pivots_[3|6]" {:count: 16}, 
 "r2-pivots_[2|6]" {:count 16},  
 "r2-pivots_[4|6]" {:count 8},  
@@ -187,7 +190,8 @@ user=> (pivot-matrix (range 1 100) "r1"  :b [number? even?] :p [divisible-by?] :
 "r2-pivots_[3|7]" {:count 2}}
 
 ; Get a result set for any of the predicate groups in a matrix
-(def mtrx (pivot-matrix (range 1 100) "foo" :b [even?] :p [divisible-by?] :v [(range 2 6)]))
+(def mtrx (pivot-matrix (range 1 100) "foo" :b [even?] :p [divisible-by?] 
+                                                       :v [(range 2 6)]))
 user=> (pprint mtrx) 
 {"foo-pivots_[2]" {:count 49},
 "foo-pivots_[3]" {:count 24},
@@ -200,7 +204,7 @@ user=> (90 80 70 60 50 40 30 20 10)
 
 ; For a more explicit/verbose (pivot-matrix), try:
 (pivot-matrix-e hundred "r2e" :base even-numbers :pivot [{:f divisible-by? :v (range 2 5)} 
-                                                         {:f divisible-by? :v (range 5 8}])
+                                                         {:f divisible-by? :v (range 5 8)}])
 ```
 ### Examples
 1. src/clash/example/web_shop_example.clj
