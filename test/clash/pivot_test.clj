@@ -188,24 +188,27 @@
                                                                          :p [divisible-by?]
                                                                          :v [(range 2 6)])
         ]
-
-    ;(println r1)
     (are [x y] (= x y)
       4 (count r1)
       0.706 (get-in r1 ["foo-pivots_[4]" :result])
       0.696 (get-in r1 ["foo-pivots_[3]" :result])
       0.686 (get-in r1 ["foo-pivots_[2]" :result])
       0.643 (get-in r1 ["foo-pivots_[5]" :result])
-      )
-    ) )
+      ) ) )
 
 (deftest test-get-rs-from-matrix
   (let [hundred (range 1 100)
         m1 (pivot-matrix hundred "foo" :b [even?] :p [divisible-by?] :v [(range 2 6)])
-        r1 (get-rs-from-matrix hundred m1 "foo-pivots_[5]")]
+        r1 (get-rs-from-matrix hundred m1 "foo-pivots_[5]")
+        m2 (pivot-matrix-compare (range 1 50) (range 50 120) "foo" ratio :b [number?]
+                                                                         :p [divisible-by?]
+                                                                         :v [(range 2 6)])
+        r2 (get-rs-from-matrix hundred m2 "foo-pivots_[5]")
+        ]
 
     (are [x y] (= x y)
       9 (count r1)
-      '(90 80 70 60 50 40 30 20 10) r1
-      )
-    ) )
+      r1 '(90 80 70 60 50 40 30 20 10)
+      19 (count r2)
+      r2 '(95 90 85 80 75 70 65 60 55 50 45 40 35 30 25 20 15 10 5)
+      ) ) )

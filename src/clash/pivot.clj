@@ -194,13 +194,9 @@
                                [(get-in m [k1 mkey]) k1]) ) )
     m) )
 
-;(defn- sort-pivot-and-attach-meta
-;  "Propogates :function, :count forward with each pivot result"
-;  [pm mkey]
-;  (let [sorted-pivot (sort-pivot-map-by-value m mkey)]
-;    ; Reattach meta-data
-;    ) )
 
+; todo: don't store function as metadata, store it next to result
+; todo: create printer without 'function'
 (defn- compare-pivot-map-with
   "Compare values in two maps with a specific 2 arg function. Currently this assumes
   identical keysets in each map. todo: fix for missing keys (set default value)"
@@ -209,8 +205,8 @@
     (fn [result [k v]]
       ; Should compare when the value is not nil
       (assoc-in result [k] (when (not (nil? v))
-                             (with-meta {:result (f (:count v) (get-in m2 [k :count]))}
-                                        {:function (:function v)}) )
+                             {:result (f (:count v) (get-in m2 [k :count]))
+                             :function (:function (meta v))})
         ) )
     {} m1) )
 
@@ -292,8 +288,8 @@
 (defn pivot-matrix-e
   "Identical to, but more explicit than (pivot-matrix). This expects the following form:
 
-  (pivot-matrix-e col msg :base [number? even?] :pivot [{:f divide-by? :v (range 2 5}
-                                                        {:f divide-by? :v (range 5 8}]
+  (pivot-matrix-e col msg :base [number? even?] :pivot [{:f divide-by? :v (range 2 5)}
+                                                        {:f divide-by? :v (range 5 8)}]
                                                 :plevel 2)"
   [col msg & {:keys [base pivot plevel] :or {base [] pivot [] plevel 1}}]
   (let [p (map #(:f %) pivot)
@@ -307,9 +303,9 @@
   The output is sorted in descending order.
   (pivot-matrix-compare col1 col2 msg compf :b common_pred :p pivot_preds :v pivot_values)"
   [col1 col2 msg compf & {:keys [b p v plevel] :or {b [] p [] v [] plevel 2}}]
-  (let [a (pivot-matrix col1 msg :b b :p p :v v :plevel plevel)
-        b (pivot-matrix col2 msg :b b :p p :v v :plevel plevel)]
-    (sort-pivot-map-by-value (compare-pivot-map-with a b compf) :result)
+  (let [pivota (pivot-matrix col1 msg :b b :p p :v v :plevel plevel)
+        pivotb (pivot-matrix col2 msg :b b :p p :v v :plevel plevel)]
+    (sort-pivot-map-by-value (compare-pivot-map-with pivota pivotb compf) :result)
     ) )
 
 (defn get-rs-from-matrix
@@ -322,4 +318,6 @@
   => (90 80 70 60 50 40 30 20 10)
   "
   [col matrix mkey]
-  (t/collect-with col (:function (meta (get matrix mkey)) ) ) )
+  (if-let [fx (:function (meta (get matrix mkey)))]
+    (t/collect-with col fx)
+    (t/collect-with col (get-in matrix [mkey :function])) ) )

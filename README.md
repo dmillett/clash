@@ -20,17 +20,16 @@ grep/cut implementations.
  * Existing log/text file data for patterns and ML
  * Experiment and identify optimal data queries for larger scale Hadoop style analysis
  * Determine initial trends
-4. Generate matrix of predicate groups and count matches against a collection
+4. Generate matrix of filter groups and count matches against a collection
 5. Retrieve result set from matrix for a generate predicate group
 
 Tested with:
-* Log files with 40,000 - 800,000 complex entries (15 seconds to load into memory with varying structure)
-* Log files with 8,000,000 simple entries (30 seconds to load into memory with varying structure)
-* Compatible with core.reducers
-* Most 'count' and 'collect' functions take between 20 ms and 1.5 seconds
-* Use **defrecord** offers ~10% performance improvement over map data structure
-* 400,000 generated filter groups against 560,000 complex data structures in 9 hours and < 4 gigs of JVM Heap
+* Log files with up to 5 million simple and/or complex data
+* Uses core.reducers
+* Most 'count' and 'collect' functions take miliseconds
 * 95,000 similar maps with 8 keys each in ~0.6 seconds
+* 400,000 generated filter groups against 560,000 complex data structures in 9 hours and < 4 gigs of JVM Heap
+* Use **defrecord** offers ~10% performance improvement over map data structure
 
 *old 4 core pentium 4 with 8 gigs of RAM*
 
@@ -205,6 +204,12 @@ user=> (90 80 70 60 50 40 30 20 10)
 ; For a more explicit/verbose (pivot-matrix), try:
 (pivot-matrix-e hundred "r2e" :base even-numbers :pivot [{:f divisible-by? :v (range 2 5)} 
                                                          {:f divisible-by? :v (range 5 8)}])
+
+; Compare 2 collections of similar data and check the count differences with a function like (ratio)
+(pivot-matrix-compare (range 1 50) (range 50 120) "foo" ratio :b [number?]
+                                                              :p [divisible-by?]
+                                                              :v [(range 2 6)])
+
 ```
 ### Examples
 1. src/clash/example/web_shop_example.clj
