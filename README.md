@@ -37,6 +37,8 @@ Tested with:
 There are tool, core, and pivot functions available to help evaluate generic data collections.
 Examples can be found in in the example namespace of this repository or in the unit tests.
 
+Add to **[clash "1.0"]** to your project.clj
+
 ### Core functions to build upon
 Build on these functions with domain specific structure
 ```clojure
