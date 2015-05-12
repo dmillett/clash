@@ -1,10 +1,16 @@
-(defproject clash "0.11-SNAPSHOT"
-  :description "A clojure library that encapsulates shell functionality for commands
-  like 'grep' and 'cut'. This is useful for search or indexing large text files."
+(defproject clash "1.0"
+  :description "A clojure library that applies customizable structures to text files
+   and quick analysis via filter groups, maps, etc. This is useful for quickly searchin
+   or indexing large text files before spending proportionally more effort on Hadoop or
+   Spark."
+  :url "https://github.com/dmillett/clash"
+  :license {:name "Eclipse Public License"
+            :url "http://www.eclipse.org/legal/epl-v10.html" }
+  :scm {:name "git" :url "https://github.com/dmillett/clash" }
   :dependencies [[org.clojure/clojure "1.6.0"]
                  [org.clojure/math.combinatorics "0.0.8"]]
   :jvm-opts ["-Xms256m" "-Xmx512m"]
-  :global-vars {*warn-on-reflection* true}
+  ;:global-vars {*warn-on-reflection* true}
   :repl-options {:init (do
                          (load-file "src/clash/tools.clj")
                          (load-file "src/clash/core.clj")

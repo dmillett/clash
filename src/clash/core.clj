@@ -64,7 +64,8 @@
                         current (hash-map k structure)]]
             (if-not (nil? current)
               (swap! result merge current)) )
-          (catch OutOfMemoryError e (println "Insufficient Memory: " (count @result) "Solutions Loaded")) ) )
+          (catch OutOfMemoryError e (println "Insufficient Memory: " (count @result) "Solutions Loaded"))
+          (catch Exception e (println "Exception:" e ", " (count @result) " Solutions Loaded"))) )
       result) ) )
 
 
@@ -103,7 +104,8 @@
                         data (parser transformed)]]
             (if-not (nil? data)
               (swap! result conj data)) ))
-        (catch OutOfMemoryError e (println "Insufficient Memory: " (count @result) " Solutions Loaded")))
+        (catch OutOfMemoryError e (println "Insufficient Memory: " (count @result) " Solutions Loaded"))
+        (catch Exception e (println "Exception:" e ", " (count @result) " Solutions Loaded")))
       result) ) )
 
 (defn file-into-structure
@@ -133,94 +135,3 @@
   ([input predicate transformer parser structure max]
     (into structure (deref (atomic-list-from-file input predicate transformer parser max)))
     ) )
-
-(defn p-count-with
-  "Perform a count on each data structure in a list use (reducers/fold) if it matches
-  the conditions defined in the predicates function. The predicates function may
-  contain multiple conditions when used with (every-pred p1 p2)."
-  ([solutions predicates] (p-count-with solutions predicates nil 0))
-  ([solutions predicates initial] (p-count-with solutions predicates nil initial))
-  ([solutions predicates incrementer initial]
-    (+ initial
-      (r/fold
-        +
-        (fn [count solution]
-          (if (or (nil? predicates) (predicates solution))
-            (if-not (nil? incrementer) (incrementer solution count) (inc count))
-            count
-            ) )
-        solutions) )
-    ) )
-;;
-;; To pass along more than one condition, use (every-pred p1 p2 p3)
-;; Example: (def even3 (every-pred even? #(mod % 3)))
-;; todo: make consistent with (pivot) and use :plevel key
-(defn s-count-with
-  "Perform a count on each data structure in a list if it matches
-  the conditions defined in the predicates function. The predicates
-  function may contain multiple conditions when used with (every-pred p1 p2)."
-  ([solutions predicates] (s-count-with solutions predicates nil 0))
-  ([solutions predicates initial] (s-count-with solutions predicates nil initial))
-  ([solutions predicates incrementer initial]
-    (reduce (fn [count solution]
-              (if (or (nil? predicates) (predicates solution))
-                (if-not (nil? incrementer) (incrementer solution count) (inc count))
-                count
-                ))
-      initial solutions) ))
-
-;(defn count-with
-;  "Tally a count for all of the members of a collection that satisfy the predicate or
-;  predicate group. This function is parallel by default (:plevel 2) using reducers
-;  (requires [] for col). Single threaded is specified by :plevel 1. An incrementing function
-;  allows for the tallying a specific quantity withing a collection data member. The initial
-;  count value is zero.
-;
-;  (count-with (range 1 10) (all? number? even?) :plevel 1) => 4
-;  (count-with (range 1 10) (all? number? even?) :incrf + :plevel 1) => 20"
-;  [col pred & {:keys [incrf initv plevel] :or {incrf nil intiv 0 plevel 2}}]
-;  (if (= 2 plevel)
-;    (p-count-with col pred incrf initv)
-;    (s-count-with col pred incrf initv)
-;    ) )
-
-(defn calculate-with
-  "Perform a count on each data structure in a list if it matches
-  the conditions defined in the predicates function. The predicates
-  function may contain multiple conditions when used with (every-pred p1 p2)."
-  ([solutions predicates] (calculate-with solutions predicates nil 0))
-  ([solutions predicates initial] (calculate-with solutions predicates nil 0))
-  ([solutions predicates incrementer initial]
-    (reduce (fn [count solution]
-              (if (or (nil? predicates) (predicates solution))
-                (if-not (nil? incrementer) (incrementer solution count) (inc count))
-                count
-                ))
-      initial solutions) ))
-
-(defn- data-per-thread
-  "How many data elements per specified thread. If the number of specified threads
-  is greater than available cores, the available cores is used. The number of data
-  per core is then calculated by quotient + modulus of size/cores"
-  [size n]
-  (let [max (.availableProcessors (Runtime/getRuntime))
-        t (if (> n max) max n)]
-    (+ (quot size t) (rem size t))
-    ) )
-
-(defn collect-with
-  "Build a collection/result set of data that satisfy the
-  conditions defined in 'predicates'. The predicates should
-  be relevant to use the data structure to filter. By default,
-  this will execute in parallel with reducers/fold. To specify
-  a single threaded execution: :plevel 1"
-  [solutions predicates & {:keys [plevel] :or [plevel 2]}]
-  (if (nil? predicates)
-    solutions
-    (if (= 1 plevel)
-      (filter (fn [sol] (predicates sol)) solutions)
-      (r/fold
-        concat
-        (fn [x y] (if (predicates y) (conj x y) x))
-        solutions)
-      ) ) )

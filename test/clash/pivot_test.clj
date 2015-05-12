@@ -184,7 +184,10 @@
     ) )
 
 (deftest test-pivot-matrix-compare
-  (let [r1 (pivot-matrix-compare (range 1 50) (range 50 120) "foo" ratio :b [number?] :p [divisible-by?] :v [(range 2 6)])]
+  (let [r1 (pivot-matrix-compare (range 1 50) (range 50 120) "foo" ratio :b [number?]
+                                                                         :p [divisible-by?]
+                                                                         :v [(range 2 6)])
+        ]
 
     ;(println r1)
     (are [x y] (= x y)

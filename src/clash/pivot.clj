@@ -9,8 +9,7 @@
   (:require [clojure.core.reducers :as r]
             [clojure.math.combinatorics :as cmb]
             [clash.core :as c]
-            [clash.tools :as t])
-  )
+            [clash.tools :as t]) )
 
 (defn- single-pivot-group
   "Create a list of functions given a list of values and add
@@ -41,7 +40,7 @@
       (t/sort-map-by-value
         (reduce
           (fn [r fx]
-            (assoc-in r [(:name (meta fx))] (c/s-count-with col fx)) )
+            (assoc-in r [(:name (meta fx))] (t/count-with col fx :plevel 1)) )
           {} combos) )
       ) )  )
 
@@ -69,7 +68,7 @@
       (t/sort-map-by-value
         (reduce
           (fn [r fx]
-            (assoc-in r [(:name (meta fx))] (c/p-count-with col fx)) )
+            (assoc-in r [(:name (meta fx))] (t/count-with col fx)) )
           {} combos) )
       ) ) )
 
@@ -189,10 +188,18 @@
   "Sort by values descending (works when there are non-unique values too).
   This compares the :value for each MatrixResult"
   [m mkey]
+  ; todo: add meta data for later retrieval
   (into (sorted-map-by
           (fn [k1 k2] (compare [(get-in m [k2 mkey]) k2]
                                [(get-in m [k1 mkey]) k1]) ) )
     m) )
+
+;(defn- sort-pivot-and-attach-meta
+;  "Propogates :function, :count forward with each pivot result"
+;  [pm mkey]
+;  (let [sorted-pivot (sort-pivot-map-by-value m mkey)]
+;    ; Reattach meta-data
+;    ) )
 
 (defn- compare-pivot-map-with
   "Compare values in two maps with a specific 2 arg function. Currently this assumes
@@ -202,9 +209,15 @@
     (fn [result [k v]]
       ; Should compare when the value is not nil
       (assoc-in result [k] (when (not (nil? v))
-                             (with-meta {:result (f (:count v) (get-in m2 [k :count]))} {:function (:function v)})
-                             ) ) )
+                             (with-meta {:result (f (:count v) (get-in m2 [k :count]))}
+                                        {:function (:function v)}) )
+        ) )
     {} m1) )
+
+(defn- update-map-with-pivot-meta
+  "Used to update each new pivot result with meta-data from the previous filter group."
+  [m fx col]
+  (assoc-in m [(:name (meta fx))] (with-meta {:count (t/count-with col fx :plevel 1)} {:function fx}) ))
 
 (defn- s-pivot-matrix
   "Evaluate a multi-dimensional array of predicates with their base predicates over
@@ -213,11 +226,9 @@
   (let [message (if (empty? msg) "pivot-test" msg)
         pivot_groups (build-pivot-groups-matrix pivotfs pivotds message)
         flat_matrix (build-matrix t/all? base_preds pivot_groups)]
-
     (sort-pivot-map-by-value
       (reduce
-        (fn [result fx]
-          (assoc-in result [(:name (meta fx))] (with-meta {:count (c/s-count-with col fx)} {:function fx}) ) )
+        (fn [result fx] (update-map-with-pivot-meta result fx col))
          {} flat_matrix)
       :count)
     ) )
@@ -229,11 +240,9 @@
   (let [message (if (empty? msg) "pivot-test" msg)
         pivot_groups (build-pivot-groups-matrix pivotfs pivotds message)
         flat_matrix (build-matrix t/all? base_preds pivot_groups)]
-
     (sort-pivot-map-by-value
       (reduce
-        (fn [result fx]
-          (assoc-in result [(:name (meta fx))] (with-meta {:count (c/p-count-with col fx)} {:function fx}) ) )
+        (fn [result fx] (update-map-with-pivot-meta result fx col))
         {} flat_matrix)
       :count)
     ) )
@@ -251,11 +260,9 @@
   (let [message (if (empty? msg) "pivot-test" msg)
         pivot_groups (build-pivot-groups-matrix pivotfs pivotds message)
         flat_matrix (into [] (build-matrix t/all? base_preds pivot_groups))]
-
     (sort-pivot-map-by-value
       (r/fold reducers-merge
-        (fn [results fx]
-          (assoc-in results [(:name (meta fx))] (with-meta {:count (c/p-count-with col fx)} {:function fx}) ) )
+        (fn [results fx] (update-map-with-pivot-meta results fx col))
         flat_matrix)
       :count)
     ) )
@@ -286,7 +293,8 @@
   "Identical to, but more explicit than (pivot-matrix). This expects the following form:
 
   (pivot-matrix-e col msg :base [number? even?] :pivot [{:f divide-by? :v (range 2 5}
-                                                        {:f divide-by? :v (range 5 8}] :plevel 2)"
+                                                        {:f divide-by? :v (range 5 8}]
+                                                :plevel 2)"
   [col msg & {:keys [base pivot plevel] :or {base [] pivot [] plevel 1}}]
   (let [p (map #(:f %) pivot)
         v (map #(:v %) pivot)]
@@ -311,9 +319,7 @@
   (def hundred (range 1 100))
   (def mtrx (pivot-matrix hundred \"foo\" :b [even?] :p [divisible-by?] :v [(range 2 6]))
   (get-rs-from-matrix hundred mtrx \"foo-pivots_[5]\")
-
   => (90 80 70 60 50 40 30 20 10)
   "
   [col matrix mkey]
-  (c/collect-with col (:function (meta (get matrix mkey)) ) )
-  )
+  (t/collect-with col (:function (meta (get matrix mkey)) ) ) )

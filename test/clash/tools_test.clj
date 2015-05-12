@@ -220,3 +220,80 @@
       '(6 5 3 "bar" "foo") r3
       '() r4
       ) ) )
+
+;; Medium complexity structures
+(def medium_complexity
+  '({:foo "FOO" :bar {:zoo "ZOO" :fur (2 4)} }
+     {:foo "BAR" :bar {:zoo "ZAP" :fur (3 5 7)} }) )
+
+(defn is-zoo?
+  [stock]
+  (fn [solution] (= stock (-> solution :bar :zoo))) )
+
+(def is-fur-odd?
+  (fn [solution]
+    (let [values (-> solution :bar :fur)]
+      (every? odd? values)) ) )
+
+(deftest test-count-with-conditions__medium_complexity
+  (are [x y] (= x y)
+    true ((is-zoo? "ZOO") (first medium_complexity))
+    0 (count-with medium_complexity (is-zoo? "PIG") :plevel 1)
+    1 (count-with medium_complexity (is-zoo? "ZOO") :plevel 1)
+    1 (count-with medium_complexity is-fur-odd? :plevel 1)
+    0 (count-with medium_complexity (every-pred is-fur-odd? (is-zoo? "BAR")) :plevel 1)
+    1 (count-with medium_complexity (every-pred is-fur-odd? (is-zoo? "ZAP")) :plevel 1)
+    ) )
+
+(def foo-numbers '(2 3 4 5 9 11 12 15 20 21 25 26 27))
+(def foo-numbers-mixed '(2 3 4 5 9 "a" 11 12 15 20 21 "b" 25 26 27))
+
+(deftest test-count-with
+  (let [r1 (count-with foo-numbers-mixed (all? number?) :plevel 1)
+        r2 (count-with foo-numbers-mixed (all? number? even?) :plevel 1)
+        r3 (count-with foo-numbers-mixed (all? number? even?) :initval 37 :plevel 1)]
+
+    (are [x y] (= x y)
+      13 r1
+      5  r2
+      42 r3
+      ) ) )
+
+(deftest test-pcount-with
+  (let [r1 (count-with foo-numbers-mixed (all? number?))
+        r2 (count-with (into [] foo-numbers-mixed) (all? number?))
+        r3 (count-with foo-numbers-mixed (all? number? even?))
+        r4 (count-with (into [] foo-numbers-mixed) (all? number? even?))
+        r5 (count-with (into [] foo-numbers-mixed) (all? number? even?) :initval 37)]
+
+    (are [x y] (= x y)
+      13 r1
+      13 r2
+      5 r3
+      5 r4
+      42 r5
+      ) ) )
+
+(deftest test-collect-with
+  (let [r1 (collect-with foo-numbers-mixed (all? number?) :plevel 1)
+        r2 (collect-with foo-numbers-mixed (all? number? even?) :plevel 1)]
+
+    (are [x y] (= x y)
+      13 (count r1)
+      5 (count r2)
+      ) ) )
+
+(deftest test-pcollect-with
+  (let [r1 (collect-with foo-numbers-mixed (all? number?))
+        r2 (collect-with (into [] foo-numbers-mixed) (all? number?))
+        r3 (collect-with (into [] foo-numbers-mixed) (all? number? even?))
+        r3s (collect-with foo-numbers-mixed (all? number? even?) :plevel 1)
+        r4 (collect-with (into [] foo-numbers-mixed) (all? number? even?))]
+
+    (are [x y] (= x y)
+      13 (count r1)
+      13 (count r2)
+      5 (count r3)
+      (sort r3) (sort r3s)
+      5 (count r4)
+      ) ) )
