@@ -162,7 +162,7 @@
   (let [cartesian (apply cmb/cartesian-product pgs)]
     (for [pg cartesian]
       ; apply f, e.g. (all?), to the combintation of base_preds + predicate group
-      (with-meta (apply f (into [] (concat base pg))) {:name (build-pg-meta pg "|")})
+      (with-meta (apply f (into [] (into base pg))) {:name (build-pg-meta pg "|")})
       ) ) )
 
 (defn- build-pivot-groups-matrix
@@ -188,7 +188,6 @@
   "Sort by values descending (works when there are non-unique values too).
   This compares the :value for each MatrixResult"
   [m mkey]
-  ; todo: add meta data for later retrieval
   (into (sorted-map-by
           (fn [k1 k2] (compare [(get-in m [k2 mkey]) k2]
                                [(get-in m [k1 mkey]) k1]) ) )

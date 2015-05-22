@@ -174,6 +174,12 @@
     (+ (quot size t) (rem size t))
     ) )
 
+(defn- rinto
+  "For reducers, will use a list as for 0 or 1 args."
+  ([] '())
+  ([c1] (into '() c1))
+  ([c1 c2] (into c1 c2)))
+
 (defn collect-with
   "Build a collection/result set of data that satisfy the
   conditions defined in 'predicates'. The predicates should
@@ -186,7 +192,7 @@
     (if (= 1 plevel)
       (filter (fn [sol] (predicates sol)) solutions)
       (r/fold
-        concat
+        rinto
         (fn [x y] (if (predicates y) (conj x y) x))
         solutions)
       ) ) )
@@ -310,6 +316,19 @@
       (if (or (not result) (empty? preds))
         result
         (recur ((first preds) item) (rest preds))
+        ) ) ) )
+
+(defn none?
+  "Returns 'false' if any of the predicates returns true. This could be used with
+  (filter) or (count-with), etc. Example
+  "
+  [& predicates]
+  (fn [item]
+    (loop [result false
+           ps predicates]
+      (if (or result (empty? ps))
+        (not result)
+        (recur ((first ps) item) (rest ps))
         ) ) ) )
 
 (defn any?

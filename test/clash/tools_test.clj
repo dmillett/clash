@@ -193,6 +193,13 @@
     (is result5)
     ) )
 
+(deftest test-none
+  (is ((none? number?) "5"))
+  (is ((none? odd?) 10))
+  (is (not ((none? number? even?) 10)))
+  (is ((none? even? (divisible-by? 4)) 9))
+  )
+
 (deftest test-until
   (let [r1 (until? even? '("foo" "bar"))
         r2 (until? number? '(1 2 3))

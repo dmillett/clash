@@ -1,43 +1,21 @@
 # clash
 A clojure project for quick interactive analysis of structured text files (ex: logs, csv, etc.), within
-the REPL. After parsing structured text into an in memory data structure as an *atom*, clash facilitates
-counting and collecting results from the data structure based on specified predicates and incrementing
-functions. This is valuable for quickly analyzing data that is not persisted in databases or Hadoop.
-
-It can also be used in an ad-hoc analysis of multiple data sets to measure how a cartesian product of predicates
-evaluates against two different data sets. For example, in a web shopping experience: "How many times are
-products within a specific price range + type searched? priced? or purchased?" 
+the REPL. Define a representative structure with matching regular expressions for the text, then load the 
+file into memory. This is useful for identifying trends and gaining insight from smaller datasets (~ million rows),
+before starting a time consuming Hadoop or Spark job.
 
 Clash also includes clojure-shell (bash, csh, zsh, ec) functionality that incorporates most of the speed 
-advantages of commands like 'grep' and 'cut' individually or piped together. The results of unpiped/piped
-shell command are OS specific (non MS Windows), but offer better performance than pure clojure/java 
-grep/cut implementations.
+advantages of commands like 'grep' and 'cut' individually or piped together.
 
-## Features & Benefits
-1. Quickly load small-large log or text file into a custom object structure 
-2. Very fast, condition based, result counts and retrievals 
-3. Quickly build and analyze text data withing Clojure REPL
- * Existing log/text file data for patterns and ML
- * Experiment and identify optimal data queries for larger scale Hadoop style analysis
- * Determine initial trends
-4. Generate matrix of filter groups and count matches against a collection
-5. Retrieve result set from matrix for a generate predicate group
-
-Tested with:
-* Log files with up to 5 million simple and/or complex data
-* Uses core.reducers
-* Most 'count' and 'collect' functions take miliseconds
-* 95,000 similar maps with 8 keys each in ~0.6 seconds
-* 400,000 generated filter groups against 560,000 complex data structures in 9 hours and < 4 gigs of JVM Heap
-* Use **defrecord** offers ~10% performance improvement over map data structure
-
-*old 4 core pentium 4 with 8 gigs of RAM*
-
-## Usage
-There are tool, core, and pivot functions available to help evaluate generic data collections.
-Examples can be found in in the example namespace of this repository or in the unit tests.
+## Usage & Benefits
 
 Add to **[clash "1.0"]** to your project.clj
+
+* Log files with up to 5 million simple and/or complex data
+* Most 'count', 'collect', and pivot functions take less than a second for a million records
+* 95,000 similar maps with 8 keys each in ~0.6 seconds
+* 400,000 generated filter groups against 560,000 complex data structures in 9 hours and < 4 gigs of JVM Heap
+*old 4 core pentium 4 with 8 gigs of RAM*
 
 ### Core functions to build upon
 Build on these functions with domain specific structure
@@ -82,13 +60,15 @@ Build on these functions with domain specific structure
 ; Create a dataset from raw text file to work with   
 (def solutions (file-into-structure web-log-file into-memory-parser []))
 
-; Save dataset as .edn for future access
+; Save dataset as .edn for future access (slower than reparsing the original text)
 (data-to-file solutions "/some/local/directory/solutions")    
 (data-from-file "/some/local/directory/solutions.edn")    
 ```
 
 #### Utility functions (tools.clj)
-Potentially useful functions to help filter and sort data.
+Potentially useful functions to help filter and sort data. The resulting function
+will execute predicates from left to right. These are helpful for counting or collecting
+data that satisfy predicates.
 
 ```clojure
 ; Build filters with conditionals and predicates (fail fast)
@@ -97,6 +77,9 @@ Potentially useful functions to help filter and sort data.
 => true
 
 ((any? number? even?) 11)
+=> true
+
+((none? odd?) 10)
 => true
 
 ; true when the first item in a collection is satisfied, otherwise false
