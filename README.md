@@ -15,6 +15,7 @@ Add to **[clash "1.0"]** to your project.clj
 * Most 'count', 'collect', and pivot functions take less than a second for a million records
 * 95,000 similar maps with 8 keys each in ~0.6 seconds
 * 400,000 generated filter groups against 560,000 complex data structures in 9 hours and < 4 gigs of JVM Heap
+
 *old 4 core pentium 4 with 8 gigs of RAM*
 
 ### Core functions to build upon
