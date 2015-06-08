@@ -321,7 +321,7 @@
     {} vfreqs) )
 
 (defn distinct-by
-  "Collect distinct or unique items accoring to a function 'eqfx'.
+  "Collect distinct or unique items accoridng to a function 'eqfx'.
   This creates a Map structure where the keys are given by 'eqfx'
   and then returns the values."
   [col eqfx]
@@ -329,7 +329,7 @@
     (reduce
       (fn [result current]
         (let [k (eqfx current)]
-          (if (or (nil? k) (not (nil? (get result k))))
+          (if (or (nil? k) (not k) (not (nil? (get result k))))
             result
             (assoc-in result [k] current)
             ) ) )
