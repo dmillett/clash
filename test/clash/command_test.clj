@@ -42,16 +42,19 @@
   (delete-file output1)
   )
 
-(def command2 (str "grep message " input1 " | cut -d\",\" -f2 " input1))
 (def output2 (str tresource "/output2.txt"))
 
 (deftest test-jproc-write-grep-cut
-  (is (= 4 (count-file-lines input1)))
-  (perf (jproc-write command2 output2 ":") "'cl + grep + cut' results to file")
-  (is (= 1 (count-file-lines output2)))
-  ; To see results comment out the next line "is:this: hopefully: satire?" 
-  (delete-file output2)
-  )
+  (let [c1 (str "grep message " input1 " | cut -d\",\" -f2 " input1)
+        c2 (str "wc -l")
+        out2 (str tresource "/output2.txt")]
+
+    (is (= 4 (count-file-lines input1)))
+    (perf (jproc-write c1 out2 ":") "'cl + grep + cut' results to file")
+    (is (= 1 (count-file-lines out2)))
+    ; To see results comment out the next line "is:this: hopefully: satire?"
+    (delete-file out2)
+  ) )
 
 (def command3 (str "grep hopefully " input1))
 (def output3 (str tresource "/output3.txt"))

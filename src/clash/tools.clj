@@ -90,11 +90,12 @@
   in nanos or millis or seconds (see elapsed()). Println time side
   effect. This was first macro I wrote and is functionally equivalent
   to 'latency' function."
-  [exe message]
-  `(let [time# (System/nanoTime)
-         result# ~exe]
-     (println (elapsed (nano-time time#) ~message))
-     result#))
+  ([exe] (perf exe ""))
+  ([exe message]
+    `(let [time# (System/nanoTime)
+           result# ~exe]
+       (println (elapsed (nano-time time#) ~message))
+       result#)))
 
 (defn count-file-lines
   "How many lines in a small file?"
@@ -229,6 +230,21 @@
             ) )
         target_map submap) ) ) )
 
+(defn value-frequencies2
+  "todo: experiment with performance"
+  ([m] (value-frequencies2 {} m))
+  ([target_map m & {:keys [kset kpath] :or {kset [] kpath []}}]
+    (let [kpmap (if (empty? kpath) m (get-in m kpath))
+          mp (if (map? kpmap) kpmap {})
+          submap (if (empty? kset) mp (select-keys mp kset))]
+      (persistent! (reduce
+                     (fn [result [k v]]
+                       (if-let [nv (get-in result [k v])]
+                         (assoc! result k {v (inc nv)})
+                         (assoc! result k {v 1})
+                         ) )
+                     (transient target_map) submap) ) ) ) )
+
 (defn merge-value-frequencies
   "Merge two value frequency maps where the value frequency totals will be added
   together. Can be used with reducers. For this examples, 'a1', 'b1', 'd1' are strings.
@@ -303,6 +319,21 @@
   (reduce
     (fn [result [k v]] (assoc-in result [k] (sort-map-by-value v)) )
     {} vfreqs) )
+
+(defn distinct-by
+  "Collect distinct or unique items accoring to a function 'eqfx'.
+  This creates a Map structure where the keys are given by 'eqfx'
+  and then returns the values."
+  [col eqfx]
+  (vals
+    (reduce
+      (fn [result current]
+        (let [k (eqfx current)]
+          (if (or (nil? k) (not (nil? (get result k))))
+            result
+            (assoc-in result [k] current)
+            ) ) )
+      {} col)))
 
 (defn all?
   "Pass value(s) implicitly and a list of predicates explicitly for evaluation.

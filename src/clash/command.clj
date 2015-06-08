@@ -12,7 +12,6 @@
     clash.command
   (:use [clojure.java.io :only (reader writer)]
         [clojure.string :only (split)]
-        ;[clash.tools]
         [clash.text_tools]
         ))
 

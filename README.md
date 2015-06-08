@@ -18,29 +18,6 @@ Add to **[clash "1.0"]** to your project.clj
 
 *old 4 core pentium 4 with 8 gigs of RAM*
 
-### Core functions to build upon
-Build on these functions with domain specific structure
-```clojure
-; Load objects from a file into memory (via defined regex and keyset)
-; It's possible to transform text prior to parsing and apply predicates
-; core.reducers pmap and fold expect a vector for parallel operations
-(atomic-list-from-file filename parser)
-(atomic-map-from-file filename parser)
-(file-into-structure filename parser [])
-
-; Analyze data with defined predicates (filters with 'and'/'or' functionality)
-; Incrementors can extract information and update cumulative results
-; Count or total specific pieces of data per 'solution'
-; Use a vector instead of a list for r/fold parallelism
-(count-with solutions predicate)
-(count-with solutions predicate :incrf + :initv 10 :plevel 1)
-
-; Build a result set with via filters, etc for each 'solution'
-; Use a vector instead of a list for r/fold parallelism
-(collect-with solutions predicates)
-(collect-with solutions predicates :plevel 1)
-```
-
 ### define object structure, regex, and parser for sample text
 ```clojure
 ; time|application|version|logging_level|log_message (Action, Name, Quantity, Unit Price)
@@ -66,6 +43,27 @@ Build on these functions with domain specific structure
 (data-from-file "/some/local/directory/solutions.edn")    
 ```
 
+### Core functions to build upon
+Build on these functions with domain specific structure
+```clojure
+; Load objects from a file into memory (via defined regex and keyset).
+(atomic-list-from-file filename parser)
+(atomic-map-from-file filename parser)
+(file-into-structure filename parser [])
+
+; Analyze data with defined predicates (filters with 'and'/'or' functionality)
+; Incrementors can extract information and update cumulative results
+; Count or total specific pieces of data per 'solution'
+; Use a vector instead of a list for r/fold parallelism
+(count-with solutions predicate)
+(count-with solutions predicate :incrf + :initv 10 :plevel 1)
+
+; Build a result set with via filters, etc for each 'solution'
+; Use a vector instead of a list for r/fold parallelism
+(collect-with solutions predicates)
+(collect-with solutions predicates :plevel 1)
+```
+
 #### Utility functions (tools.clj)
 Potentially useful functions to help filter and sort data. The resulting function
 will execute predicates from left to right. These are helpful for counting or collecting
@@ -84,7 +82,7 @@ data that satisfy predicates.
 => true
 
 ; true when the first item in a collection is satisfied, otherwise false
-; Resembles (some), but will not throw an error for this case:
+; Resembles (some), but will not throw an error for this case (or return a function):
 (until? number? '("foo" 2 "bar"))
 => true
 
@@ -92,6 +90,10 @@ data that satisfy predicates.
 ; compliments (take-while), another implementation is due in clojure 1.7
 (take-until number? '("foo" "bar" 3 4))
 => (3 "bar" "foo")
+
+; Find distinct values for a given ~equality function for maps/lists
+(distinct-by [{:a 1, :b 2} {:a 1, :b 3} {:a 2, :b 4}] #(-> % :a))
+=> ({:a 2 :b 4} {:a 1 :b 2})
 
 ; How many times do values repeat for specific keys across a collection of maps?
 (def mvs [{:a "a1" :b "b1"} {:a "a2" :b "b2"} {:a "a2" :c "c1"}])
@@ -230,7 +232,7 @@ user=> (first @sols)
 {:unit_price 2.25, :quantity 10, :name BAR, :action Purchase, :time 05042013-13:24:13.123}
 ```
 
-#### single conditions and incrementers
+#### single conditions and incrementing functions
 ```clojure
 ; in the context of a map composed of 'structure' keys
 (defn name-action?
@@ -276,17 +278,6 @@ user=> (count-with @sols (all? (price-higher? 12.10) (price-lower? 14.50) ) )
 ; Using (all?) and (any?) together
 user=> (count-with @sols (all? (any? (price-higher? 12.20) (price-lower? 16.20)) ) )
 4
-```
-
-### Evaluate a predicate over a collection until true (until?) (take-until?)
-```clojure
-; find if a predicate returns true for any value in a collection
-(until? even? '("foo" "bar" 3 4 "zoo"))
-=> true
-
-; Build a collection of values until the predicate is satisfied
-(take-until even? '("foo" "bar" 3 4 "zoo"))
-=> (4 3 "bar" "foo")
 ```
 
 ### creating maps from key sets and regex groups

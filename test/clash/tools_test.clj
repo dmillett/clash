@@ -174,6 +174,18 @@
       r2 r4
       ) ) )
 
+
+(deftest test-distinct-by
+  (let [c1 [{:a "a1"} {:a "a2" :b "b1"} {:c "c2" :a "a2" :b "b1"}]
+        c2 [{"foo" 1} {"foo" 1 "bar" 3}]
+        c3 [1 3 4 5 "six" 7 8]]
+    (are [x y] (= x y)
+      '({:b "b1", :a "a2"} {:a "a1"}) (distinct-by c1 #(-> % :a))
+      '({:c "c2" :a "a2" :b "b1"}) (distinct-by c1 #(-> % :c))
+      '({"foo" 1}) (distinct-by c2 #(get % "foo"))
+      '(4 1) (distinct-by c3 #(and (number? %) (odd? %)))
+      ) ) )
+
 (defn- divisible-by?
   [x]
   (fn [n] (= 0 (mod n x))) )
@@ -195,7 +207,7 @@
 
 (deftest test-none
   (is ((none? number?) "5"))
-  (is ((none? odd?) 10))
+  (is ((none? seq? odd?) 10))
   (is (not ((none? number? even?) 10)))
   (is ((none? even? (divisible-by? 4)) 9))
   )
