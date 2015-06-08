@@ -183,7 +183,7 @@
       '({:b "b1", :a "a2"} {:a "a1"}) (distinct-by c1 #(-> % :a))
       '({:c "c2" :a "a2" :b "b1"}) (distinct-by c1 #(-> % :c))
       '({"foo" 1}) (distinct-by c2 #(get % "foo"))
-      '(4 1) (distinct-by c3 #(and (number? %) (odd? %)))
+      '(1) (distinct-by c3 #(and (number? %) (odd? %)))
       ) ) )
 
 (defn- divisible-by?
