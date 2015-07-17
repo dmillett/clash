@@ -16,9 +16,9 @@
   (is (= "1.5000" (formatf 1.5 4))) )
 
 (deftest test-elapsed
-  (is (= "t1 Time(ns):100" (elapsed 100 "t1" 0)))
-  (is (= "t2 Time(ms):1.000" (elapsed 1000000 "t2" 4)))
-  (is (= "t3 Time(s):1.000" (elapsed 1000000000 "t3" 4))) )
+  (is (= "t1 Time(ns):100" (elapsed 100 "t1 " 0)))
+  (is (= "t2 Time(ms):1.000" (elapsed 1000000 "t2 " 4)))
+  (is (= "t3 Time(s):1.000" (elapsed 1000000000 "t3 " 4))) )
 
 ;; Test functions for perf and latency
 (defn foobar [x] (* x x))
@@ -26,13 +26,34 @@
 
 (deftest test-latency
   (let [result1 (latency (foobar 5))
-        result2 (latency (phrase-it (foobar 10) ", the square of 10"))]
+        result2 (latency (phrase-it (foobar 10) ", the square of 10"))
+        result3 (latency (foobar 6) "six squared")
+        result4 (latency (foobar 7) "seven " "squared")]
+    (are [x y] (= x y)
+      25 (-> result1 :result)
+      nil (-> result1 :text)
+      "100, the square of 10" (-> result2 :result)
+      "six squared" (-> result3 :text)
+      36 (-> result3 :result)
+      "seven squared" (-> result4 :text)
+      49 (-> result4 :result)
+      ) ) )
 
-    (is (= 25 (-> result1 :result)))
-    (is (not (nil? (-> result1 :latency_text))))
-    (is (= "100, the square of 10" (-> result2 :result)))
-    )
-  )
+(deftest test-perf
+  (let [r1 (perf (+ 1 1))
+        r2 (perf (+ 1 2) "Simple Addition ")
+        r3 (perf (+ 1 3) "Foo " "Bar ")]
+    ;(println "'" r3 "'")
+    (is (= 2 r1))
+    (is (= 3 r2))
+    ) )
+
+(deftest test-perfd
+  (let [r1 (perfd (+ 1 1))
+        r2 (perfd (+ 1 2) "= 3? ")]
+    (= 2 r1)
+    (= 3 r2)
+    ) )
 
 (deftest test-sort-map-by-value
   (let [m1 {:a 1 :b 2 :c 3}

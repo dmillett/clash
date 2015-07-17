@@ -63,9 +63,9 @@
   ([time message] (elapsed time message 4))
   ([time message digits]
     (cond
-      (< time 99999) (str message " Time(ns):" time)
-      (< time 99999999) (str message " Time(ms):" (formatf (millis time) 3))
-      :else (str message " Time(s):" (formatf (seconds time) 3)))) )
+      (< time 99999) (str message "Time(ns):" time)
+      (< time 99999999) (str message "Time(ms):" (formatf (millis time) 3))
+      :else (str message "Time(s):" (formatf (seconds time) 3)))) )
 
 (defn format-nanotime-to
   "Format nano time (9 digits) to a specified date-time format
@@ -73,29 +73,51 @@
   [nano_time date_fmt]
   (.. (SimpleDateFormat. date_fmt) (format nano_time)) )
 
-;; todo: convert HH mm DD to nanotime pattern
 
 (defmacro latency
   "A macro to determine the latency for function execution. Returns a map
-  with ':latency', ':latency_text', and ':result'"
-  [exe]
-  `(let [time# (System/nanoTime)
+  with ':latency {[:ts :ns]}', ':text', and ':result'"
+  [exe & messages]
+  `(let [msgs# (str ~@messages)
+         start# (System/nanoTime)
          result# ~exe
-         nano_latency# (nano-time time#)
-         latency_text# (elapsed nano_latency#)]
-     {:latency_text latency_text# :latentcy nano_latency# :result result#} ) )
+         time# (nano-time start#)
+         scaled# (elapsed time#)]
+     {:text (when (not (empty? msgs#)) msgs#) :latentcy {:ts scaled# :ns time#} :result result#} ) )
 
 (defmacro perf
   "Determine function execution time in nano seconds. Display is
-  in nanos or millis or seconds (see elapsed()). Println time side
+  in nanos or millis or seconds (see elapsed()). Println 'time side
   effect. This was first macro I wrote and is functionally equivalent
   to 'latency' function."
-  ([exe] (perf exe ""))
-  ([exe message]
-    `(let [time# (System/nanoTime)
-           result# ~exe]
-       (println (elapsed (nano-time time#) ~message))
-       result#)))
+  [exe & messages]
+  `(let [msgs# (str ~@messages)
+         start# (System/nanoTime)
+         result# ~exe
+         time# (nano-time start#)]
+     (if (not (empty? msgs#))
+       (println (elapsed time# msgs#))
+       (println (elapsed time#)) )
+     result#))
+
+(defmacro perfd
+  "A debug version of (perf) that will print the optional message, followed
+  by (elapsed) time, and then debug: 'result'. Time print out will be scaled via (elapsed).
+  todo: It would be nice to link this to a system variable for on/off (println).
+
+  user=> (perfd (+ 1 1))
+  debug value: 2 , Time(ns):1567
+  2
+  "
+  [exe & messages]
+  `(let [msgs# (str ~@messages)
+         start# (System/nanoTime)
+         result# ~exe
+         total# (nano-time start#)]
+     (if (empty? msgs#)
+       (println "debug value:" result# "," (elapsed total#))
+       (println "debug value:" result# "," msgs# (elapsed total#)) )
+     result#))
 
 (defn count-file-lines
   "How many lines in a small file?"
