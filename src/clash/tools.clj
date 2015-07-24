@@ -161,16 +161,20 @@
 (defn- s-count-with
   "Perform a count on each data structure in a list if it matches
   the conditions defined in the predicates function. The predicates
-  function may contain multiple conditions when used with (every-pred p1 p2)."
+  function may contain multiple conditions when used with (every-pred p1? p2?)
+  or (all? p1? p2?). If 'predicates' is nil, then this returns 0."
   ([solutions predicates] (s-count-with solutions predicates nil 0))
   ([solutions predicates initial] (s-count-with solutions predicates nil initial))
   ([solutions predicates initial incrementer]
-    (reduce (fn [count solution]
-              (if (or (nil? predicates) (predicates solution))
-                (if-not (nil? incrementer) (incrementer solution count) (inc count))
-                count
-                ))
-      initial solutions) ))
+    (if predicates
+      (reduce (fn [result solution]
+                (if (predicates solution)
+                  (if incrementer (incrementer solution result) (inc result))
+                  result
+                  ))
+        initial solutions)
+      0
+      )) )
 
 (defn count-with
   "Tally a count for all of the members of a collection that satisfy the predicate or

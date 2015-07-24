@@ -47,6 +47,22 @@
   [name action]
   (fn [line] (and (= name (-> line :name)) (= action (-> line :action)))) )
 
+(defn ts-count-with
+  "Uses transduce to count the number of items in a collection that satisfy
+  'predfx'. "
+  [collection predfx & {:keys [incrfx initval] :or {incrfx nil initval 0}}]
+  (if (not (nil? predfx))
+    (transduce
+      (map (fn [current] (if (predfx current) (if incrfx (incrfx current) 1) 0) ) )
+      +
+      initval
+      collection)
+    initval) )
+
 (def increment-with-quanity
-  "Increments a count based on the :quantity for each solution in the collection"
+  "With (reduce): increments a count based on the :quantity for each solution in the collection"
   (fn [solution count] (+ count (read-string (-> solution :quantity))) ) )
+
+(def increment-with-quanity2
+  "With (transduce): increments a count based on the :quantity for each solution in the collection"
+  (fn [solution] (if solution (read-string (-> solution :quantity)) 0) ) )

@@ -60,10 +60,11 @@
 
 (deftest test-count-with-conditions
   (let [solutions (atomic-list-from-file web-log-file into-memory-parser)]
-    ;(println (first @solutions))
+    ;(perfd (first @solutions))
     (are [x y] (= x y)
       0 (count-with @solutions #(= "XYZ" (-> % :name)) :plevel 1)
-      7 (count-with @solutions nil  :plevel 1)
+      0 (count-with @solutions nil  :plevel 1)
+      7 (count-with @solutions #(not (nil? (-> % :action))) :plevel 1)
       3 (count-with @solutions #(= "FOO" (-> % :name)) :plevel 1)
       3 (count-with @solutions (name? "FOO") :plevel 1)
       2 (count-with @solutions (name-action? "FOO" "Search") :plevel 1)
@@ -79,7 +80,11 @@
       3 (count-with @solutions (name? "FOO") :initval 0 :plevel 1)
       9 (count-with @solutions (name? "FOO") :incrfx increment-with-quanity :initval 0 :plevel 1)
       ; count all quantities regardless of search, price, purchase
-      84 (count-with @solutions nil :incrfx increment-with-quanity :initval 20 :plevel 1)
+      ; 84
+      0 (count-with @solutions nil :incrfx increment-with-quanity :initval 20 :plevel 1)
+      29 (count-with @solutions (name? "FOO") :incrfx increment-with-quanity :initval 20 :plevel 1)
+      20 (ts-count-with @solutions nil :incrfx increment-with-quanity :initval 20)
+      29 (ts-count-with @solutions (name? "FOO") :incrfx increment-with-quanity2 :initval 20)
       ) ) )
 
 ;; Collecting results
