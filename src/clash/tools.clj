@@ -191,20 +191,15 @@
     (s-count-with col predfx initval incrfx)
     ) )
 
-(defn- data-per-thread
-  "How many data elements per specified thread. If the number of specified threads
-  is greater than available cores, the available cores is used. The number of data
-  per core is then calculated by quotient + modulus of size/cores"
-  [size n]
-  (let [max (.availableProcessors (Runtime/getRuntime))
-        t (if (> n max) max n)]
-    (+ (quot size t) (rem size t))
-    ) )
+(defn count-from-groups
+  "Count all data in a list of groups that satisfies 'predfx'."
+  [groups predfx]
+  (reduce (fn [result group] (+ result (count-with group predfx))) 0 groups))
 
 (defn- rinto
   "For reducers, will use a list as for 0 or 1 args."
-  ([] '())
-  ([c1] (into '() c1))
+  ([] [])
+  ([c1] (into [] c1))
   ([c1 c2] (into c1 c2)))
 
 (defn collect-with
@@ -224,6 +219,20 @@
         solutions)
       ) ) )
 
+(defn collect-from-groups
+  "Collect all data in a list of groups that satisfies 'predfx'."
+  [groups predfx]
+  (reduce (fn [result group] (into result (collect-with group predfx))) [] groups))
+
+(defn- data-per-thread
+  "How many data elements per specified thread. If the number of specified threads
+  is greater than available cores, the available cores is used. The number of data
+  per core is then calculated by quotient + modulus of size/cores"
+  [size n]
+  (let [max (.availableProcessors (Runtime/getRuntime))
+        t (if (> n max) max n)]
+    (+ (quot size t) (rem size t))
+    ) )
 
 (defn compare-map-with
   "Compare values in two maps with a specific 2 arg function. Currently this assumes
@@ -242,7 +251,7 @@
   'a1', 'b1', 'd1' are strings.
 
   (value-frequencies {:a a1}) => {:a {a1 1}}
-  (value-frequencies {} {:a 1 :b {:c1 1}} :kpath [:b]) => {:c {c1 1}}"
+  (value-frequencies {} {:a 1 :b {:c1 2}} :kpath [:b]) => {:c {2 1}}"
   ([m] (value-frequencies {} m))
   ([target_map m & {:keys [kset kpath] :or {kset [] kpath []}}]
     (let [kpmap (if (empty? kpath) m (get-in m kpath))

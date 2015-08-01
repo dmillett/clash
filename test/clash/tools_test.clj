@@ -314,13 +314,13 @@
       42 r5
       ) ) )
 
-(deftest test-collect-with
-  (let [r1 (collect-with foo-numbers-mixed (all? number?) :plevel 1)
-        r2 (collect-with foo-numbers-mixed (all? number? even?) :plevel 1)]
-
+(deftest test-count-from-groups
+  (let [groups1 ['(1 2 3) '(4 5 6) '(7 8 9)]]
     (are [x y] (= x y)
-      13 (count r1)
-      5 (count r2)
+      0 (count-from-groups [] odd?)
+      0 (count-from-groups nil odd?)
+      5 (count-from-groups groups1 odd?)
+      4 (count-from-groups groups1 even?)
       ) ) )
 
 (deftest test-pcollect-with
@@ -336,4 +336,13 @@
       5 (count r3)
       (sort r3) (sort r3s)
       5 (count r4)
+      ) ) )
+
+(deftest test-collect-from-groups
+  (let [groups1 ['(1 2 3) '(4 5 6) '(7 8 9)]]
+    (are [x y] (= x y)
+      [] (collect-from-groups [] odd?)
+      [] (collect-from-groups nil odd?)
+      [1 3 5 7 9] (collect-from-groups groups1 odd?)
+      [2 4 6 8] (collect-from-groups groups1 even?)
       ) ) )
