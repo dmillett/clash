@@ -32,6 +32,11 @@
   [message]
    (throw (RuntimeException. (str message))) )
 
+(defn microsoft?
+  "Is the operating Microsoft based ('win')"
+  []
+  (= "win" (System/getProperty "os.name")))
+
 (defn millis
   "Convert nano seconds to milliseconds."
   [nt]
@@ -46,11 +51,6 @@
   "How many nano seconds from 'start'."
   [start]
   (- (System/nanoTime) start))
-
-(defn microsoft?
-  "Is the operating Microsoft based ('win')"
-  []
-  (= "win" (System/getProperty "os.name")))
 
 (defn formatf
   "Format a number to scale. Ex: (formatf 1 3) --> 1.000"
@@ -84,6 +84,24 @@
          time# (nano-time start#)
          scaled# (elapsed time#)]
      {:text (when (not (empty? msgs#)) msgs#) :latentcy {:ts scaled# :ns time#} :result result#} ) )
+
+(defmacro repeatfx
+  "A macro to evaluate performance of a function over a specified number of executions.
+  This is valuable to see how the JVM hotspot optimizes for repeat customers. It is
+  possible to collect the result of every execution by setting ':capture true'. Note
+  that the JVM hotspot will significantly improve performance over the first 50 iterations.
+
+  user=> (repeatfx 3 (* 3 3) :capture true)
+  {:total Time(ns):7729 :values [9 9 9] :average Time(ns):2576.33}"
+  [n fx & {:keys [capture] :or {capture false}}]
+  `(loop [i# ~n, ttime# 0, results# []]
+     (if (zero? i#)
+       {:total (elapsed ttime#) :average (elapsed (/ ttime# (float ~n))) :values results#}
+       (let [start# (System/nanoTime)
+             result# ~fx
+             time# (- (System/nanoTime) start#)]
+         (recur (dec i#) (+ ttime# time#) (if ~capture (conj results# result#) nil)) )
+       ) ) )
 
 (defmacro perf
   "Determine function execution time in nano seconds. Display is

@@ -55,6 +55,15 @@
     (= 3 r2)
     ) )
 
+(deftest test-repeatfx
+  (are [x y] (= x y)
+    [6 6 6] (:values (repeatfx 3 (+ 3 3) :capture true))
+    50 (count (:values (repeatfx 50 (+ 4 4) :capture true)))
+    nil (:values (repeatfx 2 (+ 3 3)))
+    ; For Shining fans
+    "All work and no play..." (first (:values (repeatfx 5000 (str "All work and no play...") :capture true)))
+    ) )
+
 (deftest test-sort-map-by-value
   (let [m1 {:a 1 :b 2 :c 3}
         m2 {:a 1 :b 2 :c 1 :d 3 :e 2}

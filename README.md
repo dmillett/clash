@@ -112,6 +112,14 @@ data that satisfy predicates.
 ; Sort inner key values (descending)
 (sort-value-frequencies {:a {"a1" 2 "a2" 5 "a3" 1}})
 => {:a {"a2" 5 "a1" 2 "a3" 1}}
+
+; Evaluate function performance (debug, etc)
+=> (perfd (+ 3 3)
+debug value: 6, Time(ns): 2100
+
+; By default, capture of function values will not occur
+=> (repeatfx 5 (+ 4 4) :capture true)
+{:total Time(ns):6832, :values [8 8 8 8 8], :average Time(ns):1366.4}
 ```
 
 ### Generate and apply filter groups to a collection (creates cartesian product)
