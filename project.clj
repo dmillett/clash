@@ -1,4 +1,4 @@
-(defproject clash "1.0"
+(defproject clash "1.1"
   :description "A clojure library that applies customizable structures to text files
    and quick analysis via filter groups, maps, etc. This is useful for quickly searchin
    or indexing large text files before spending proportionally more effort on Hadoop or

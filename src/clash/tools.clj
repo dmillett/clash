@@ -156,57 +156,29 @@
   ([] '())
   ([a b] (conj a b)) )
 
-(defn- p-count-with
-  "Perform a count on each data structure in a list use (reducers/fold) if it matches
-  the conditions defined in the predicates function. The predicates function may
-  contain multiple conditions when used with (every-pred p1 p2)."
-  ([solutions predicates] (p-count-with solutions predicates nil 0))
-  ([solutions predicates initial] (p-count-with solutions predicates nil initial))
-  ([solutions predicates initial incrementer]
-    (+ initial
-      (r/fold
-        +
-        (fn [count solution]
-          (if (or (nil? predicates) (predicates solution))
-            (if-not (nil? incrementer) (incrementer solution count) (inc count))
-            count
-            ) )
-        solutions) )
-    ) )
-;;
-;; To pass along more than one condition, use (every-pred p1 p2 p3)
-;; Example: (def even3 (every-pred even? #(mod % 3)))
-(defn- s-count-with
-  "Perform a count on each data structure in a list if it matches
-  the conditions defined in the predicates function. The predicates
-  function may contain multiple conditions when used with (every-pred p1? p2?)
-  or (all? p1? p2?). If 'predicates' is nil, then this returns 0."
-  ([solutions predicates] (s-count-with solutions predicates nil 0))
-  ([solutions predicates initial] (s-count-with solutions predicates nil initial))
-  ([solutions predicates initial incrementer]
-    (if predicates
-      (reduce (fn [result solution]
-                (if (predicates solution)
-                  (if incrementer (incrementer solution result) (inc result))
-                  result
-                  ))
-        initial solutions)
-      0
-      )) )
-
 (defn count-with
   "Tally a count for all of the members of a collection that satisfy the predicate or
-  predicate group. This function is parallel by default (:plevel 2) using reducers
-  (requires [] for col). Single threaded is specified by :plevel 1. An incrementing function
-  allows for the tallying a specific quantity withing a collection data member. The initial
-  count value is zero.
+  predicate group. Using reducers requires a vecor concurrency. Single threaded is specified
+  by :plevel 1. An incrementing function allows for the tallying a specific quantity withing
+  a collection data member. The initial count value is zero. This is single threaded by
+  default {:plevel 1}. Concurrency starts to show benefits for collections sizes > 40,000.
+  The incrementing function has the following form '{:incrfx (fn [current_val result] (somefn))}'
+  where 'result' is the first argument from the reduce function.
 
-  (count-with (range 1 10) (all? number? even?) :plevel 1) => 4
-  (count-with (range 1 10) (all? number? even?) :incrf + :plevel 1) => 20"
-  [col predfx & {:keys [incrfx initval plevel] :or {incrfx nil, initval 0, plevel 2}}]
-  (if (= 2 plevel)
-    (p-count-with col predfx initval incrfx)
-    (s-count-with col predfx initval incrfx)
+  (count-with (range 1 10) (all? number? even?)) => 4
+  (count-with (range 1 10) (all? number? even?) :incrfx + :plevel 2) => 20
+  ; (+ 5 (+ 0 (* 2 2)))
+  ; (+ 9 (* 2 4))
+  (count-with {:a 1 :b 2 :c 3 :d 4} even? :initval 5 :incrfx #(+ %2 (* 2 %1))) => 17
+  "
+  [sols preds & {:keys [incrfx initval plevel] :or {incrfx nil initval 0 plevel 1}}]
+  (if (or (nil? sols) (nil? preds))
+    0
+    (let [reducefx (fn [r i] (if (preds i) (if incrfx (incrfx i r) (inc r)) r))]
+      (if (= 1 plevel)
+        (if (map? sols) (reduce-kv #(reducefx %1 %3) initval sols) (reduce reducefx initval sols))
+        (+ initval (r/fold + (if (map? sols) #(reducefx %1 %3) #(reducefx %1 %2)) sols))
+        ))
     ) )
 
 (defn count-from-groups
@@ -282,21 +254,6 @@
             (update-in result [k v] inc)
             ) )
         target_map submap) ) ) )
-
-(defn value-frequencies2
-  "todo: experiment with performance"
-  ([m] (value-frequencies2 {} m))
-  ([target_map m & {:keys [kset kpath] :or {kset [] kpath []}}]
-    (let [kpmap (if (empty? kpath) m (get-in m kpath))
-          mp (if (map? kpmap) kpmap {})
-          submap (if (empty? kset) mp (select-keys mp kset))]
-      (persistent! (reduce
-                     (fn [result [k v]]
-                       (if-let [nv (get-in result [k v])]
-                         (assoc! result k {v (inc nv)})
-                         (assoc! result k {v 1})
-                         ) )
-                     (transient target_map) submap) ) ) ) )
 
 (defn merge-value-frequencies
   "Merge two value frequency maps where the value frequency totals will be added

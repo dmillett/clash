@@ -63,7 +63,7 @@
     ;(perfd (first @solutions))
     (are [x y] (= x y)
       0 (count-with @solutions #(= "XYZ" (-> % :name)) :plevel 1)
-      0 (count-with @solutions nil  :plevel 1)
+      0 (count-with @solutions nil :plevel 1)
       7 (count-with @solutions #(not (nil? (-> % :action))) :plevel 1)
       3 (count-with @solutions #(= "FOO" (-> % :name)) :plevel 1)
       3 (count-with @solutions (name? "FOO") :plevel 1)

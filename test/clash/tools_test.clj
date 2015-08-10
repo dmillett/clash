@@ -298,29 +298,37 @@
 (def foo-numbers-mixed '(2 3 4 5 9 "a" 11 12 15 20 21 "b" 25 26 27))
 
 (deftest test-count-with
-  (let [r1 (count-with foo-numbers-mixed (all? number?) :plevel 1)
-        r2 (count-with foo-numbers-mixed (all? number? even?) :plevel 1)
-        r3 (count-with foo-numbers-mixed (all? number? even?) :initval 37 :plevel 1)]
+  (let [r1 (count-with foo-numbers-mixed (all? number?))
+        r2 (count-with foo-numbers-mixed (all? number? even?))
+        r3 (count-with foo-numbers-mixed (all? number? even?) :initval 37 :plevel 1)
+        r4 (count-with foo-numbers-mixed (all? number?) :plevel 2)
+        r5 (count-with (into [] foo-numbers-mixed) (all? number?) :plevel 2)
+        r6 (count-with foo-numbers-mixed (all? number? even?) :plevel 2)
+        r7 (count-with (into [] foo-numbers-mixed) (all? number? even?) :plevel 2)
+        r8 (count-with (into [] foo-numbers-mixed) (all? number? even?) :initval 37 :plevel 2)
+        r9 (count-with {:a 1 :b 2 :c 3} even?)
+        r10 (count-with {:a 1 :b 2 :c 3} even? :plevel 2)
+        r11 (count-with {:a 1 :b 2 :c 3} odd? :initval 5)
+        r12 (count-with {:a 1 :b 2 :c 3} odd? :initval 5 :plevel 2)
+        r13 (count-with (range 0 5) odd? :initval 1 :incrfx #(+ %2 (* 2 %1)))
+        r14 (count-with {:a 1 :b 2 :c 3 :d 4} even? :initval 2 :incrfx #(+ %2 (* 2 %1)) :plevel 2)]
 
     (are [x y] (= x y)
       13 r1
       5  r2
       42 r3
-      ) ) )
-
-(deftest test-pcount-with
-  (let [r1 (count-with foo-numbers-mixed (all? number?))
-        r2 (count-with (into [] foo-numbers-mixed) (all? number?))
-        r3 (count-with foo-numbers-mixed (all? number? even?))
-        r4 (count-with (into [] foo-numbers-mixed) (all? number? even?))
-        r5 (count-with (into [] foo-numbers-mixed) (all? number? even?) :initval 37)]
-
-    (are [x y] (= x y)
       13 r1
-      13 r2
-      5 r3
-      5 r4
-      42 r5
+      r1 r4
+      13 r5
+      5 r6
+      5 r7
+      42 r8
+      1 r9
+      r9 r10
+      7 r11
+      r11 r12
+      9 r13
+      14 r14
       ) ) )
 
 (deftest test-count-from-groups
