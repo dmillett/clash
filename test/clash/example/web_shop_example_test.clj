@@ -93,7 +93,7 @@
     (are [x y] (= x y)
       0 (count (collect-with @solutions (name? "XYZ")) )
       2 (count (collect-with @solutions (name-action? "FOO" "Search")))
-      7 (count (collect-with @solutions nil))
+      0 (count (collect-with @solutions nil))
       ) ) )
 
 ; edn file created with (data-to-file)

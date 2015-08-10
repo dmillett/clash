@@ -165,6 +165,8 @@
   The incrementing function has the following form '{:incrfx (fn [current_val result] (somefn))}'
   where 'result' is the first argument from the reduce function.
 
+  If 'sols' or 'preds' is nil, then this returns 0.
+
   (count-with (range 1 10) (all? number? even?)) => 4
   (count-with (range 1 10) (all? number? even?) :incrfx + :plevel 2) => 20
   ; (+ 5 (+ 0 (* 2 2)))
@@ -193,21 +195,30 @@
   ([c1 c2] (into c1 c2)))
 
 (defn collect-with
-  "Build a collection/result set of data that satisfy the
-  conditions defined in 'predicates'. The predicates should
-  be relevant to use the data structure to filter. By default,
-  this will execute in parallel with reducers/fold. To specify
-  a single threaded execution: :plevel 1"
-  [solutions predicates & {:keys [plevel] :or {plevel 2}}]
-  (if (nil? predicates)
-    solutions
+  "Build a collection/result set of data that satisfy the conditions defined in
+  'predicates'. The predicates should be relevant to use the data structure to filter.
+  By default, this will execute single threaded. For concurrent with reducers/fold,
+  then in parallel with reducers/fold, specify {:plevel 2} (usually > 40,000 data elements).
+
+  If 'sols' or 'preds' is nil, then this returns an empty list.
+
+  (collect-with (range 0 5) odd?) => '(1 3)
+  ; For reducers/fold concurrency, input should be a vector
+  (collect-with (into [] (range 0 5)) odd? :plevel 2) => [1 3]
+  ; Map data structures will return key-value pairs in a collection
+  (collect-with {:a 1 :b 2 :c 3} odd?) => '([:a 1] [:c 3])
+  "
+  [sols preds & {:keys [:plevel] :or {:plevel 1}}]
+  (if (or (nil? sols) (nil? preds))
+    '()
     (if (= 1 plevel)
-      (filter (fn [sol] (predicates sol)) solutions)
-      (r/fold
-        rinto
-        (fn [x y] (if (predicates y) (conj x y) x))
-        solutions)
-      ) ) )
+      (if (map? sols) (filter (fn [[k v]] (preds v)) sols) (filter #(preds %1) sols))
+      (if (map? sols)
+        (r/fold rinto (fn [r k v] (if (preds v) (conj r [k v]) r)) sols)
+        (r/fold rinto (fn [r y] (if (preds y) (conj r y) r)) sols)
+        )
+      )
+    ) )
 
 (defn collect-from-groups
   "Collect all data in a list of groups that satisfies 'predfx'."
