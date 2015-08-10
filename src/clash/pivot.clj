@@ -40,7 +40,7 @@
       (t/sort-map-by-value
         (reduce
           (fn [r fx]
-            (assoc-in r [(:name (meta fx))] (t/count-with col fx :plevel 1)) )
+            (assoc-in r [(:name (meta fx))] (t/count-with col fx)) )
           {} combos) )
       ) )  )
 
@@ -68,7 +68,7 @@
       (t/sort-map-by-value
         (reduce
           (fn [r fx]
-            (assoc-in r [(:name (meta fx))] (t/count-with col fx)) )
+            (assoc-in r [(:name (meta fx))] (t/count-with col fx :plevel 2)) )
           {} combos) )
       ) ) )
 
@@ -212,7 +212,7 @@
 (defn- update-map-with-pivot-meta
   "Used to update each new pivot result with meta-data from the previous filter group."
   [m fx col]
-  (assoc-in m [(:name (meta fx))] (with-meta {:count (t/count-with col fx :plevel 1)} {:function fx}) ))
+  (assoc-in m [(:name (meta fx))] (with-meta {:count (t/count-with col fx)} {:function fx}) ))
 
 (defn- s-pivot-matrix
   "Evaluate a multi-dimensional array of predicates with their base predicates over

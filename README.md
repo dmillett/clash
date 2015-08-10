@@ -53,10 +53,10 @@ Build on these functions with domain specific structure
 
 ; Analyze data with defined predicates (filters with 'and'/'or' functionality)
 ; Incrementors can extract information and update cumulative results
-; Count or total specific pieces of data per 'solution'
+; Count or total specific pieces of data per 'solution' (collection or map)
 ; Use a vector instead of a list for r/fold parallelism
 (count-with solutions predicate)
-(count-with solutions predicate :incrf + :initv 10 :plevel 1)
+(count-with solutions predicate :incrf + :initv 10 :plevel 2)
 
 ; Build a result set with via filters, etc for each 'solution'
 ; Use a vector instead of a list for r/fold parallelism
