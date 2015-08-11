@@ -211,8 +211,8 @@
 
 (defn- update-map-with-pivot-meta
   "Used to update each new pivot result with meta-data from the previous filter group."
-  [m fx col]
-  (assoc-in m [(:name (meta fx))] (with-meta {:count (t/count-with col fx)} {:function fx}) ))
+  [m fx col plevel]
+  (assoc-in m [(:name (meta fx))] (with-meta {:count (t/count-with col fx :plevel plevel)} {:function fx}) ))
 
 (defn- s-pivot-matrix
   "Evaluate a multi-dimensional array of predicates with their base predicates over
@@ -223,7 +223,7 @@
         flat_matrix (build-matrix t/all? base_preds pivot_groups)]
     (sort-pivot-map-by-value
       (reduce
-        (fn [result fx] (update-map-with-pivot-meta result fx col))
+        (fn [result fx] (update-map-with-pivot-meta result fx col 1))
          {} flat_matrix)
       :count)
     ) )
@@ -237,7 +237,7 @@
         flat_matrix (build-matrix t/all? base_preds pivot_groups)]
     (sort-pivot-map-by-value
       (reduce
-        (fn [result fx] (update-map-with-pivot-meta result fx col))
+        (fn [result fx] (update-map-with-pivot-meta result fx col 2))
         {} flat_matrix)
       :count)
     ) )
@@ -257,7 +257,7 @@
         flat_matrix (into [] (build-matrix t/all? base_preds pivot_groups))]
     (sort-pivot-map-by-value
       (r/fold reducers-merge
-        (fn [results fx] (update-map-with-pivot-meta results fx col))
+        (fn [results fx] (update-map-with-pivot-meta results fx col 2))
         flat_matrix)
       :count)
     ) )
