@@ -17,8 +17,8 @@
   that requires multiple params (initially) should satisfie (coll?)"
   [pivotf values msg]
   (if (coll? (first values))
-    (map #(with-meta (apply pivotf %) {:name (str msg "-" %)}) values)
-    (map #(with-meta (pivotf %) {:name (str msg "-" %)}) values)
+    (map #(with-meta (apply pivotf %) {:name (str msg "_[" % "]")}) values)
+    (map #(with-meta (pivotf %) {:name (str msg "_[" % "]")}) values)
   ) )
 
 (defn- combine-functions-with-meta
@@ -31,12 +31,10 @@
 
 (defn- s-pivot
   ([col preds pivotf pivotd] (s-pivot col t/all? preds pivotf pivotd ""))
-  ([col preds pivotf pivotd msg] (s-pivot col t/all? preds pivotf pivotd msg))
-  ([col f preds pivotf pivotd msg]
-    (let [message (if (empty? msg) "pivot" (str msg "_pivot"))
-          fpivots (single-pivot-group pivotf pivotd message)
+  ([col preds pivotf pivotd message] (s-pivot col t/all? preds pivotf pivotd message))
+  ([col f preds pivotf pivotd message]
+    (let [fpivots (single-pivot-group pivotf pivotd message)
           combos (combine-functions-with-meta f preds fpivots)]
-
       (t/sort-map-by-value
         (reduce
           (fn [r fx]
@@ -59,12 +57,10 @@
   {is-even-number_pivot-by-2 2, is-even-number_pivot-by-3 1}
   "
   ([col preds pivotf pivotd] (p-pivot col t/all? preds pivotf pivotd ""))
-  ([col preds pivotf pivotd msg] (p-pivot col t/all? preds pivotf pivotd msg))
-  ([col f preds pivotf pivotd msg]
-    (let [message (if (empty? msg) "pivot" (str msg "_pivot"))
-          fpivots (single-pivot-group pivotf pivotd message)
+  ([col preds pivotf pivotd message] (p-pivot col t/all? preds pivotf pivotd message))
+  ([col f preds pivotf pivotd message]
+    (let [fpivots (single-pivot-group pivotf pivotd message)
           combos (combine-functions-with-meta f preds fpivots)]
-
       (t/sort-map-by-value
         (reduce
           (fn [r fx]
@@ -85,16 +81,17 @@
   (pivot '(6 7 8) 'is-even-number' :b [number? even?] :p divisible-by? :v '(2 3))
   or
   (pivot '(6 7 8) 'is-even-number' :b [number? even?] :p divisible-by? :v '(2 3) :plevel 2)
-  {is-even-number_pivot-by-2 2, is-even-number_pivot-by-3 1}
+  {is-even-number_[2] 2, is-even-number_[3] 1}
 
   If a pivot predicate (:p) has multiple arity, then the corresponding pivot values (:v) collection
   should also have multiple values, e.g:  :v '([2 3] [4 5])
   "
   [col msg & {:keys [b p v plevel] :or {b [] p nil v [] plevel 1}}]
-  (cond
-    (= 1 plevel) (s-pivot col t/all? b p v msg)
-    (= 2 plevel) (p-pivot col t/all? b p v msg)
-    ) )
+  (let [message (if (empty? msg) "pivot" msg)]
+    (cond
+      (= 1 plevel) (s-pivot col t/all? b p v message)
+      (= 2 plevel) (p-pivot col t/all? b p v message)
+      ) ) )
 
 (defn- s-pivot-compare
   "Compare the results (maps) of two pivots with a specific function. For
@@ -133,7 +130,7 @@
   "Create a list of functions given a list of values and add
   meta-data to them with {:name 'msg'-pivot_X :base_msg 'msg' :pivot 'X'}"
   [pivotf values msg]
-  (let [name (str msg "-pivot_")]
+  (let [name (str msg "_")]
     ; :name will get recalculated later when > 1 pivot groups exist
     (if (coll? (first values))
       (map #(with-meta (apply pivotf %) {:name (str name %) :base_msg msg :pivot %}) values)
@@ -146,7 +143,7 @@
   '-pivots_[x|y]' where 'x' is :pivot for function 1 and 'y' is the :pivot for function 2."
   [pg delim]
   (loop [p pg
-         text (str (:base_msg (meta (first p))) "-pivots_[")]
+         text (str (:base_msg (meta (first p))) "_[")]
     (if (empty? p)
       (str (subs text 0 (dec (count text))) "]")
       (recur
@@ -217,9 +214,8 @@
 (defn- s-pivot-matrix
   "Evaluate a multi-dimensional array of predicates with their base predicates over
   a collection. The predicate evaluation against the collection is single threaded."
-  [col msg base_preds pivotfs pivotds]
-  (let [message (if (empty? msg) "pivot-test" msg)
-        pivot_groups (build-pivot-groups-matrix pivotfs pivotds message)
+  [col message base_preds pivotfs pivotds]
+  (let [pivot_groups (build-pivot-groups-matrix pivotfs pivotds message)
         flat_matrix (build-matrix t/all? base_preds pivot_groups)]
     (sort-pivot-map-by-value
       (reduce
@@ -231,9 +227,8 @@
 (defn- p-pivot-matrix
   "Evaluate a multi-dimensional array of predicates with their base predicates over
   a collection. The predicate evaluation against the collection is in parallel (reducers/fold)."
-  [col msg base_preds pivotfs pivotds]
-  (let [message (if (empty? msg) "pivot-test" msg)
-        pivot_groups (build-pivot-groups-matrix pivotfs pivotds message)
+  [col message base_preds pivotfs pivotds]
+  (let [pivot_groups (build-pivot-groups-matrix pivotfs pivotds message)
         flat_matrix (build-matrix t/all? base_preds pivot_groups)]
     (sort-pivot-map-by-value
       (reduce
@@ -251,9 +246,8 @@
   a collection. The predicate evaluation against the collection is in parallel (reducers/fold).
   This might be beneficial when the flattened cartesian product has a large count
   (maybe > 50 predicate groups) and the workstation has a large number of cores."
-  [col msg base_preds pivotfs pivotds]
-  (let [message (if (empty? msg) "pivot-test" msg)
-        pivot_groups (build-pivot-groups-matrix pivotfs pivotds message)
+  [col message base_preds pivotfs pivotds]
+  (let [pivot_groups (build-pivot-groups-matrix pivotfs pivotds message)
         flat_matrix (into [] (build-matrix t/all? base_preds pivot_groups))]
     (sort-pivot-map-by-value
       (r/fold reducers-merge
@@ -266,7 +260,7 @@
   "Evaluate a multi-dimensional array of predicates with their base predicates over
   a collection. The predicate evaluation against the collection is single/multithreaded.
   Ex:
-  (pivot-matrix-x col [number?] 'foo' :plevel 2 :pivots [divisible-by?] :values [(range 2 5)]
+  (pivot-matrix col [number?] 'foo' :plevel 2 :p [divisible-by?] :v [(range 2 5)]
 
   If a pivot predicate (:p) has multiple arity, then the corresponding pivot values (:v) collection
   should also have multiple values, e.g:  :v '([2 3] [4 5])
@@ -278,11 +272,12 @@
              (note: more beneficial for a large cartesian structure or a good multi-cpu workstation)
   )"
   [col msg & {:keys [b p v plevel] :or {b [] p [] v [] plevel 1}}]
-  (cond
-    (= 1 plevel) (s-pivot-matrix col msg b p v)
-    (= 2 plevel) (p-pivot-matrix col msg b p v)
-    (= 3 plevel) (pp-pivot-matrix col msg b p v)
-    ) )
+  (let [message (if (empty? msg) "pivot" msg)]
+    (cond
+      (= 1 plevel) (s-pivot-matrix col message b p v)
+      (= 2 plevel) (p-pivot-matrix col message b p v)
+      (= 3 plevel) (pp-pivot-matrix col message b p v)
+      ) ) )
 
 (defn pivot-matrix-e
   "Identical to, but more explicit than (pivot-matrix). This expects the following form:

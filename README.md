@@ -161,9 +161,9 @@ For example a collection 1 - 100,000:
 ;; The count and the generated partial function (as meta data) used to derive that count
 user=> (pivot-matrix (range 1 100) "r1"  :b [number? even?] :p [divisible-by?] 
                                                             :v [(range 2 5)])
-{"r1-pivots_[2]" {:count 49}, 
-"r1-pivots_[4]" {:count 24}, 
-"r1-pivots_[3]" {:count 16}}
+{"r1_[2]" {:count 49}, 
+"r1_[4]" {:count 24}, 
+"r1_[3]" {:count 16}}
 
 ;; Generate a cartesian product combination of predicate groups:
 ; --> (all? number? even? (divisible-by? 2) (divisible-by? 6))
@@ -177,21 +177,21 @@ user=> (pivot-matrix (range 1 100) "r1"  :b [number? even?] :p [divisible-by?]
 (def even-numbers [number? even?])
 (pivot-matrix (range 1 100) "r2" :b even-numbers :p [divisible-by? divisible-by?] 
                                                  :v [(range 2 5) (range 6 8)])
-{"r2-pivots_[3|6]" {:count: 16}, 
-"r2-pivots_[2|6]" {:count 16},  
-"r2-pivots_[4|6]" {:count 8},  
-"r2-pivots_[2|7]" {:count 7},  
-"r2-pivots_[4|7]" {:count 3},  
-"r2-pivots_[3|7]" {:count 2}}
+{"r2_[3|6]" {:count: 16}, 
+"r2_[2|6]" {:count 16},  
+"r2_[4|6]" {:count 8},  
+"r2_[2|7]" {:count 7},  
+"r2_[4|7]" {:count 3},  
+"r2_[3|7]" {:count 2}}
 
 ; Get a result set for any of the predicate groups in a matrix
 (def mtrx (pivot-matrix (range 1 100) "foo" :b [even?] :p [divisible-by?] 
                                                        :v [(range 2 6)]))
 user=> (pprint mtrx) 
-{"foo-pivots_[2]" {:count 49},
-"foo-pivots_[3]" {:count 24},
-"foo-pivots_[4]" {:count 16},
-"foo-pivots_[5]" {:count 9}}
+{"foo_[2]" {:count 49},
+"foo_[3]" {:count 24},
+"foo_[4]" {:count 16},
+"foo_[5]" {:count 9}}
 
 ; All of the even numbers divisible by 5 for 1 - 100
 (get-rs-from-matrix hundred mtrx "foo-pivots_[5]")

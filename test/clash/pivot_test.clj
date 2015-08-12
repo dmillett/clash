@@ -31,71 +31,24 @@
         r4 (pivot foo-numbers "foo2" :b [number?] :p foo-divide? :v [[2 3] [4 5]])
         ;r5 (perf (pivot foo-numbers [number?] divide-by-x? '(2 3 4)) "(pivot a)")
         ]
-
     (are [x y] (= x y)
-      3 (-> "pivot-4" r1)
-      6 (-> "pivot-3" r1)
-      5 (-> "pivot-2" r1)
+      3 (-> "pivot_[4]" r1)
+      6 (-> "pivot_[3]" r1)
+      5 (-> "pivot_[2]" r1)
       ;
-      3 (-> "foo_pivot-4" r2)
-      6 (-> "foo_pivot-3" r2)
-      5 (-> "foo_pivot-2" r2)
+      3 (-> "foo_[4]" r2)
+      6 (-> "foo_[3]" r2)
+      5 (-> "foo_[2]" r2)
       ;
-      3 (-> "foo_pivot-4" r3)
-      6 (-> "foo_pivot-3" r3)
-      5 (-> "foo_pivot-2" r3)
+      3 (-> "foo_[4]" r3)
+      6 (-> "foo_[3]" r3)
+      5 (-> "foo_[2]" r3)
       ;
-      4 (-> "foo2_pivot-[2 3]" r4)
-      2 (-> "foo2_pivot-[4 5]" r4)
+      4 (-> "foo2_[[2 3]]" r4)
+      2 (-> "foo2_[[4 5]]" r4)
       ) ) )
 
 (def foo-numbers-mixed '(2 3 4 5 9 "a" 11 12 15 20 21 "b" 25 26 27))
-
-;(deftest test-build-pivot-functions-for-matrix
-;  (let [r1 (build-pivot-groups-matrix [divisible-by?] (list '(2 3 4)) "pivot")
-;        r2 (build-pivot-groups-matrix [divisible-by? divisible-by?] (list '(2 3) '(4 5)) "2x2")
-;        r3 (build-pivot-groups-matrix [divisible-by? divisible-by? divisible-by?] (list '(2 3) '(4 5 6) '(7 8)) "2x3x2")
-;        ]
-;
-;    (are [x y] (= x y)
-;      1 (count r1)
-;      3 (count (first r1))
-;      2 (:pivot (meta (first (first r1))))
-;      4 (:pivot (meta (last (first r1))))
-;      ;
-;      2 (count r2)
-;      2 (count (nth r2 0))
-;      2 (count (nth r2 1))
-;      2 (:pivot (meta (first (first r2))))
-;      3 (:pivot (meta (last (first r2))))
-;      4 (:pivot (meta (first (last r2))))
-;      5 (:pivot (meta (last (last r2))))
-;      ) ) )
-
-;(deftest test-build-matrix
-;  (let [base [number?]
-;        l1 (list '(2 3 4))
-;        l2 (list '(2 3) '(4 5))
-;        l3 (list '(2 3) '(4 5 6) '(7 8))
-;        pg1 (build-pivot-groups-matrix [divisible-by?] l1 "pg1")
-;        pg2 (build-pivot-groups-matrix [divisible-by? divisible-by?] l2 "pg2")
-;        pg3 (build-pivot-groups-matrix [divisible-by? divisible-by? divisible-by?] l3 "pg3")
-;        r1 (build-matrix c/all? base pg1)
-;        r2 (build-matrix c/all? base pg2)
-;        r3 (build-matrix c/all? base pg3)
-;        ]
-;
-;    (are [x y] (= x y)
-;      3 (count r1)
-;      "pg1-pivots_[2]" (:name (meta (nth r1 0)))
-;      "pg1-pivots_[4]" (:name (meta (nth r1 2)))
-;      4 (count r2)
-;      "pg2-pivots_[2|4]" (:name (meta (nth r2 0)))
-;      "pg2-pivots_[3|5]" (:name (meta (nth r2 3)))
-;      12 (count r3)
-;      "pg3-pivots_[2|4|7]" (:name (meta (nth r3 0)))
-;      "pg3-pivots_[3|6|8]" (:name (meta (nth r3 11)))
-;      ) ) )
 
 (def hundred (range 1 100))
 ; reducers/fold requires [] for multi-threads
@@ -131,42 +84,42 @@
 
     (are [x y] (= x y)
       3 (count r1)
-      49 (get-in r1 ["r1-pivots_[2]" :count])
-      16 (get-in r1 ["r1-pivots_[3]" :count])
-      24 (get-in r1 ["r1-pivots_[4]" :count])
+      49 (get-in r1 ["r1_[2]" :count])
+      16 (get-in r1 ["r1_[3]" :count])
+      24 (get-in r1 ["r1_[4]" :count])
       ;
       6 (count r2)
-      16 (get-in r2 ["r2-pivots_[3|6]" :count])
-      7 (get-in r2 ["r2-pivots_[2|7]" :count])
-      2 (get-in r2 ["r2-pivots_[3|7]" :count])
+      16 (get-in r2 ["r2_[3|6]" :count])
+      7 (get-in r2 ["r2_[2|7]" :count])
+      2 (get-in r2 ["r2_[3|7]" :count])
       ;
       6 (count r7)
-      16 (get-in r7 ["r7-pivots_[3|[2 4]]" :count])
-      8 (get-in r7 ["r7-pivots_[4|[2 4]]" :count])
-      2 (get-in r7 ["r7-pivots_[4|[4 5]]" :count])
+      16 (get-in r7 ["r7_[3|[2 4]]" :count])
+      8 (get-in r7 ["r7_[4|[2 4]]" :count])
+      2 (get-in r7 ["r7_[4|[4 5]]" :count])
       ;
       3 (count r3p)
-      49 (get-in r3p ["r1-pivots_[2]" :count])
-      16 (get-in r3p ["r1-pivots_[3]" :count])
-      24 (get-in r3p ["r1-pivots_[4]" :count])
+      49 (get-in r3p ["r1_[2]" :count])
+      16 (get-in r3p ["r1_[3]" :count])
+      24 (get-in r3p ["r1_[4]" :count])
       ;
       6 (count r4p)
-      16 (get-in r4p ["r2-pivots_[3|6]" :count])
-      7 (get-in r4p ["r2-pivots_[2|7]" :count])
-      2 (get-in r4p ["r2-pivots_[3|7]" :count])
+      16 (get-in r4p ["r2_[3|6]" :count])
+      7 (get-in r4p ["r2_[2|7]" :count])
+      2 (get-in r4p ["r2_[3|7]" :count])
       ;
       3 (count r5pp)
-      49 (get-in r5pp ["r1-pivots_[2]" :count])
-      16 (get-in r5pp ["r1-pivots_[3]" :count])
-      24 (get-in r5pp ["r1-pivots_[4]" :count])
+      49 (get-in r5pp ["r1_[2]" :count])
+      16 (get-in r5pp ["r1_[3]" :count])
+      24 (get-in r5pp ["r1_[4]" :count])
       ;
       6 (count r6pp)
-      16 (get-in r6pp ["r2-pivots_[3|6]" :count])
-      7 (get-in r6pp ["r2-pivots_[2|7]" :count])
-      2 (get-in r6pp ["r2-pivots_[3|7]" :count])
+      16 (get-in r6pp ["r2_[3|6]" :count])
+      7 (get-in r6pp ["r2_[2|7]" :count])
+      2 (get-in r6pp ["r2_[3|7]" :count])
       ;
       18 (count r8)
-      12 (get-in r8 ["r8-pivots_[2|[3 5]]" :count])
+      12 (get-in r8 ["r8_[2|[3 5]]" :count])
       ;
       r1 r1e
       r2 r2e
@@ -190,20 +143,20 @@
         ]
     (are [x y] (= x y)
       4 (count r1)
-      0.706 (get-in r1 ["foo-pivots_[4]" :result])
-      0.696 (get-in r1 ["foo-pivots_[3]" :result])
-      0.686 (get-in r1 ["foo-pivots_[2]" :result])
-      0.643 (get-in r1 ["foo-pivots_[5]" :result])
+      0.706 (get-in r1 ["foo_[4]" :result])
+      0.696 (get-in r1 ["foo_[3]" :result])
+      0.686 (get-in r1 ["foo_[2]" :result])
+      0.643 (get-in r1 ["foo_[5]" :result])
       ) ) )
 
 (deftest test-get-rs-from-matrix
   (let [hundred (range 1 100)
         m1 (pivot-matrix hundred "foo" :b [even?] :p [divisible-by?] :v [(range 2 6)])
-        r1 (get-rs-from-matrix hundred m1 "foo-pivots_[5]")
+        r1 (get-rs-from-matrix hundred m1 "foo_[5]")
         m2 (pivot-matrix-compare (range 1 50) (range 50 120) "foo" ratio :b [number?]
                                                                          :p [divisible-by?]
                                                                          :v [(range 2 6)])
-        r2 (get-rs-from-matrix hundred m2 "foo-pivots_[5]")
+        r2 (get-rs-from-matrix hundred m2 "foo_[5]")
         ]
 
     (are [x y] (= x y)
