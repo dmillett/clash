@@ -147,8 +147,8 @@
   "Sort by values descending (works when there are non-unique values too)."
   [m]
   (into (sorted-map-by
-          (fn [k1 k2] (compare [(get m k2) k2]
-                               [(get m k1) k1]) ) )
+          (fn [k1 k2] (compare [(get m k2) (str k2)]
+                               [(get m k1) (str k1)]) ) )
     m) )
 
 (defn fold-conj
