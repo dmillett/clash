@@ -149,10 +149,10 @@
       0.643 (get-in r1 ["foo_[5]" :result])
       ) ) )
 
-(deftest test-get-rs-from-matrix
+(deftest test-pivot-rs
   (let [hundred (range 1 100)
         m1 (pivot-matrix hundred "foo" :b [even?] :p [divisible-by?] :v [(range 2 6)])
-        r1 (get-rs-from-matrix hundred m1 "foo_[5]")
+        r1 (pivot-rs hundred m1 "foo_[5]")
         m2 (pivot-matrix-compare (range 1 50) (range 50 120) "foo" ratio :b [number?]
                                                                          :p [divisible-by?]
                                                                          :v [(range 2 6)])

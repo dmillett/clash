@@ -194,7 +194,7 @@ user=> (pprint mtrx)
 "foo_[5]" {:count 9}}
 
 ; All of the even numbers divisible by 5 for 1 - 100
-(get-rs-from-matrix hundred mtrx "foo-pivots_[5]")
+(pivot-rs hundred mtrx "foo-pivots_[5]")
 user=> (90 80 70 60 50 40 30 20 10)
 
 ; For a more explicit/verbose (pivot-matrix), try:

@@ -178,10 +178,7 @@
         (rest data)) )
     ) )
 
-; The name and function that produced a 'count' result
-;(defrecord MatrixResult [value function])
-
-(defn- sort-pivot-map-by-value
+(defn sort-pivot-map-by-value
   "Sort by values descending (works when there are non-unique values too).
   This compares the :value for each MatrixResult"
   [m mkey]
@@ -193,13 +190,12 @@
 
 ; todo: don't store function as metadata, store it next to result
 ; todo: create printer without 'function'
-(defn- compare-pivot-map-with
+(defn compare-pivot-map-with
   "Compare values in two maps with a specific 2 arg function. Currently this assumes
   identical keysets in each map. todo: fix for missing keys (set default value)"
   [m1 m2 f]
   (reduce
     (fn [result [k v]]
-      ; Should compare when the value is not nil
       (assoc-in result [k] (when (not (nil? v))
                              {:result (f (:count v) (get-in m2 [k :count]))
                              :function (:function (meta v))})
@@ -303,7 +299,9 @@
     ) )
 
 (defn get-rs-from-matrix
-  "Get a result set by applying the underlying predicate group (partial function)
+  "Deprecated, use (pivot-rs)
+
+  Get a result set by applying the underlying predicate group (partial function)
   against a data collection. For example, for a pivot matrix with even? divisibly-by? (3 4 5),
 
   (def hundred (range 1 100))
@@ -315,3 +313,14 @@
   (if-let [fx (:function (meta (get matrix mkey)))]
     (t/collect-with col fx)
     (t/collect-with col (get-in matrix [mkey :function])) ) )
+
+(defn pivot-rs
+  "Duplicates (get-rs-from-matrix), but with a better function name.
+
+  (def hundred (range 1 100))
+  (def mtrx (pivot-matrix hundred \"foo\" :b [even?] :p [divisible-by?] :v [(range 2 6]))
+  (get-rs-from-matrix hundred mtrx \"foo-pivots_[5]\")
+  => (90 80 70 60 50 40 30 20 10)
+  "
+  [col pivot_matrix pivot_key]
+  (get-rs-from-matrix col pivot_matrix pivot_key))
