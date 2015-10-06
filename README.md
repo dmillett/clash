@@ -197,6 +197,10 @@ user=> (pprint mtrx)
 (pivot-rs hundred mtrx "foo-pivots_[5]")
 user=> (90 80 70 60 50 40 30 20 10)
 
+; Filter for specific pivots (could do w/o :kterms below)
+(filter-pivots hundred :kterms ["4" "3"] :cfx even?)
+user=> {"foo_[3]" {:count 24} "foo_[4]" {:count 16}}
+
 ; For a more explicit/verbose (pivot-matrix), try:
 (pivot-matrix-e hundred "r2e" :base even-numbers :pivot [{:f divisible-by? :v (range 2 5)} 
                                                          {:f divisible-by? :v (range 5 8)}])

@@ -324,3 +324,20 @@
   "
   [col pivot_matrix pivot_key]
   (get-rs-from-matrix col pivot_matrix pivot_key))
+
+(defn filter-pivots
+  "Find pivot results that match specific terms. To find a range of
+  specific result keys, pass in a collection of string terms to match.
+  Filter result counts based on a defined function 'cfx'. todo: (transduce)?"
+  [pivot_matrix & {:keys [kterms cfx] :or [kterms [] cfx nil]}]
+  (if (and (empty? kterms) (nil? cfx))
+    pivot_matrix
+    (let [fx1 (fn [[k v]] (every? #(.contains k %) kterms))
+          fx2 (fn [[k v]] (cfx (:count v)))
+          fx3 #(apply merge (map (fn [[k v]] {k v}) %))]
+      (cond
+        (nil? cfx) (fx3 (filter fx1 pivot_matrix))
+        (empty? kterms) (fx3 (filter fx2 pivot_matrix))
+        :else (fx3 (filter (t/all? fx1 fx2) pivot_matrix))
+        ) )
+    ) )

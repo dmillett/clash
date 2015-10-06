@@ -165,3 +165,12 @@
       19 (count r2)
       r2 [5 10 15 20 25 30 35 40 45 50 55 60 65 70 75 80 85 90 95]
       ) ) )
+
+(deftest test-filter-pivots
+  (let [pm1 (pivot-matrix hundred "find" :p [divisible-by?] :v [(range 2 6)])]
+    (are [x y] (= x y)
+      pm1 (filter-pivots pm1)
+      {"find_[4]" {:count 24}} (filter-pivots pm1 :cfx even?)
+      {"find_[4]" {:count 24}} (filter-pivots pm1 :kterms ["4"])
+      {"find_[3]" {:count 33}} (filter-pivots pm1 :kterms ["3"] :cfx odd?)
+      ) ) )
