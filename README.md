@@ -9,7 +9,7 @@ advantages of commands like 'grep' and 'cut' individually or piped together.
 
 ## Usage & Benefits
 
-Add to **[clash "1.1"]** to your project.clj
+Add to **[clash "1.1.1"]** to your project.clj
 
 * Log files with up to 5 million simple and/or complex data
 * Most 'count', 'collect', and pivot functions take <= 1s per million rows*

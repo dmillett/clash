@@ -10,8 +10,6 @@
   ^{:author "dmillett"
     :doc "Atomizing and interacting with oject memory stores from text files (logs, etc)."}
   clash.core
-  (:require [clojure.core.reducers :as r]
-            [clash.tools :as t])
   (:use [clojure.java.io :only (reader writer)]) )
 
 (defn- transform-text
@@ -49,7 +47,7 @@
 
    Alternatively, just the 2 arg function and rely on the parser to perform much of
    the functionality with more strict regex."
-  ([input parser] (atomic-map-from-file input nil nil parser nil))
+  ([input parser] (atomic-map-from-file input nil nil parser nil nil))
   ([input parser max] (atomic-map-from-file input nil nil parser nil max))
   ([input predicate transformer parser key max]
     (let [result (atom {})]
@@ -64,7 +62,7 @@
                         current (hash-map k structure)]]
             (if-not (nil? current)
               (swap! result merge current)) )
-          (catch OutOfMemoryError e (println "Insufficient Memory: " (count @result) "Solutions Loaded"))
+          (catch OutOfMemoryError _ (println "Insufficient Memory: " (count @result) "Solutions Loaded"))
           (catch Exception e (println "Exception:" e ", " (count @result) " Solutions Loaded"))) )
       result) ) )
 
@@ -104,7 +102,7 @@
                         data (parser transformed)]]
             (if-not (nil? data)
               (swap! result conj data)) ))
-        (catch OutOfMemoryError e (println "Insufficient Memory: " (count @result) " Solutions Loaded"))
+        (catch OutOfMemoryError _ (println "Insufficient Memory: " (count @result) " Solutions Loaded"))
         (catch Exception e (println "Exception:" e ", " (count @result) " Solutions Loaded")))
       result) ) )
 

@@ -17,8 +17,8 @@
 
 (deftest test-elapsed
   (is (= "t1 Time(ns):100" (elapsed 100 "t1 " 0)))
-  (is (= "t2 Time(ms):1.000" (elapsed 1000000 "t2 " 4)))
-  (is (= "t3 Time(s):1.000" (elapsed 1000000000 "t3 " 4))) )
+  (is (= "t2 Time(ms):1.0000" (elapsed 1000000 "t2 " 4)))
+  (is (= "t3 Time(s):1.0000" (elapsed 1000000000 "t3 " 4))) )
 
 ;; Test functions for perf and latency
 (defn foobar [x] (* x x))
@@ -363,3 +363,21 @@
       [1 3 5 7 9] (collect-from-groups groups1 odd?)
       [2 4 6 8] (collect-from-groups groups1 even?)
       ) ) )
+
+(deftest test-data-per-thread
+  (is (= 25 (data-per-thread 50 2)))
+  ; due to rounding, this bumps data per thread up
+  (is (= 5 (data-per-thread 17 4)))
+  ; 6 cores, not 30 results in 10 threads/core
+  (is (< 2 (data-per-thread 50 30)))
+  )
+
+(deftest test-fold-conj
+  (are [x y] (= x y)
+    [] (fold-conj)
+    [1 2] (fold-conj [1] 2)
+    ))
+
+(deftest test-format-millitime-to
+  (is (= "10-24-2015" (format-millitime-to 1445715563306 "MM-dd-yyyy")))
+  )

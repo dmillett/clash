@@ -7,11 +7,10 @@
 ;   You must not remove this notice, or any other, from this software.
 
 (ns
-    ^{:author "David Millett"
+    ^{:author "dmillett"
       :doc "Some potentially useful tools with command.clj or other."}
   clash.tools
-  (:require [clojure.string :as str]
-            [clojure.core.reducers :as r])
+  (:require [clojure.core.reducers :as r])
   (:use [clojure.java.io :only (reader)])
   (:import [java.text.SimpleDateFormat]
            [java.text SimpleDateFormat]))
@@ -26,16 +25,6 @@
   "Read the contents of a small file into its clojure data structure."
   [filename]
   (read-string (slurp filename)))
-
-(defn stb
-  "Sh*t the bed message."
-  [message]
-   (throw (RuntimeException. (str message))) )
-
-(defn microsoft?
-  "Is the operating Microsoft based ('win')"
-  []
-  (= "win" (System/getProperty "os.name")))
 
 (defn millis
   "Convert nano seconds to milliseconds."
@@ -62,16 +51,18 @@
   ([time] (elapsed time "" 4))
   ([time message] (elapsed time message 4))
   ([time message digits]
-    (cond
-      (< time 99999) (str message "Time(ns):" time)
-      (< time 99999999) (str message "Time(ms):" (formatf (millis time) 3))
-      :else (str message "Time(s):" (formatf (seconds time) 3)))) )
+   (let [p (if (pos? digits) digits 3)]
+     (cond
+       (< time 99999) (str message "Time(ns):" time)
+       (< time 99999999) (str message "Time(ms):" (formatf (millis time) p))
+       :else (str message "Time(s):" (formatf (seconds time) p)))
+     ) ) )
 
-(defn format-nanotime-to
+(defn format-millitime-to
   "Format nano time (9 digits) to a specified date-time format
   uses java SimpleDateFormat."
-  [nano_time date_fmt]
-  (.. (SimpleDateFormat. date_fmt) (format nano_time)) )
+  [milli_time date_fmt]
+  (.. (SimpleDateFormat. date_fmt) (format milli_time)) )
 
 
 (defmacro latency
@@ -212,7 +203,7 @@
   (if (or (nil? sols) (nil? preds))
     '()
     (if (= 1 plevel)
-      (if (map? sols) (filter (fn [[k v]] (preds v)) sols) (filter #(preds %1) sols))
+      (if (map? sols) (filter (fn [[_ v]] (preds v)) sols) (filter #(preds %1) sols))
       (if (map? sols)
         (r/fold rinto (fn [r k v] (if (preds v) (conj r [k v]) r)) sols)
         (r/fold rinto (fn [r y] (if (preds y) (conj r y) r)) sols)
@@ -225,10 +216,11 @@
   [groups predfx]
   (reduce (fn [result group] (into result (collect-with group predfx))) [] groups))
 
-(defn- data-per-thread
+(defn data-per-thread
   "How many data elements per specified thread. If the number of specified threads
   is greater than available cores, the available cores is used. The number of data
-  per core is then calculated by quotient + modulus of size/cores"
+  per core is then calculated by quotient + modulus of size/cores.
+  "
   [size n]
   (let [max (.availableProcessors (Runtime/getRuntime))
         t (if (> n max) max n)]
@@ -404,7 +396,7 @@
          items coll]
     (cond
       (empty? items) result
-      (try (pred (first items)) (catch Exception e false)) true
+      (try (pred (first items)) (catch Exception _ false)) true
       :else (recur result (rest items))
       ) ) )
 
@@ -418,6 +410,6 @@
     (cond
       (and (empty? items) (= (count coll) (count result))) '()
       (empty? items) result
-      (try (pred (first items)) (catch Exception e false)) (conj result (first items))
+      (try (pred (first items)) (catch Exception _ false)) (conj result (first items))
       :else (recur (conj result (first items)) (rest items))
       ) ) )

@@ -5,10 +5,9 @@
 ;   By using this software in any fashion, you are agreeing to be bound by
 ;   the terms of this license.
 ;   You must not remove this notice, or any other, from this software.
-(ns ^{:author dmillett} clash.pivot
+(ns ^{:author "dmillett"} clash.pivot
   (:require [clojure.core.reducers :as r]
             [clojure.math.combinatorics :as cmb]
-            [clash.core :as c]
             [clash.tools :as t]) )
 
 (defn- single-pivot-group
@@ -97,9 +96,9 @@
   "Compare the results (maps) of two pivots with a specific function. For
   example, perhaps it is helpful to compare the ratio of values from col1/col2.
   The output is sorted in descending order."
-  [col1 col2 preds pivotf pivotd msg compf]
-  (let [a (pivot col1 preds pivotf pivotd msg)
-        b (pivot col2 preds pivotf pivotd msg)]
+  [col1 col2 basepreds pivotf pivotd msg compf]
+  (let [a (pivot col1 msg :b basepreds :p pivotf :v pivotd)
+        b (pivot col2 msg :b basepreds :p pivotf :v pivotd)]
     (t/sort-map-by-value (t/compare-map-with a b compf))
     ) )
 
@@ -108,8 +107,8 @@
   example, perhaps it is helpful to compare the ratio of values from col1/col2.
   The output is sorted in descending order."
   [col1 col2 preds pivotf pivotd msg compf]
-  (let [a (p-pivot col1 preds pivotf pivotd msg)
-        b (p-pivot col2 preds pivotf pivotd msg)]
+  (let [a (pivot col1 msg :b preds :p pivotf :v pivotd :plevel 2)
+        b (pivot col2 msg :b preds :p pivotf :v pivotd :plevel 2)]
     (t/sort-map-by-value (t/compare-map-with a b compf))
     ) )
 
@@ -117,11 +116,17 @@
   "Compare the results (maps) of two pivots with a specific function. For
   example, perhaps it is helpful to compare the ratio of values from col1/col2.
   The output is sorted in descending order. The default parallelism is 1 (single threaded).
-  Specify :plevel 2 for parallel operation (r/fold)."
-  [col1 col2 msg {:keys [b p v plevel] :or {b [] p [] v [] plevel 1}}]
+  Specify :plevel 2 for parallel operation (r/fold).
+
+  (pivot-compare c1 c2 \"divy1\" > :b [number?] :p divisible-by? :v [2 3 4])
+  ; {divy1_[2] 10, divy1_[3] 7, divy1_[4] 5}
+  ; {divy1_[2] 10, divy1_[3] 6, divy1_[4] 5}
+  => {\"divy1_[3]\" true, \"divy1_[4]\" false, \"divy1_[2]\" false}
+  "
+  [col1 col2 msg compfx & {:keys [b p v plevel] :or {b [] p nil v [] plevel 1}}]
   (cond
-    (= 1 plevel) (s-pivot-compare col1 col2 b p v msg)
-    (= 2 plevel) (p-pivot-compare col1 col2 b p v msg)
+    (= 1 plevel) (s-pivot-compare col1 col2 b p v msg compfx)
+    (= 2 plevel) (p-pivot-compare col1 col2 b p v msg compfx)
     ) )
 
 ;; **************************************************************************************
@@ -329,11 +334,11 @@
   "Find pivot results that match specific terms. To find a range of
   specific result keys, pass in a collection of string terms to match.
   Filter result counts based on a defined function 'cfx'. todo: (transduce)?"
-  [pivot_matrix & {:keys [kterms cfx] :or [kterms [] cfx nil]}]
+  [pivot_matrix & {:keys [kterms cfx] :or {kterms [] cfx nil}}]
   (if (and (empty? kterms) (nil? cfx))
     pivot_matrix
-    (let [fx1 (fn [[k v]] (every? #(.contains k %) kterms))
-          fx2 (fn [[k v]] (cfx (:count v)))
+    (let [fx1 (fn [[k _]] (every? #(.contains k %) kterms))
+          fx2 (fn [[_ v]] (cfx (:count v)))
           fx3 #(apply merge (map (fn [[k v]] {k v}) %))]
       (cond
         (nil? cfx) (fx3 (filter fx1 pivot_matrix))

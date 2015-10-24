@@ -10,7 +10,7 @@
     ;^{:author "David Millett"
     ;  :doc "Some useful text tools."}
   clash.text_tools
-  (:require [clojure.string :as str]))
+  (:require [clojure.string :as s]))
 
 (defn as-one-line
   "Remove newline characters from a given string and substitue with \"\" (default)
@@ -18,42 +18,24 @@
   ([text]
     (if (empty? text)
       text
-      (str/replace text "\n" "") ) )
+      (s/replace text "\n" "") ) )
   ([text delim]
     (if (or (empty? text) (empty? delim))
       text
-      (str/replace text "\n" delim) )) )
+      (s/replace text "\n" delim) )) )
 
 (defn str-contains?
-  "Does a String contain a specific piece of text?"
-  [^java.lang.String text, ^java.lang.String search]
+  "@deprecated (see clojure 1.8 includes?)
+  Does a String contain a specific piece of text?"
+  [^String text, ^String search]
   (if (or (empty? text) (empty? search))
     false
     (.contains text search) ) )
 
-(defn split-with-regex
-  "Split a message with a given character or regex"
-  [text, regex]
-  (if-not (or (nil? text) (nil? regex))
-    (str/split text (re-pattern regex)) ) )
-
-(defn replace-delim
-  "Replace a 'delim1' in 'text' with 'delim2'. Otherwise
-  return 'text' if there are no matching delim1 values.
-  Ex:  (replace-delim a_b_c _ :) --> a:b:c "
-  [text, d1, d2]
-  (if (or (empty? text) (empty? d1) (empty? d2))
-    text
-    (let [result (str/split text (re-pattern d1))
-          number (count result)]
-      (if (> number 1)
-        (apply str (interpose d2 result))
-        text) ) ) )
-
 (defn count-tokens
   "Count the number of tokens in a string (text) for
   a given string delimiter (token)."
-  [text, token]
+  [^String text ^String token]
   (if (or (empty? text) (empty? token))
     0
     (count (re-seq (re-pattern token) text)) ) )
@@ -62,7 +44,8 @@
 (defn create-shell-cut-with-keys
   "Build a shell 'cut' command with a specific delimiter and specified fields. This
   is more performant than using log-line-to-map to return a 'sub-map' of values"
-  [^java.lang.String structure, keys, ^java.lang.String delim]
+  [^String structure, keys, ^String delim]
+  ; See clojure 1.8 (index-of)
   (let [indices (map #(+ 1 (.indexOf structure %)) keys)
         cut (str "cut -d" \" delim \" " -f")]
     (if (empty? indices)
@@ -76,7 +59,7 @@
   ([line pattern structure] (text-structure-to-map line pattern structure []))
   ([line pattern structure keys]
     (when-not (empty? line)
-      (let [result (zipmap structure (str/split line pattern))]
+      (let [result (zipmap structure (s/split line pattern))]
         (if (empty? keys)
           result
           (select-keys result keys)) ))) )

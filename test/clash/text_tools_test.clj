@@ -51,5 +51,8 @@ cd")
     nil (regex-groups-into-maps "a,b,c;d,e,f" [:a :b :c] #"-" [])
     '({:a "a" :b "b" :c "c"}) (regex-groups-into-maps "a,b,c;" [:a :b :c] #"(\w),(\w),(\w)")
     '({:a "a"} {:a "d"}) (regex-groups-into-maps "a,b,c,d,e,f" [:a :b :c] #"(\w),(\w),(\w)" [:a])
-    )
+    ) )
+
+(deftest test-count-tokens
+  (is (= 2 (count-tokens "Drink that beverage!" " ")))
   )

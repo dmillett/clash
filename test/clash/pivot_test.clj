@@ -136,6 +136,17 @@
     :else (read-string (format "%.3f" (/ a (float b))))
     ) )
 
+(deftest test-pivot-compare
+  (let [c1 (range 0 20)
+        c2 (range 10 30)
+        expected {"divy1_[3]" true, "divy1_[4]" false, "divy1_[2]" false}]
+    (are [x y] (= x y)
+      {} (pivot-compare c1 c2 "empty" >)
+      expected (pivot-compare c1 c2 "divy1" > :b [number?] :p divisible-by? :v [2 3 4])
+      expected (pivot-compare c1 c2 "divy1" > :b [number?] :p divisible-by? :v [2 3 4] :plevel 2)
+      ) ) )
+
+
 (deftest test-pivot-matrix-compare
   (let [r1 (pivot-matrix-compare (range 1 50) (range 50 120) "foo" ratio :b [number?]
                                                                          :p [divisible-by?]
@@ -156,7 +167,7 @@
         m2 (pivot-matrix-compare (range 1 50) (range 50 120) "foo" ratio :b [number?]
                                                                          :p [divisible-by?]
                                                                          :v [(range 2 6)])
-        r2 (get-rs-from-matrix hundred m2 "foo_[5]")
+        r2 (pivot-rs hundred m2 "foo_[5]")
         ]
 
     (are [x y] (= x y)
