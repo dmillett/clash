@@ -6,9 +6,8 @@
 ;   the terms of this license.
 ;   You must not remove this notice, or any other, from this software.
 
-(ns
-    ;^{:author "David Millett"
-    ;  :doc "Some useful text tools."}
+(ns ^{:author "David Millett"
+      :doc "Some useful text tools."}
   clash.text_tools
   (:require [clojure.string :as s]))
 
