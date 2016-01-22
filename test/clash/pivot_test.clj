@@ -6,7 +6,7 @@
 ;   the terms of this license.
 ;   You must not remove this notice, or any other, from this software.
 
-(ns ^{:author dmillett} clash.pivot_test
+(ns ^{:author "dmillett"} clash.pivot_test
   (:require [clojure.math.combinatorics :as cmb]
             [clash.core :as c]
             [clash.tools :as t])

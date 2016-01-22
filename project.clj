@@ -7,8 +7,8 @@
   :license {:name "Eclipse Public License"
             :url "http://www.eclipse.org/legal/epl-v10.html" }
   :scm {:name "git" :url "https://github.com/dmillett/clash" }
-  :dependencies [[org.clojure/clojure "1.7.0"]
-                 [org.clojure/math.combinatorics "0.0.8"]]
+  :dependencies [[org.clojure/clojure "1.8.0"]
+                 [org.clojure/math.combinatorics "0.1.1"]]
   :jvm-opts ["-Xms256m" "-Xmx256m"]
   ;:global-vars {*warn-on-reflection* true}
   :repl-options {:init (do

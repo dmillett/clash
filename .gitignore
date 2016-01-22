@@ -2,11 +2,8 @@ clash.iml
 /pom.xml
 *jar
 /lib
-/classes
-/native
 /.lein-failures
-/checkouts
-/.lein-deps-sum
 *.idea
 target/
 .lein-repl-history
+pom.xml.asc
