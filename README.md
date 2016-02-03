@@ -13,6 +13,7 @@ Add to **[clash "1.1.1"]** to your project.clj
 
 * Log files with up to 5 million simple and/or complex data
 * Most 'count', 'collect', and pivot functions take <= 1s per million rows*
+  * simple data (4/5) columns might evaluate at 10+ million rows/s
 * 2 - 3 million rows (30 elements, 2 nest levels) evaluated per second*
 * 95,000 similar maps with 8 keys each in ~0.6 seconds**
 * 400,000 filter groups and 560,000 complex data row in 9 hours and < 4 gb JVM Heap**
@@ -49,6 +50,12 @@ Add to **[clash "1.1.1"]** to your project.clj
 Build on these functions with domain specific structure
 ```clojure
 ; Load objects from a file into memory (via defined regex and keyset).
+(transform-lines filename parser :max xx :tdfx some-xform)
+
+; Uses reduce, tracks counts and failed line parsings
+(transform-lines-verbose filename parser :max xx)
+
+; Slower, but atomic loads
 (atomic-list-from-file filename parser)
 (atomic-map-from-file filename parser)
 (file-into-structure filename parser [])
