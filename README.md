@@ -55,7 +55,7 @@ Build on these functions with domain specific structure
 ; Uses reduce, tracks counts and failed line parsings
 (transform-lines-verbose filename parser :max xx)
 
-; Slower, but atomic loads
+; Slower, but atomic loads (use when encountering errors)
 (atomic-list-from-file filename parser)
 (atomic-map-from-file filename parser)
 (file-into-structure filename parser [])

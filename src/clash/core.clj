@@ -113,15 +113,16 @@
   transducing xform function. For example, get the first 10 lines:
 
   (transform-lines \"some-file.txt\" some-parser :max 10 :tdfx (filter identity))
+
+  If errors are encountered, try (transform-lines-verbose) or (atomic-list-from-file)
   "
   [input parser & {:keys [max tdfx] :or {max nil tdfx nil}}]
-  (let [result []
-        transducefxA (if tdfx tdfx (comp (map parser) (filter identity)))
+  (let [transducefxA (if tdfx tdfx (comp (map parser) (filter identity)))
         transducefx (if max (comp transducefxA (take max)) transducefxA)]
     (try
       (with-open [ireader (reader input)]
-        (transduce transducefx conj result (line-seq ireader)) )
-      (catch Exception e (println "Exception:" e "," (count result) " Lines Transformed")))
+        (transduce transducefx conj [] (line-seq ireader)) )
+      (catch Exception e (println "Exception:" (.getMessage e))))
     ) )
 
 (defn transform-lines-verbose
@@ -145,7 +146,7 @@
           (reduce rdfx result (take max (line-seq ireader)))
           (reduce rdfx result (line-seq ireader))
           ) )
-      (catch Exception e (println "Exception:" e "," (:c result) " Lines Transformed")))
+      (catch Exception e (println "Exception:" (.getMessage e))))
   ) )
 
 (defn file-into-structure
