@@ -106,6 +106,48 @@
         (catch Exception e (println "Exception:" e ", " (count @result) " Solutions Loaded")))
       result) ) )
 
+(defn transform-lines
+  "Transform the text with a transducer instead of doseq. In this case, default
+  behavior will 1) parse lines and 2) filter non-nil results into a collection.
+  It is possible to specify the max number of good results or to specify a specific
+  transducing xform function. For example, get the first 10 lines:
+
+  (transform-lines \"some-file.txt\" some-parser :max 10 :tdfx (filter identity))
+  "
+  [input parser & {:keys [max tdfx] :or {max nil tdfx nil}}]
+  (let [result []
+        transducefxA (if tdfx tdfx (comp (map parser) (filter identity)))
+        transducefx (if max (comp transducefxA (take max)) transducefxA)]
+    (try
+      (with-open [ireader (reader input)]
+        (transduce transducefx conj result (line-seq ireader)) )
+      (catch Exception e (println "Exception:" e "," (count result) " Lines Transformed")))
+    ) )
+
+(defn transform-lines-verbose
+  "Transform the text with a reducer into a vector instead of
+  (doseq) into an atom. This will attempt to count every line,
+  parse every line, and store the results. It produces this:
+
+  {:c 1  ; the count of lines processed
+   :p [] ; the transformed lines
+   :f [] ; the lines that failed to transform
+  }"
+  [input parser & {:keys [max] :or {max nil}}]
+  (let [result {:c 0 :p [] :f []}
+        rdfx (fn [m line] (if-let [parsed (parser line)]
+                         (assoc (assoc m :p (conj (:p m) parsed)) :c (inc (:c m)))
+                         (assoc (assoc m :f (conj (:f m) line)) :c (inc (:c m)))
+                         ))]
+    (try
+      (with-open [ireader (reader input)]
+        (if max
+          (reduce rdfx result (take max (line-seq ireader)))
+          (reduce rdfx result (line-seq ireader))
+          ) )
+      (catch Exception e (println "Exception:" e "," (:c result) " Lines Transformed")))
+  ) )
+
 (defn file-into-structure
   "Load ~structured text from a file into a data structure to interact with
   at the command line (repl). Larger files and structures may require increasing the

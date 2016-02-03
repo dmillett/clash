@@ -14,7 +14,7 @@
 ; 10022013-13:24:12.000|sample-server|1.0.0|info|Search,FOO,5,15.00
 (def detailed-pattern #"(\d{8}-\d{2}:\d{2}:\d{2}.\d{3})\|.*\|(\w*),(\w*),(\d*),(.*)")
 
-(defn into-memory-parser
+(defn weblog-parser
   "An exact parsing of line text into 'simple-structure' using
   'detailed-pattern'."
   [line]

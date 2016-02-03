@@ -95,3 +95,11 @@
            (if (empty? sub-keys)
              (map #(zipmap structure (rest %)) text_groups)
              (map #(select-keys (zipmap structure (rest %)) sub-keys) text_groups)) ))) ))
+
+(defn includes-icase?
+  "todo: tests"
+  [text & includes]
+  (let [down_text (s/lower-case text)
+        down_includes (map #(s/lower-case %) includes)]
+    (every? #(s/includes? down_text %) down_includes)
+    ) )

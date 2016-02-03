@@ -24,8 +24,8 @@
     false) )
 
 (deftest test-atomic-map-from-file
-  (let [result1 (atomic-map-from-file web-log-file into-memory-parser 4)
-        result2 (atomic-map-from-file web-log-file is-search-or-price? nil into-memory-parser nil -1)]
+  (let [result1 (atomic-map-from-file web-log-file weblog-parser 4)
+        result2 (atomic-map-from-file web-log-file is-search-or-price? nil weblog-parser nil -1)]
 
     (is (= 4 (count @result1)))
     ; todo: check on this -- Purchase line fits the pattern, but because of predicate, it's 'nil'
@@ -33,8 +33,8 @@
     ) )
 
 (deftest test-atomic-list-from-file
-  (let [result1 (atomic-list-from-file web-log-file into-memory-parser 3)
-        result2 (atomic-list-from-file web-log-file is-search-or-price? nil into-memory-parser -1)]
+  (let [result1 (atomic-list-from-file web-log-file weblog-parser 3)
+        result2 (atomic-list-from-file web-log-file is-search-or-price? nil weblog-parser -1)]
 
     (is (= 3 (count @result1)))
     (is (= 6 (count @result2)))
@@ -42,14 +42,14 @@
 
 ;;; Note the count is 8 instead of 6 because the 'parser' function is more specific
 (deftest test-atomic-list-from-file__2_parameters_better_parser
-  (let [result (atomic-list-from-file web-log-file into-memory-parser)]
+  (let [result (atomic-list-from-file web-log-file weblog-parser)]
 
     (is (= 7 (count @result)))
     ) )
 
 (deftest test-file-into-structure
-  (let [vector_result (file-into-structure web-log-file into-memory-parser [])
-        list_result (file-into-structure web-log-file into-memory-parser '())]
+  (let [vector_result (file-into-structure web-log-file weblog-parser [])
+        list_result (file-into-structure web-log-file weblog-parser '())]
 
     (are [x y] (= x y)
       clojure.lang.PersistentVector (type vector_result)
@@ -58,8 +58,35 @@
       7 (count list_result)
       ) ) )
 
+(deftest test-transform-lines
+  (let [result1 (transform-lines web-log-file weblog-parser)
+        result2 (transform-lines web-log-file weblog-parser :max 3)
+        result3 (transform-lines web-log-file weblog-parser :max 5 :tdfx (filter identity))]
+    (are [x y] (= x y)
+      7 (count result1)
+      "Search" (:action (first result1))
+      "10" (:quantity (nth result1 6))
+      3 (count result2)
+      "Search" (:action (first result2))
+      "5" (:quantity (first result2))
+      5 (count result3)
+      "05042013-13:24:12.000|sample-server|1.0.0|info|Search,FOO,5,15.00" (second result3)
+      ) ) )
+
+(deftest test-transform-lines-verbose
+  (let [result1 (transform-lines-verbose web-log-file weblog-parser)
+        result2 (transform-lines-verbose web-log-file weblog-parser :max 3)]
+    (are [x y] (= x y)
+      7 (count (:p result1))
+      2 (count (:f result1))
+      9 (:c result1)
+      2 (count (:p result2))
+      1 (count (:f result2))
+      3 (:c result2)
+      ) ) )
+
 (deftest test-count-with-conditions
-  (let [solutions (atomic-list-from-file web-log-file into-memory-parser)]
+  (let [solutions (atomic-list-from-file web-log-file weblog-parser)]
     ;(perfd (first @solutions))
     (are [x y] (= x y)
       0 (count-with @solutions #(= "XYZ" (-> % :name)) :plevel 1)
@@ -75,7 +102,7 @@
 
 ;; Demonstrating custom increment
 (deftest test-count-with-conditions__with_incrementer
-  (let [solutions (atomic-list-from-file web-log-file into-memory-parser)]
+  (let [solutions (atomic-list-from-file web-log-file weblog-parser)]
     (are [x y] (= x y)
       3 (count-with @solutions (name? "FOO") :initval 0 :plevel 1)
       9 (count-with @solutions (name? "FOO") :incrfx increment-with-quanity :initval 0 :plevel 1)
@@ -89,7 +116,7 @@
 
 ;; Collecting results
 (deftest test-collect-with-conditions
-  (let [solutions (atomic-list-from-file web-log-file into-memory-parser)]
+  (let [solutions (atomic-list-from-file web-log-file weblog-parser)]
     (are [x y] (= x y)
       0 (count (collect-with @solutions (name? "XYZ")) )
       2 (count (collect-with @solutions (name-action? "FOO" "Search")))
@@ -98,7 +125,7 @@
 
 ; edn file created with (data-to-file)
 (deftest test-write-data-to-edn-and-read-back
-  (let [solutions (file-into-structure web-log-file into-memory-parser [])
+  (let [solutions (file-into-structure web-log-file weblog-parser [])
         web_solutions_file (str tresource "/web-solutions")
         solutions_from_file (data-from-file (str web_solutions_file ".edn"))]
     (is (= solutions solutions_from_file))
