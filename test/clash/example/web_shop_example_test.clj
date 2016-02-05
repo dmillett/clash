@@ -66,7 +66,7 @@
       7 (count result1)
       "Search" (:action (first result1))
       "10" (:quantity (nth result1 6))
-      3 (count result2)
+      2 (count result2)
       "Search" (:action (first result2))
       "5" (:quantity (first result2))
       5 (count result3)

@@ -117,11 +117,13 @@
   If errors are encountered, try (transform-lines-verbose) or (atomic-list-from-file)
   "
   [input parser & {:keys [max tdfx] :or {max nil tdfx nil}}]
-  (let [transducefxA (if tdfx tdfx (comp (map parser) (filter identity)))
-        transducefx (if max (comp transducefxA (take max)) transducefxA)]
+  (let [transducefx (if tdfx tdfx (comp (map parser) (filter identity)))]
     (try
       (with-open [ireader (reader input)]
-        (transduce transducefx conj [] (line-seq ireader)) )
+        (if max
+          (transduce transducefx conj [] (take max (line-seq ireader)))
+          (transduce transducefx conj [] (line-seq ireader))
+          ) )
       (catch Exception e (println "Exception:" (.getMessage e))))
     ) )
 
@@ -133,13 +135,20 @@
   {:c 1  ; the count of lines processed
    :p [] ; the transformed lines
    :f [] ; the lines that failed to transform
-  }"
+  }
+
+  It seems that local variables in the (let) assignment improve
+  performance a little bit."
   [input parser & {:keys [max] :or {max nil}}]
   (let [result {:c 0 :p [] :f []}
-        rdfx (fn [m line] (if-let [parsed (parser line)]
-                         (assoc (assoc m :p (conj (:p m) parsed)) :c (inc (:c m)))
-                         (assoc (assoc m :f (conj (:f m) line)) :c (inc (:c m)))
-                         ))]
+        rdfx (fn [m line]
+               (let [i (inc (:c m))
+                     pd (:p m)
+                     fd (:f m)]
+                 (if-let [parsed (parser line)]
+                   (assoc (assoc m :p (conj pd parsed)) :c i)
+                   (assoc (assoc m :f (conj fd line)) :c i)
+                   ) ) )]
     (try
       (with-open [ireader (reader input)]
         (if max

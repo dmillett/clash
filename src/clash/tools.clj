@@ -252,10 +252,10 @@
           submap (if (empty? kset) mp (select-keys mp kset))]
       (reduce
         (fn [result [k v]]
-          (if (or (nil? (get-in result [k])) (nil? (get-in result [k v])))
-            (assoc-in result [k v] 1)
-            (update-in result [k v] inc)
-            ) )
+          (let [freqkey (get-in result [k v])
+                freq (if freqkey (inc freqkey) 1)]
+            (merge result {k {v freq}})
+            ))
         target_map submap) ) ) )
 
 (defn merge-value-frequencies
@@ -274,7 +274,8 @@
   (reduce
     (fn [result m]
       (merge-value-frequencies result (value-frequencies {} m :kset kset :kpath kpath)) )
-    {} items)
+    {}
+    items)
   )
 
 (defn- pcollect-value-frequencies
@@ -344,7 +345,7 @@
         (let [k (eqfx current)]
           (if (or (nil? k) (not k) (not (nil? (get result k))))
             result
-            (assoc-in result [k] current)
+            (assoc result k current)
             ) ) )
       {} col)))
 

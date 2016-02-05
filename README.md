@@ -49,10 +49,11 @@ Add to **[clash "1.1.1"]** to your project.clj
 ### Core functions to build upon
 Build on these functions with domain specific structure
 ```clojure
-; Load objects from a file into memory (via defined regex and keyset).
+; Load lines from a file/reader into memory (via defined regex and keyset).
 (transform-lines filename parser :max xx :tdfx some-xform)
 
 ; Uses reduce, tracks counts and failed line parsings
+; Useful when encountering OutOfMemory with above functions
 (transform-lines-verbose filename parser :max xx)
 
 ; Slower, but atomic loads (use when encountering errors)
