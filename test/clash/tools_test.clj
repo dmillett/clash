@@ -204,7 +204,6 @@
       r2 r4
       ) ) )
 
-
 (deftest test-distinct-by
   (let [c1 [{:a "a1"} {:a "a2" :b "b1"} {:c "c2" :a "a2" :b "b1"}]
         c2 [{"foo" 1} {"foo" 1 "bar" 3}]

@@ -56,3 +56,12 @@ cd")
 (deftest test-count-tokens
   (is (= 2 (count-tokens "Drink that beverage!" " ")))
   )
+
+(deftest test-includes-icase
+  (are [x y] (= x y)
+     false (includes-icase? nil nil)
+     false (includes-icase? "foo" nil)
+     false (includes-icase? nil "o")
+     false (includes-icase? "foo" "b")
+     true (includes-icase? "foo" "o")
+     ))

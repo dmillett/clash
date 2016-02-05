@@ -97,9 +97,10 @@
              (map #(select-keys (zipmap structure (rest %)) sub-keys) text_groups)) ))) ))
 
 (defn includes-icase?
-  "todo: tests"
-  [text & includes]
-  (let [down_text (s/lower-case text)
-        down_includes (map #(s/lower-case %) includes)]
-    (every? #(s/includes? down_text %) down_includes)
-    ) )
+  "Check if text includes substring regardless of case. Everything
+  is converted to lower-case."
+  [text substr]
+  (if (and text substr)
+    (s/includes? (s/lower-case text) (s/lower-case substr))
+    false
+    ))
