@@ -143,6 +143,7 @@
     m) )
 
 (defn fold-conj
+  ^{:deprecated "1.2.1+, conj 1.7.0+ supports multiple arity conj"}
   "Acts like (conj) but intended for reducers/fold and zero arity."
   ([] '())
   ([a b] (conj a b)) )
@@ -234,8 +235,9 @@
   (reduce
     (fn [result [k v]]
       ; Should compare when the value is not nil
-      (assoc-in result [k] (when (not (nil? v)) (f v (-> k m2))) ) )
-    {} m1) )
+      (assoc result k (when v (f v (-> k m2))) ) )
+    {}
+    m1) )
 
 (defn value-frequencies
   "Find out the frequency of values for each key for a map. This can be useful when
@@ -265,8 +267,7 @@
   (merge-value-frequency-maps {:a {a1 1}} {:a {a1 3}}) => {:a {a1 4}}"
   ([] {})
   ([m] m)
-  ([mleft mright]
-    (merge-with #(merge-with + %1 %2) mleft mright) ) )
+  ([mleft mright] (merge-with #(merge-with + %1 %2) mleft mright) ) )
 
 (defn- scollect-value-frequencies
   "Determine the cumulative value frequencies for a collection of maps. Single threaded."
@@ -331,7 +332,7 @@
   => {:a {a2 5, a1 2, a3 1}}"
   [vfreqs]
   (reduce
-    (fn [result [k v]] (assoc-in result [k] (sort-map-by-value v)) )
+    (fn [result [k v]] (assoc result k (sort-map-by-value v)) )
     {} vfreqs) )
 
 (defn distinct-by
@@ -343,11 +344,12 @@
     (reduce
       (fn [result current]
         (let [k (eqfx current)]
-          (if (or (nil? k) (not k) (not (nil? (get result k))))
+          (if (or (not k) (get result k))
             result
             (assoc result k current)
             ) ) )
-      {} col)))
+      {}
+      col)))
 
 (defn all?
   "Pass value(s) implicitly and a list of predicates explicitly for evaluation.
