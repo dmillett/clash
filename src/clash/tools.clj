@@ -10,7 +10,8 @@
     ^{:author "dmillett"
       :doc "Some potentially useful tools with command.clj or other."}
   clash.tools
-  (:require [clojure.core.reducers :as r])
+  (:require [clojure.core.reducers :as r]
+            [clojure.string :as s])
   (:use [clojure.java.io :only (reader)])
   (:import [java.text.SimpleDateFormat]
            [java.text SimpleDateFormat]))
@@ -76,6 +77,21 @@
          scaled# (elapsed time#)]
      {:text (when (not (empty? msgs#)) msgs#) :latentcy {:ts scaled# :ns time#} :result result#} ) )
 
+(def jvm_sysinfo
+  "Some information from System/getProperties and Runtime. At a high level:
+  processors, heap, os, jvm versions."
+  (let [names ["os.name" "os.version" "java.vm.vendor" "java.vm.version" "java.vm.name"
+               "java.version" "java.runtime.version" "java.class.version" "java.specification.version"
+               "java.vm.specification.version" ""]
+        rt (Runtime/getRuntime)
+        ps (.availableProcessors rt)
+        mm (.maxMemory rt)
+        fm (.freeMemory rt)
+        props (select-keys (System/getProperties) names)
+        ]
+    (merge props {"available.processors" ps, "heap.max.memory" mm, "heap.free.memory" fm})
+    ) )
+
 (defmacro repeatfx
   "A macro to evaluate performance of a function over a specified number of executions.
   This is valuable to see how the JVM hotspot optimizes for repeat customers. It is
@@ -93,6 +109,33 @@
              time# (- (System/nanoTime) start#)]
          (recur (dec i#) (+ ttime# time#) (if ~capture (conj results# result#) nil)) )
        ) ) )
+
+(defmacro sweetspot
+  "Identify how many repeated executions does it take Hotspot to optimize the call. This macro
+  relieas on (repeatfx n fx) to repeatedly execute a function until the 'max_count' or minimum
+  performance slope is reached. The following are optional values:
+
+  stepfx - how many times should (repeatfx) run? Defaults #(* 10 %)
+  threshold - stop if performance increase is less than this? Defaults to 0.10
+  max_count - the maximum step iterations with (repeatfx) to run? Defaults to 10
+  verbose - dump system information (heap, os, cpus, etc)? Default 'true'
+  "
+  [fx & {:keys [stepfx threshold max_count verbose] :or {stepfx #(* 10 %) threshold 0.10 max_count 10 verbose true}}]
+  `(let [tfx# #(read-string (last (s/split % #":")))
+         sysinfo# (if ~verbose jvm_sysinfo {})]
+     (loop [i# 1, total_time# 0, results# [], thold# 1.0]
+       (if (or (>= i# ~max_count) (<= thold# ~threshold))
+         {:count i# :total (elapsed total_time#) :results results# :system sysinfo#}
+         (let [n# (~stepfx i#)
+               result# (repeatfx n# ~fx)
+               previous# (:avgtime (last results#))
+               pavg# (tfx# (:average result#))
+               current# (if (= 1 i#) pavg# (/ (- previous# pavg#) previous#))
+               ]
+           (recur (inc i#) (+ total_time# (tfx# (:total result#))) (conj results# {:n n# :avgtime (tfx# (:average result#))}) current#)
+           ) ) )
+     )
+  )
 
 (defmacro perf
   "Determine function execution time in nano seconds. Display is
@@ -143,7 +186,7 @@
     m) )
 
 (defn fold-conj
-  ^{:deprecated "1.2.1+, conj 1.7.0+ supports multiple arity conj"}
+  ;^{:deprecated "1.2.1+, conj 1.7.0+ supports multiple arity conj"}
   "Acts like (conj) but intended for reducers/fold and zero arity."
   ([] '())
   ([a b] (conj a b)) )
