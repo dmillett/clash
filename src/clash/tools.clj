@@ -122,7 +122,8 @@
   "
   [fx & {:keys [stepfx threshold max_count verbose] :or {stepfx #(* 10 %) threshold 0.10 max_count 10 verbose true}}]
   `(let [tfx# #(read-string (last (s/split % #":")))
-         sysinfo# (if ~verbose jvm_sysinfo {})]
+         sysinfo# (if ~verbose jvm_sysinfo {})
+         change# #(/ (- %1 %2) %1)]
      (loop [i# 1, total_time# 0, results# [], thold# 1.0]
        (if (or (>= i# ~max_count) (<= thold# ~threshold))
          {:count i# :total (elapsed total_time#) :results results# :system sysinfo#}
@@ -130,7 +131,7 @@
                result# (repeatfx n# ~fx)
                previous# (:avgtime (last results#))
                pavg# (tfx# (:average result#))
-               current# (if (= 1 i#) pavg# (/ (- previous# pavg#) previous#))
+               current# (if (= 1 i#) pavg# (change# previous# pavg#))
                ]
            (recur (inc i#) (+ total_time# (tfx# (:total result#))) (conj results# {:n n# :avgtime (tfx# (:average result#))}) current#)
            ) ) )
