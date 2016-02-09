@@ -82,7 +82,7 @@
   processors, heap, os, jvm versions."
   (let [names ["os.name" "os.version" "java.vm.vendor" "java.vm.version" "java.vm.name"
                "java.version" "java.runtime.version" "java.class.version" "java.specification.version"
-               "java.vm.specification.version" ""]
+               "java.vm.specification.version"]
         rt (Runtime/getRuntime)
         ps (.availableProcessors rt)
         mm (.maxMemory rt)
@@ -103,7 +103,9 @@
   [n fx & {:keys [capture] :or {capture false}}]
   `(loop [i# ~n, ttime# 0, results# []]
      (if (zero? i#)
-       {:total (elapsed ttime#) :average (elapsed (/ ttime# (float ~n))) :values results#}
+       {:total_time ttime# :total (elapsed ttime#)
+        :average_time (/ ttime# (float ~n)) :average (elapsed (/ ttime# (float ~n)))
+        :values results#}
        (let [start# (System/nanoTime)
              result# ~fx
              time# (- (System/nanoTime) start#)]
@@ -118,22 +120,28 @@
   stepfx - how many times should (repeatfx) run? Defaults #(* 10 %)
   threshold - stop if performance increase is less than this? Defaults to 0.10
   max_count - the maximum step iterations with (repeatfx) to run? Defaults to 10
-  verbose - dump system information (heap, os, cpus, etc)? Default 'true'
+  verbose - dump system information (heap, os, cpus, etc)? Default 'false'
   "
-  [fx & {:keys [stepfx threshold max_count verbose] :or {stepfx #(* 10 %) threshold 0.10 max_count 10 verbose true}}]
-  `(let [tfx# #(read-string (last (s/split % #":")))
+  [fx & {:keys [stepfx threshold max_count verbose] :or {stepfx nil threshold 0.10 max_count 10 verbose false}}]
+  `(let [stepfn# (if ~stepfx ~stepfx #(* 10 %))
          sysinfo# (if ~verbose jvm_sysinfo {})
-         change# #(/ (- %1 %2) %1)]
-     (loop [i# 1, total_time# 0, results# [], thold# 1.0]
+         change# #(Math/abs (/ (- %1 %2) %1))]
+     (loop [i# 0
+            total_time# 0
+            results# []
+            thold# 1.0]
        (if (or (>= i# ~max_count) (<= thold# ~threshold))
          {:count i# :total (elapsed total_time#) :results results# :system sysinfo#}
-         (let [n# (~stepfx i#)
+         (let [n# (stepfn# (inc i#))
                result# (repeatfx n# ~fx)
-               previous# (:avgtime (last results#))
-               pavg# (tfx# (:average result#))
-               current# (if (= 1 i#) pavg# (change# previous# pavg#))
+               previous# (:average_time (last results#))
+               current_avg# (:average_time result#)
+               current_thold# (if (= 0 i#) 1.0 (change# previous# current_avg#))
                ]
-           (recur (inc i#) (+ total_time# (tfx# (:total result#))) (conj results# {:n n# :avgtime (tfx# (:average result#))}) current#)
+           (recur (inc i#)
+                  (+ total_time# (:total_time result#))
+                  (conj results# {:n n# :average_time (:average_time result#) :text (elapsed (:average_time result#))})
+                  current_thold#)
            ) ) )
      )
   )

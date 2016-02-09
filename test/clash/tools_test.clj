@@ -385,10 +385,12 @@
   (let [r1 (sweetspot (+ 1 2))
         r2 (sweetspot (+ 2 3) :max_count 2)
         r3 (sweetspot (+ 3 4) :threshold 0.50)
-        r4 (sweetspot (+ 4 5) :max_count 2 :threshold 0.70 :verbose false)]
-    (is (not (empty? (:system r1))))
+        r3x (take 2 (reverse (:results r3)))
+        r4 (sweetspot (+ 4 5) :max_count 2 :threshold 0.70 :verbose true)]
+    (is (empty? (:system r1)))
     (is (not (empty? (:results r1))))
     (is (= 2 (:count r2)))
-    (is (empty? (:system r4)))
-    ; todo more testing
+    (is (<= (Math/abs (/ (- (:average_time (second r3x)) (:average_time (first r3x))) (:average_time (second r3x)) )) 0.50))
+    (is (not (empty? (:system r4))))
+    (is (= 13 (count (:system r4))))
     ) )
