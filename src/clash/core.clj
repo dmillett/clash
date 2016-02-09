@@ -23,7 +23,8 @@
 ;; (let [decoded (tt/url-decode line)] (sd/parse-soldump-line decoded))
 ;;   (sd/parse-soldump-line line)
 (defn atomic-map-from-file
-  "Load ~structured text from a file into a map of data structures to interact with
+  "DEPRECATED: use (transform-lines) or (atomic-list-from-file)
+  Load ~structured text from a file into a map of data structures to interact with
   at the command line (repl). Larger files and structures may require increasing the
    jvm heap. It helps to have specific regex to decrease the number of 'bad'
    structures included in the atomized data structure.
@@ -47,6 +48,7 @@
 
    Alternatively, just the 2 arg function and rely on the parser to perform much of
    the functionality with more strict regex."
+  {:deprecated 1.2}
   ([input parser] (atomic-map-from-file input nil nil parser nil nil))
   ([input parser max] (atomic-map-from-file input nil nil parser nil max))
   ([input predicate transformer parser key max]
@@ -106,6 +108,34 @@
         (catch Exception e (println "Exception:" e ", " (count @result) " Solutions Loaded")))
       result) ) )
 
+(defn file-into-structure
+  "Load ~structured text from a file into a data structure to interact with
+  at the command line (repl). Larger files and structures may require increasing the
+   jvm heap. It helps to have specific regex to decrease the number of 'bad'
+   structures included in the atomized data structure.
+
+  Usage:
+  (file-into-structure \"/foo.log\" foo-parser [])    ;; Attempt to load all
+  (file-into-structure \"foo.log\" foo-parser [] 50)  ;; Load first 50
+  (file-into-structure \"/foo.log\" is-foo? url-decode foo-parser [] -1) ;; Attempt to load all
+
+  'input' - a text file with structure (typically a log file)
+  'parser' - function that parses a text line, with regex, into a data structure
+  'predicates'  - function includes/excludes text line from parsing
+                - default will allow every line
+                - define predicates with 'every-pred' for 1 - N predicates
+  'transformer' - function to alter text line (decode, decrypt, etc) prior to parsing
+                - defaults to no text transformation
+  'max'         - Max number of solutions to load (possibly due to memory constraint)
+
+   Alternatively, just the 2 arg function and rely on the parser to perform much of
+   the functionality with more strict regex."
+  ([input parser structure] (file-into-structure input nil nil parser structure -1))
+  ([input parser structure max] (file-into-structure input nil nil parser structure max))
+  ([input predicate transformer parser structure max]
+   (into structure (deref (atomic-list-from-file input predicate transformer parser max)))
+    ) )
+
 (defn transform-lines
   "Transform the text with a transducer instead of doseq. In this case, default
   behavior will 1) parse lines and 2) filter non-nil results into a collection.
@@ -157,31 +187,3 @@
           ) )
       (catch Exception e (println "Exception:" (.getMessage e))))
   ) )
-
-(defn file-into-structure
-  "Load ~structured text from a file into a data structure to interact with
-  at the command line (repl). Larger files and structures may require increasing the
-   jvm heap. It helps to have specific regex to decrease the number of 'bad'
-   structures included in the atomized data structure.
-
-  Usage:
-  (file-into-structure \"/foo.log\" foo-parser [])    ;; Attempt to load all
-  (file-into-structure \"foo.log\" foo-parser [] 50)  ;; Load first 50
-  (file-into-structure \"/foo.log\" is-foo? url-decode foo-parser [] -1) ;; Attempt to load all
-
-  'input' - a text file with structure (typically a log file)
-  'parser' - function that parses a text line, with regex, into a data structure
-  'predicates'  - function includes/excludes text line from parsing
-                - default will allow every line
-                - define predicates with 'every-pred' for 1 - N predicates
-  'transformer' - function to alter text line (decode, decrypt, etc) prior to parsing
-                - defaults to no text transformation
-  'max'         - Max number of solutions to load (possibly due to memory constraint)
-
-   Alternatively, just the 2 arg function and rely on the parser to perform much of
-   the functionality with more strict regex."
-  ([input parser structure] (file-into-structure input nil nil parser structure -1))
-  ([input parser structure max] (file-into-structure input nil nil parser structure max))
-  ([input predicate transformer parser structure max]
-    (into structure (deref (atomic-list-from-file input predicate transformer parser max)))
-    ) )

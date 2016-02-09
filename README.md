@@ -21,35 +21,11 @@ Add to **[clash "1.1.1"]** to your project.clj
 \*Macbook Pro
 \**old 4 core pentium 4 with 8 gigs of RAM
 
-### define object structure, regex, and parser for sample text
-```clojure
-; time|application|version|logging_level|log_message (Action, Name, Quantity, Unit Price)
-(def line "05042013-13:24:12.000|sample-server|1.0.0|info|Search,FOO,5,15.00") 
- 
-; Defrecords offer a 12%-15% performance improvement during parsing vs maps
-(def simple-structure [:time :action :name :quantity :unit_price])
-
-; 10022013-13:24:12.000|sample-server|1.0.0|info|Search,FOO,5,15.00
-(def detailed-pattern #"(\d{8}-\d{2}:\d{2}:\d{2}.\d{3})\|.*\|(\w*),(\w*),(\d*),(.*)")
-
-(defn into-memory-parser
-  "An exact parsing of line text into 'simple-structure' using
-  'detailed-pattern'."
-  [text_line]
-  (tt/regex-group-into-map text_line simple-structure detailed-pattern) )
-
-; Create a dataset from raw text file to work with   
-(def solutions (file-into-structure web-log-file into-memory-parser []))
-
-; Save dataset as .edn for future access (slower than reparsing the original text)
-(data-to-file solutions "/some/local/directory/solutions")    
-(data-from-file "/some/local/directory/solutions.edn")    
-```
-
 ### Core functions to build upon
 Build on these functions with domain specific structure
 ```clojure
 ; Load lines from a file/reader into memory (via defined regex and keyset).
+; The 'parser' maps a structure onto lines of text (see Example below)
 (transform-lines filename parser :max xx :tdfx some-xform)
 
 ; Uses reduce, tracks counts and failed line parsings
@@ -74,7 +50,7 @@ Build on these functions with domain specific structure
 (collect-with solutions predicates :plevel 1)
 ```
 
-#### Utility functions (tools.clj)
+### Utility functions (tools.clj)
 Potentially useful functions to help filter and sort data. The resulting function
 will execute predicates from left to right. These are helpful for counting or collecting
 data that satisfy predicates.
@@ -129,22 +105,32 @@ debug value: 6, Time(ns): 2100
 
 ; By default, capture of function values will not occur
 => (repeatfx 5 (+ 4 4) :capture true)
-{:total Time(ns):6832, :values [8 8 8 8 8], :average Time(ns):1366.4}
+{:total_time 6832, :total Time(ns):6832, :values [8 8 8 8 8], :average_time 1366.4 :average Time(ns):1366.4}
+
+; What is the Hotspot performance curve for a function.
+; Use ':verbose true' to see System/heap stats
+=> (sweetspot (clojure.string/split "This is a test" #" "))
+{:system {},
+ :total "Time(ns):94774",
+ :count 3,
+ :results
+ [{:n 10, :average_time 3847.4, :text "Time(ns):3847.4"}
+  {:n 20, :average_time 1133.45, :text "Time(ns):1133.45"}
+  {:n 30, :average_time 1121.0333333333333, :text "Time(ns):1121.0333333333333"}]}
 ```
 
 ### Generate and apply filter groups to a collection (creates cartesian product)
-This generates a list of predicate function groups (partials) that are applied to
-a collection of data (single or multi-threaded). Each predicate group is the result
-of a cartesian product from partial functions and their corresponding values (see example
-below). This results in a map that contains the count for each predicate group 'match' in
-descending order.
+This generates a list of predicate function groups (partials) that are applied to a collection of data (single or 
+multi-threaded). Each predicate group is the result of a cartesian product from partial functions and their 
+corresponding values (see example below). This results in a map that contains the count for each predicate group 
+'match' in descending order.
 
-The predicate functions should be contextually relevant for the collection of data
-(e.g. don't use numeric predicates with a list of strings).
+The predicate functions should be contextually relevant for the collection of data (e.g. don't use numeric predicates 
+with a list of strings).
 
-Since it is hard for the JVM to keep the collections for large collections and predicate groups,
-only the count and underlying function are returned. Invidual result sets for any of the predicate
-groups may be obtained with (get-rs-from-matrix)
+Since it is hard for the JVM to keep the collections for large collections and predicate groups, only the count and 
+underlying function are returned. Invidual result sets for any of the predicate groups may be obtained with 
+(get-rs-from-matrix)
 
 For example a collection 1 - 100,000:
 
@@ -221,10 +207,36 @@ user=> {"foo_[3]" {:count 24} "foo_[4]" {:count 16}}
                                                               :v [(range 2 6)])
 
 ```
+
 ### Examples
 1. src/clash/example/web_shop_example.clj
 2. test/clash/example/web_shop_example_test.clj
 3. test/resources/web-shop.log
+
+#### define object structure, regex, and parser for sample text
+```clojure
+; time|application|version|logging_level|log_message (Action, Name, Quantity, Unit Price)
+(def line "05042013-13:24:12.000|sample-server|1.0.0|info|Search,FOO,5,15.00") 
+ 
+; Defrecords offer a 12%-15% performance improvement during parsing vs maps
+(def simple-structure [:time :action :name :quantity :unit_price])
+
+; 10022013-13:24:12.000|sample-server|1.0.0|info|Search,FOO,5,15.00
+(def detailed-pattern #"(\d{8}-\d{2}:\d{2}:\d{2}.\d{3})\|.*\|(\w*),(\w*),(\d*),(.*)")
+
+(defn into-memory-parser
+  "An exact parsing of line text into 'simple-structure' using
+  'detailed-pattern'."
+  [text_line]
+  (tt/regex-group-into-map text_line simple-structure detailed-pattern) )
+
+; Create a dataset from raw text file to work with   
+(def solutions (file-into-structure web-log-file into-memory-parser []))
+
+; Save dataset as .edn for future access (slower than reparsing the original text)
+(data-to-file solutions "/some/local/directory/solutions")    
+(data-from-file "/some/local/directory/solutions.edn")    
+```
 
 #### sample log data (web-shop.log) 
 ```
