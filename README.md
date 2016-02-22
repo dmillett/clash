@@ -366,33 +366,11 @@ elapsed time in nano seconds (ns), milliseconds (ms) or seconds(s).
 2. Install Leiningen and update the **project.clj**
     * Adjust based on number and complexity of structured objects
 
-```clojure
-;; Increase to 1024m or 2096m for larger files
-:jvm-opts ["-Xms256m" "-Xmx512m"]
-```
-```clojure
-:repl-options { :init (do
-                (load-file "checkouts/clash/src/clash/tools.clj")
-                (load-file "checkouts/clash/src/clash/text_tools.clj")
-                (load-file "checkouts/clash/src/clash/core.clj")
-                (load-file "your-clojure-source-file.clj")
-                (use 'clash.tools)
-                (use 'clash.text_tools)
-                (use 'clash.core)
-                (use 'ns.your-clojure-file)
-                (defn load-local-resource
-                  [filename]
-                  (str (System/getProperty "user.dir") "path/to/log-file" filename))
-               )}
-```
-
-
 ### notes
 * requires "/bin/sh" functionality
 * works best with java 1.8
 * built with leiningen (thanks technomancy)
-* clojure 1.6 (thank rich, et al)
-* requires custom heap values and init in project.clj (sample forthcoming)
+* clojure 1.8 (thank rich, et al)
 
 ## License
 Copyright (c) David Millett 2012. All rights reserved.
