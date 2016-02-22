@@ -6,7 +6,9 @@
 ;   the terms of this license.
 ;   You must not remove this notice, or any other, from this software.
 (ns clash.example.web_shop_example
-  (:require [clash.text_tools :as tt])
+  (:require [clash.text_tools :as tt]
+            [clojure.string :as s]
+            [clojure.java.io :as jio])
   (:use [clash.core]) )
 
 (def simple-structure [:time :action :name :quantity :unit_price])
@@ -66,3 +68,19 @@
 (def increment-with-quanity2
   "With (transduce): increments a count based on the :quantity for each solution in the collection"
   (fn [solution] (if solution (read-string (-> solution :quantity)) 0) ) )
+
+;; ***** increasing the size of a file to read in
+(def load-weblog
+  "Load a resource into memory and split by lines"
+  (drop 1 (s/split (slurp "test/resources/web-shop.log") #"\n")))
+
+(defn grow-weblog
+  "Grow the weblog data by 'n' times and shuffle the output."
+  [n data]
+  (shuffle (apply concat (repeat n data))))
+
+(defn lines-to-file
+  "Write the lines to a file"
+  [file data]
+  (with-open [wtr (jio/writer file)]
+    (doseq [line data] (.write wtr (str line "\n"))) ) )

@@ -8,7 +8,8 @@
 
 (ns clash.tools_test
   (:use [clash.tools]
-        [clojure.test]))
+        [clojure.test])
+  (:require [clojure.string :as s]))
 
 (deftest test-formatf
   (is (= "2.00" (formatf 2 2)))
@@ -384,13 +385,14 @@
 (deftest test-sweetspot
   (let [r1 (sweetspot (+ 1 2))
         r2 (sweetspot (+ 2 3) :max_count 2)
-        r3 (sweetspot (+ 3 4) :threshold 0.50)
-        r3x (take 2 (reverse (:results r3)))
-        r4 (sweetspot (+ 4 5) :max_count 2 :threshold 0.70 :verbose true)]
-    (is (empty? (:system r1)))
-    (is (not (empty? (:results r1))))
-    (is (= 2 (:count r2)))
+        r3 (sweetspot (+ 3 4) :delta 0.50)
+        r3x (take 2 (reverse (get-in r3 ["+" :results]) ))
+        r4 (sweetspot (s/split "Foo Bar" #" ") :max_count 2 :delta 0.70 :verbose true)]
+
+    (is (empty? (get-in r1 ["+" :system])))
+    (is (not (empty? (get-in r1 ["+" :results]))))
+    (is (= 2 (get-in r2 ["+" :count])))
     (is (<= (Math/abs (/ (- (:average_time (second r3x)) (:average_time (first r3x))) (:average_time (second r3x)) )) 0.50))
-    (is (not (empty? (:system r4))))
-    (is (= 13 (count (:system r4))))
+    (is (not (empty? (get-in r4 ["s/split" :system]))))
+    (is (= 13 (count (get-in r4 ["s/split" :system])) ))
     ) )

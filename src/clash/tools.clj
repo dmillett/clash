@@ -122,29 +122,38 @@
   max_count - the maximum step iterations with (repeatfx) to run? Defaults to 10
   verbose - dump system information (heap, os, cpus, etc)? Default 'false'
   "
-  [fx & {:keys [stepfx threshold max_count verbose] :or {stepfx nil threshold 0.10 max_count 10 verbose false}}]
+  [fx & {:keys [stepfx delta max_count verbose] :or {stepfx nil delta 0.10 max_count 10 verbose false}}]
   `(let [stepfn# (if ~stepfx ~stepfx #(* 10 %))
          sysinfo# (if ~verbose jvm_sysinfo {})
-         change# #(Math/abs (/ (- %1 %2) %1))]
+         deltafn# #(Math/abs (/ (- %1 %2) %1))
+         fxname# (first (map #(str %) '~fx))]
      (loop [i# 0
             total_time# 0
             results# []
             thold# 1.0]
-       (if (or (>= i# ~max_count) (<= thold# ~threshold))
-         {:count i# :total (elapsed total_time#) :results results# :system sysinfo#}
+       (if (or (>= i# ~max_count) (<= thold# ~delta))
+         {fxname# {:count i# :total (elapsed total_time#) :results results# :system sysinfo#}}
          (let [n# (stepfn# (inc i#))
-               result# (repeatfx n# ~fx)
+               result# (repeatfx n# '~fx :collect true)
                previous# (:average_time (last results#))
                current_avg# (:average_time result#)
-               current_thold# (if (= 0 i#) 1.0 (change# previous# current_avg#))
+               current_thold# (if (= 0 i#) 1.0 (deltafn# previous# current_avg#))
                ]
            (recur (inc i#)
                   (+ total_time# (:total_time result#))
                   (conj results# {:n n# :average_time (:average_time result#) :text (elapsed (:average_time result#))})
                   current_thold#)
            ) ) )
-     )
-  )
+     ) )
+
+(defmacro suitespot
+  [fns]
+  `(map
+     (fn [fx#] (let [f# (str fx#)] {(last (re-find #"\((.+?) .*\)" f#))
+                                    (repeatfx 1 'fx#)
+                                    ;(sweetspot 'fx#)
+                                    }))
+     '~fns))
 
 (defmacro perf
   "Determine function execution time in nano seconds. Display is

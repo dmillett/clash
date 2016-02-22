@@ -7,83 +7,70 @@ before starting a time consuming Hadoop or Spark job.
 Clash also includes clojure-shell (bash, csh, zsh, ec) functionality that incorporates most of the speed 
 advantages of commands like 'grep' and 'cut' individually or piped together.
 
-## Usage & Benefits
+## Usage 
+Add to **[clash "1.2.0"]** to your project
 
-Add to **[clash "1.1.1"]** to your project.clj
+## Benefits 
 
-* Log files with up to 5 million simple and/or complex data
+Convert lines, from a file, like this:
+```
+05042013-13:24:13.005|sample-server|1.0.0|info|Search,ZOO,25,13.99
+```
+into
+```clojure
+{:time "05042013-13:24:13.005", :action "Search", :name "ZOO", :quantity "25", :unit_price "13.99"}
+```
+
+* Log files with 5+ million lines
 * Most 'count', 'collect', and pivot functions take <= 1s per million rows*
-  * simple data (4/5) columns might evaluate at 10+ million rows/s
-* 2 - 3 million rows (30 elements, 2 nest levels) evaluated per second*
+  * simple data 5 key-values might evaluate at 10+ million rows/s
+  * up to 2 - 3 million rows (30 elements, 2 nest levels) evaluated per second*
 * 95,000 similar maps with 8 keys each in ~0.6 seconds**
-* 400,000 filter groups and 560,000 complex data row in 9 hours and < 4 gb JVM Heap**
+* 400,000 filter groups and 560,000 complex data rows stable for 9 hours and < 4 gb JVM Heap**
 
 \*Macbook Pro
 \**old 4 core pentium 4 with 8 gigs of RAM
 
-### Core functions to build upon
-Build on these functions with domain specific structure
+## Core functions to build upon
+Load data structures into memory and analyze or build result sets with predicates.
 ```clojure
-; Load lines from a file/reader into memory (via defined regex and keyset).
 ; The 'parser' maps a structure onto lines of text (see Example below)
-(transform-lines filename parser :max xx :tdfx some-xform)
+(transform-lines input parser :max xx :tdfx some-xform)
 
 ; Uses reduce, tracks counts and failed line parsings
-; Useful when encountering OutOfMemory with above functions
 (transform-lines-verbose filename parser :max xx)
 
-; Slower, but atomic loads (use when encountering errors)
+; Slower, but atomic loads and useful when encountering errors
 (atomic-list-from-file filename parser)
-(atomic-map-from-file filename parser)
-(file-into-structure filename parser [])
 
-; Analyze data with defined predicates (filters with 'and'/'or' functionality)
-; Incrementors can extract information and update cumulative results
-; Count or total specific pieces of data per 'solution' (collection or map)
-; Use a vector instead of a list for r/fold parallelism
-(count-with solutions predicate)
-(count-with solutions predicate :incrf + :initv 10 :plevel 2)
+; Analyze and filter data with defined predicates
+(count-with solutions predicates)
+(count-with solutions predicatse :incrf + :initv 10 :plevel 2)
 
 ; Build a result set with via filters, etc for each 'solution'
-; Use a vector instead of a list for r/fold parallelism
 (collect-with solutions predicates)
-(collect-with solutions predicates :plevel 1)
+(collect-with solutions predicates :plevel 2)
 ```
 
-### Utility functions (tools.clj)
-Potentially useful functions to help filter and sort data. The resulting function
-will execute predicates from left to right. These are helpful for counting or collecting
-data that satisfy predicates.
+## Utility functions (tools.clj)
+Potentially useful functions to help filter and sort data. The resulting function will execute 
+predicates from left to right. These are helpful for counting or collecting data that satisfy 
+predicates.
 
 ```clojure
-; Build filters with conditionals and predicates (fail fast)
-; Resembles (every-pred) and (some-fn), but perhaps more readable?
+; Returns 'true', resembles (every-pred) and (some-fn), but perhaps more readable?
 ((all? number? even?) 10)
-=> true
-
 ((any? number? even?) 11)
-=> true
-
 ((none? odd?) 10)
-=> true
-
-; true when the first item in a collection is satisfied, otherwise false
-; Resembles (some), but will not throw an error for this case (or return a function):
 (until? number? '("foo" 2 "bar"))
 => true
-
-; Collect all of the items in a collection until 'predicate' is satisfied
-; compliments (take-while), another implementation is due in clojure 1.7
-(take-until number? '("foo" "bar" 3 4))
-=> (3 "bar" "foo")
 
 ; Find distinct values for a given ~equality function for maps/lists
 (distinct-by [{:a 1, :b 2} {:a 1, :b 3} {:a 2, :b 4}] #(-> % :a))
 => ({:a 2 :b 4} {:a 1 :b 2})
 
 ; How many times do values repeat for specific keys across a collection of maps?
-(def mvs [{:a "a1" :b "b1"} {:a "a2" :b "b2"} {:a "a2" :c "c1"}])
-(collect-value-frequencies mvs)
+(collect-value-frequencies [{:a "a1" :b "b1"} {:a "a2" :b "b2"} {:a "a2" :c "c1"}])
 => {:c {c1 1} :b {b2 1, b1 1}, :a {a2 2, a1 1}}
 
 ; Concurrently get ':a' frequency values
@@ -98,7 +85,10 @@ data that satisfy predicates.
 ; Sort inner key values (descending)
 (sort-value-frequencies {:a {"a1" 2 "a2" 5 "a3" 1}})
 => {:a {"a2" 5 "a1" 2 "a3" 1}}
+```
 
+#### Debugging & Performance
+```clojure
 ; Evaluate function performance (debug, etc)
 => (perfd (+ 3 3)
 debug value: 6, Time(ns): 2100
@@ -119,7 +109,7 @@ debug value: 6, Time(ns): 2100
   {:n 30, :average_time 1121.0333333333333, :text "Time(ns):1121.0333333333333"}]}
 ```
 
-### Generate and apply filter groups to a collection (creates cartesian product)
+## Generate and apply filter groups to a collection
 This generates a list of predicate function groups (partials) that are applied to a collection of data (single or 
 multi-threaded). Each predicate group is the result of a cartesian product from partial functions and their 
 corresponding values (see example below). This results in a map that contains the count for each predicate group 
@@ -208,12 +198,12 @@ user=> {"foo_[3]" {:count 24} "foo_[4]" {:count 16}}
 
 ```
 
-### Examples
+## Examples
 1. src/clash/example/web_shop_example.clj
 2. test/clash/example/web_shop_example_test.clj
 3. test/resources/web-shop.log
 
-#### define object structure, regex, and parser for sample text
+### define object structure, regex, and parser for sample text
 ```clojure
 ; time|application|version|logging_level|log_message (Action, Name, Quantity, Unit Price)
 (def line "05042013-13:24:12.000|sample-server|1.0.0|info|Search,FOO,5,15.00") 
@@ -238,7 +228,7 @@ user=> {"foo_[3]" {:count 24} "foo_[4]" {:count 16}}
 (data-from-file "/some/local/directory/solutions.edn")    
 ```
 
-#### sample log data (web-shop.log) 
+### sample log data (web-shop.log) 
 ```
 # time|application|version|logging_level|log_message (Action, Name, Quantity, Unit Price)
 05042013-13:24:12.000|sample-server|1.0.0|info|Search,FOO,5,15.00
@@ -251,22 +241,27 @@ user=> {"foo_[3]" {:count 24} "foo_[4]" {:count 16}}
 05042013-13:24:13.123|sample-server|1.0.0|info|Purchase,BAR,10,2.25
 ```
 
-#### Load the examples
+### Load the examples
 ```
 lein repl
 ```
 ```clojure
 ; With exact parser (and regex) - reads specific lines
-user=> (def sols (atomic-list-from-file web-log-file into-memory-parser))
+user=> (def sols (transform-lines web-log-file weblog-parser))
 #'user/sols
-user=> (count @sols)
+user=> (count sols)
 7
 
-user=> (first @sols)
-{:unit_price 2.25, :quantity 10, :name BAR, :action Purchase, :time 05042013-13:24:13.123}
+user=> (first sols)
+{:time "05042013-13:24:12.000", :action "Search", :name "FOO", :quantity "5", :unit_price "15.00"}
+
+; Create a larger fileset from weblog
+user=> (def weblog load-weblog)
+user=> (def weblog_40k (grow-weblog 5000 weblog))
+user=> (lines-to-file "larger-40k-shop.log" weblog_40k)
 ```
 
-#### single conditions and incrementing functions
+### single conditions and incrementing functions
 ```clojure
 ; in the context of a map composed of 'structure' keys
 (defn name-action?
@@ -276,7 +271,7 @@ user=> (first @sols)
   (fn [line] (and (= name (-> line :name)) (= action (-> line :action)))) )
 
 ; A count of all "Search" actions for "FOO"
-user=> (count-with-conditions @solutions (name-action? "FOO" "Search"))
+user=> (count-with solutions (name-action? "FOO" "Search"))
 2    
 
 ; A running total of a specific key field  
@@ -285,15 +280,15 @@ user=> (count-with-conditions @solutions (name-action? "FOO" "Search"))
   (fn [solution count] (+ count (read-string (-> solution :quantity))) ) )  
     
 ; Incrementing count based on quantity for each structure
-user=> (count-with-conditions @sols (name? "FOO") :incrf increment-with-quanity)
+user=> (count-with sols (name? "FOO") :incrf increment-with-quanity)
 9
 
 ; Collecting a sequence of all matching solutions
-user=> (count (collect-with @sols (name-action? "BAR" "Purchase")))
+user=> (count (collect-with sols (name-action? "BAR" "Purchase")))
 1
 ```
 
-#### multiple conditions (all?) and (any?) to filter data
+### multiple conditions (all?) and (any?) to filter data
 ```clojure
 (defn price-higher?
   "If the unit price is higher than X."
