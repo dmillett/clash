@@ -56,15 +56,6 @@
     (= 3 r2)
     ) )
 
-(deftest test-repeatfx
-  (are [x y] (= x y)
-    [6 6 6] (:values (repeatfx 3 (+ 3 3) :capture true))
-    50 (count (:values (repeatfx 50 (+ 4 4) :capture true)))
-    nil (:values (repeatfx 2 (+ 3 3)))
-    ; For Shining fans
-    "All work and no play..." (first (:values (repeatfx 5000 (str "All work and no play...") :capture true)))
-    ) )
-
 (deftest test-sort-map-by-value
   (let [m1 {:a 1 :b 2 :c 3}
         m2 {:a 1 :b 2 :c 1 :d 3 :e 2}
@@ -381,6 +372,17 @@
 (deftest test-format-millitime-to
   (is (= "10-24-2015" (format-millitime-to 1445715563306 "MM-dd-yyyy")))
   )
+
+(deftest test-repeatfx
+  (not (nil? (:average_time (repeatfx 5 (+ 3 3)))))
+  (not (nil? (:total_time (repeatfx 5 (* 3 3)))))
+  (are [x y] (= x y)
+    [6 6 6] (:values (repeatfx 3 (+ 3 3) :capture true))
+    50 (count (:values (repeatfx 50 (+ 4 4) :capture true)))
+    nil (:values (repeatfx 2 (+ 3 3)))
+    ; For Shining fans
+    "All work and no play..." (first (:values (repeatfx 5000 (str "All work and no play...") :capture true)))
+    ) )
 
 (deftest test-sweetspot
   (let [r1 (sweetspot (+ 1 2))

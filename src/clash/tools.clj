@@ -99,12 +99,12 @@
   that the JVM hotspot will significantly improve performance over the first 50 iterations.
 
   user=> (repeatfx 3 (* 3 3) :capture true)
-  {:total Time(ns):7729 :values [9 9 9] :average Time(ns):2576.33}"
+  {:total_time 7729 :values [9 9 9] :averagetime 2576.33}"
   [n fx & {:keys [capture] :or {capture false}}]
   `(loop [i# ~n, ttime# 0, results# []]
      (if (zero? i#)
-       {:total_time ttime# :total (elapsed ttime#)
-        :average_time (/ ttime# (float ~n)) :average (elapsed (/ ttime# (float ~n)))
+       {:total_time ttime#
+        :average_time (/ ttime# (float ~n))
         :values results#}
        (let [start# (System/nanoTime)
              result# ~fx
@@ -132,7 +132,7 @@
             results# []
             thold# 1.0]
        (if (or (>= i# ~max_count) (<= thold# ~delta))
-         {fxname# {:count i# :total (elapsed total_time#) :results results# :system sysinfo#}}
+         {fxname# {:count i# :total total_time# :results results# :system sysinfo#}}
          (let [n# (stepfn# (inc i#))
                result# (repeatfx n# '~fx :collect true)
                previous# (:average_time (last results#))
@@ -141,19 +141,11 @@
                ]
            (recur (inc i#)
                   (+ total_time# (:total_time result#))
-                  (conj results# {:n n# :average_time (:average_time result#) :text (elapsed (:average_time result#))})
+                  (conj results# {:n n# :average_time (:average_time result#)})
                   current_thold#)
            ) ) )
      ) )
 
-(defmacro suitespot
-  [fns]
-  `(map
-     (fn [fx#] (let [f# (str fx#)] {(last (re-find #"\((.+?) .*\)" f#))
-                                    (repeatfx 1 'fx#)
-                                    ;(sweetspot 'fx#)
-                                    }))
-     '~fns))
 
 (defmacro perf
   "Determine function execution time in nano seconds. Display is

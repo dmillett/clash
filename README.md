@@ -88,6 +88,7 @@ predicates.
 ```
 
 #### Debugging & Performance
+Time is typically in nano seconds via System/nanoTime
 ```clojure
 ; Evaluate function performance (debug, etc)
 => (perfd (+ 3 3)
@@ -95,18 +96,22 @@ debug value: 6, Time(ns): 2100
 
 ; By default, capture of function values will not occur
 => (repeatfx 5 (+ 4 4) :capture true)
-{:total_time 6832, :total Time(ns):6832, :values [8 8 8 8 8], :average_time 1366.4 :average Time(ns):1366.4}
+{:total_time 6832, :values [8 8 8 8 8], :average_time 1366.4}
 
 ; What is the Hotspot performance curve for a function.
 ; Use ':verbose true' to see System/heap stats
 => (sweetspot (clojure.string/split "This is a test" #" "))
 {:system {},
- :total "Time(ns):94774",
+ :total 94774,
  :count 3,
  :results
- [{:n 10, :average_time 3847.4, :text "Time(ns):3847.4"}
-  {:n 20, :average_time 1133.45, :text "Time(ns):1133.45"}
-  {:n 30, :average_time 1121.0333333333333, :text "Time(ns):1121.0333333333333"}]}
+ [{:n 10, :average_time 3847.4}
+  {:n 20, :average_time 1133.45}
+  {:n 30, :average_time 1121.033}]}
+  
+; To format time, use the elapsed function
+=> (elapsed (:average_time (repeatfx 5 (+ 4 4))))
+Time(ns): 1366.4  
 ```
 
 ## Generate and apply filter groups to a collection
