@@ -8,7 +8,7 @@ Clash also includes clojure-shell (bash, csh, zsh, ec) functionality that incorp
 advantages of commands like 'grep' and 'cut' individually or piped together.
 
 ## Usage 
-Add to **[clash "1.2.0"]** to your project
+Add to **[clash "1.2.1"]** to your project
 
 ## Benefits 
 
