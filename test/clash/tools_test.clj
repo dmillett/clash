@@ -390,11 +390,8 @@
         r3 (sweetspot (+ 3 4) :delta 0.50)
         r3x (take 2 (reverse (get-in r3 ["+" :results]) ))
         r4 (sweetspot (s/split "Foo Bar" #" ") :max_count 2 :delta 0.70 :verbose true)]
-
-    (is (empty? (get-in r1 ["+" :system])))
     (is (not (empty? (get-in r1 ["+" :results]))))
     (is (= 2 (get-in r2 ["+" :count])))
     (is (<= (Math/abs (/ (- (:average_time (second r3x)) (:average_time (first r3x))) (:average_time (second r3x)) )) 0.50))
-    (is (not (empty? (get-in r4 ["s/split" :system]))))
-    (is (= 13 (count (get-in r4 ["s/split" :system])) ))
+    (is (= 10 (count (:values (first (get-in r4 ["s/split" :results])))) ))
     ) )

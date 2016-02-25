@@ -120,11 +120,10 @@
   stepfx - how many times should (repeatfx) run? Defaults #(* 10 %)
   threshold - stop if performance increase is less than this? Defaults to 0.10
   max_count - the maximum step iterations with (repeatfx) to run? Defaults to 10
-  verbose - dump system information (heap, os, cpus, etc)? Default 'false'
+  verbose - (removed - see 'jvm_sysinfo') dump system information (heap, os, cpus, etc)? Default 'false'
   "
   [fx & {:keys [stepfx delta max_count verbose] :or {stepfx nil delta 0.10 max_count 10 verbose false}}]
   `(let [stepfn# (if ~stepfx ~stepfx #(* 10 %))
-         sysinfo# (if ~verbose jvm_sysinfo {})
          deltafn# #(Math/abs (/ (- %1 %2) %1))
          fxname# (first (map #(str %) '~fx))]
      (loop [i# 0
@@ -132,16 +131,17 @@
             results# []
             thold# 1.0]
        (if (or (>= i# ~max_count) (<= thold# ~delta))
-         {fxname# {:count i# :total total_time# :results results# :system sysinfo#}}
+         {fxname# {:count i# :total total_time# :results results#}}
          (let [n# (stepfn# (inc i#))
-               result# (repeatfx n# '~fx :collect true)
+               result# (if ~verbose (repeatfx n# ~fx :capture true) (repeatfx n# ~fx))
                previous# (:average_time (last results#))
                current_avg# (:average_time result#)
                current_thold# (if (= 0 i#) 1.0 (deltafn# previous# current_avg#))
                ]
            (recur (inc i#)
                   (+ total_time# (:total_time result#))
-                  (conj results# {:n n# :average_time (:average_time result#)})
+                  (conj results# (merge {:n n# :average_time (:average_time result#)}
+                                        (if ~verbose (select-keys result# [:values]) nil)))
                   current_thold#)
            ) ) )
      ) )
