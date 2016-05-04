@@ -32,21 +32,22 @@
         ;r5 (perf (pivot foo-numbers [number?] divide-by-x? '(2 3 4)) "(pivot a)")
         ]
     (are [x y] (= x y)
-      3 (-> "pivot_[4]" r1)
-      6 (-> "pivot_[3]" r1)
-      5 (-> "pivot_[2]" r1)
+      3 (:result (get r1 "pivot_[4]"))
+      6 (:result (get r1 "pivot_[3]"))
+      5 (:result (get r1 "pivot_[2]"))
       ;
-      3 (-> "foo_[4]" r2)
-      6 (-> "foo_[3]" r2)
-      5 (-> "foo_[2]" r2)
+      3 (:result (get r2 "foo_[4]"))
+      6 (:result (get r2 "foo_[3]"))
+      5 (:result (get r2 "foo_[2]"))
       ;
-      3 (-> "foo_[4]" r3)
-      6 (-> "foo_[3]" r3)
-      5 (-> "foo_[2]" r3)
+      3 (:result (get r3 "foo_[4]"))
+      6 (:result (get r3 "foo_[3]"))
+      5 (:result (get r3 "foo_[2]"))
       ;
-      4 (-> "foo2_[[2 3]]" r4)
-      2 (-> "foo2_[[4 5]]" r4)
-      ) ) )
+      4 (:result (get r4 "foo2_[[2 3]]"))
+      2 (:result (get r4 "foo2_[[4 5]]"))
+      )
+    ) )
 
 (def foo-numbers-mixed '(2 3 4 5 9 "a" 11 12 15 20 21 "b" 25 26 27))
 
@@ -67,7 +68,7 @@
         r6pp (pivot-matrix hundred "r2" :b even-numbers :p divyX2 :v [(range 2 5) (range 6 8)] :plevel 3)
         r7 (pivot-matrix hundred "r7" :b even-numbers :p [divisible-by? foo-divide?] :v [(range 2 5) '([2 4] [4 5])])
         r8 (pivot-matrix hundred "r8" :b even-numbers :p [divisible-by? foo-divide?] :v [(range 2 4) cp])
-
+        ;
         r1e (pivot-matrix-e hundred "r1"  :base [number? even?] :pivot [{:f divisible-by? :v (range 2 5)}])
         r2e (pivot-matrix-e hundred "r2" :base even-numbers :pivot [{:f divisible-by? :v (range 2 5)} {:f divisible-by? :v (range 6 8)}])
         r3pe (pivot-matrix-e hundred "r1" :base even-numbers :pivot [{:f divisible-by? :v (range 2 5)}] :plevel 2)
@@ -81,7 +82,6 @@
         ;lc (into [] (range 1 1000001))
         ;r9 (t/perf (pivot-matrix lc "r2lc" :b even-numbers :p divyX2 :v [(range 2 11) (range 7 18)] :plevel 3) "")
         ]
-
     (are [x y] (= x y)
       3 (count r1)
       49 (get-in r1 ["r1_[2]" :count])
@@ -121,9 +121,17 @@
       18 (count r8)
       12 (get-in r8 ["r8_[2|[3 5]]" :count])
       ;
-      r1 r1e
-      r2 r2e
-      r3p r3pe
+      ;r1 r1e
+      (keys r1) (keys r1e)
+      '(49 24 16) (map #(:count %) (vals r1))
+      '(49 24 16) (map #(:count %) (vals r1e))
+      (keys r2) (keys r2e)
+      '(16 16 8 7 3 2) (map #(:count %) (vals r2))
+      '(16 16 8 7 3 2) (map #(:count %) (vals r2e))
+      ;r3p r3pe
+      (keys r3p) (keys r3pe)
+      '(49 24 16) (map #(:count %) (vals r3p))
+      '(49 24 16) (map #(:count %) (vals r3pe))
       ) ) )
 
 (defn- ratio
@@ -158,7 +166,8 @@
       0.696 (get-in r1 ["foo_[3]" :result])
       0.686 (get-in r1 ["foo_[2]" :result])
       0.643 (get-in r1 ["foo_[5]" :result])
-      ) ) )
+      )
+    ) )
 
 (deftest test-pivot-rs
   (let [hundred (range 1 100)
@@ -169,19 +178,19 @@
                                                                          :v [(range 2 6)])
         r2 (pivot-rs hundred m2 "foo_[5]")
         ]
-
     (are [x y] (= x y)
       9 (count r1)
       r1 [10 20 30 40 50 60 70 80 90]
       19 (count r2)
       r2 [5 10 15 20 25 30 35 40 45 50 55 60 65 70 75 80 85 90 95]
-      ) ) )
+      )
+  ) )
 
 (deftest test-filter-pivots
   (let [pm1 (pivot-matrix hundred "find" :p [divisible-by?] :v [(range 2 6)])]
     (are [x y] (= x y)
       pm1 (filter-pivots pm1)
-      {"find_[4]" {:count 24}} (filter-pivots pm1 :cfx even?)
-      {"find_[4]" {:count 24}} (filter-pivots pm1 :kterms ["4"])
-      {"find_[3]" {:count 33}} (filter-pivots pm1 :kterms ["3"] :cfx odd?)
+      24 (get-in (filter-pivots pm1 :cfx even?) ["find_[4]" :count])
+      24 (get-in (filter-pivots pm1 :kterms ["4"]) ["find_[4]" :count])
+      33 (get-in (filter-pivots pm1 :kterms ["3"] :cfx odd?) ["find_[3]" :count])
       ) ) )

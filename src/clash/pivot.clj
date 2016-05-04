@@ -10,36 +10,40 @@
             [clojure.math.combinatorics :as cmb]
             [clash.tools :as t]) )
 
+(defn- pivot-name
+  "Build a pivot name"
+  [value message]
+  (str message "_[" value "]"))
+
 (defn- single-pivot-group
-  "Create a list of functions given a list of values and add
-  meta-data to them with {:base_msg 'msg' :name 'X'}. Any partial function
-  that requires multiple params (initially) should satisfie (coll?)"
+  "Create a vector of maps with {:fx pivotf:v, :name msg_[v]}. Any partial function
+  that requires multiple params (initially) should satisfy (coll?). Example:
+  pivotf: divide-by?
+  values: [3 4 5]
+  --> [{:fx (divide-by? % 3) :name '_[3]'} ...]"
   [pivotf values msg]
   (if (coll? (first values))
-    (map #(with-meta (apply pivotf %) {:name (str msg "_[" % "]")}) values)
-    (map #(with-meta (pivotf %) {:name (str msg "_[" % "]")}) values)
-  ) )
+    (map (fn [v] {:fx (apply pivotf v) :name (pivot-name v msg)}) values)
+    (map (fn [v] {:fx (pivotf v) :name (pivot-name v msg)}) values)
+    ) )
 
-(defn- combine-functions-with-meta
-  "Carry the metadata :name forward from the pivot functions"
-  [f preds metafs]
-  ; copy meta data from pivot functions when appending them to predicates
-  (map #(with-meta
-          (apply f (conj preds %))
-          {:name (:name (meta %))}) metafs) )
+(defn- wrap-predicate-group
+  "Wrap the pivot functions with another function. Typically (all?) or (any?)."
+  [fx preds pivotsfx]
+  (map (fn [v] {:fx (apply fx (conj preds (:fx v))) :name (:name v)}) pivotsfx) )
 
 (defn- s-pivot
   ([col preds pivotf pivotd] (s-pivot col t/all? preds pivotf pivotd ""))
   ([col preds pivotf pivotd message] (s-pivot col t/all? preds pivotf pivotd message))
   ([col f preds pivotf pivotd message]
     (let [fpivots (single-pivot-group pivotf pivotd message)
-          combos (combine-functions-with-meta f preds fpivots)]
-      (t/sort-map-by-value
-        (reduce
-          (fn [r fx]
-            (assoc-in r [(:name (meta fx))] (t/count-with col fx)) )
-          {} combos) )
-      ) )  )
+          pivot_fxd (wrap-predicate-group f preds fpivots)]
+      (reduce
+        (fn [r fxd]
+          (assoc r (:name fxd) {:result (t/count-with col (:fx fxd)) :fx (:fx fxd)}) )
+        {}
+        pivot_fxd)
+      ) ) )
 
 (defn- p-pivot
   "Parallel evaluation of each value in a collection (col) with a base set of
@@ -59,13 +63,12 @@
   ([col preds pivotf pivotd message] (p-pivot col t/all? preds pivotf pivotd message))
   ([col f preds pivotf pivotd message]
     (let [fpivots (single-pivot-group pivotf pivotd message)
-          combos (combine-functions-with-meta f preds fpivots)]
-      (t/sort-map-by-value
-        (reduce
-          (fn [r fx]
-            (assoc-in r [(:name (meta fx))] (t/count-with col fx :plevel 2)) )
-          {} combos) )
-      ) ) )
+          pivot_fxd (wrap-predicate-group f preds fpivots)]
+      (reduce
+        (fn [r fxd]
+          (assoc r (:name fxd) {:result (t/count-with col (:fx fxd) :plevel 2) :fx (:fx fxd)}) )
+        {}
+        pivot_fxd) ) ) )
 
 (defn pivot
   "Evaluation of each value in a collection (col) with a base set of
@@ -87,10 +90,11 @@
   "
   [col msg & {:keys [b p v plevel] :or {b [] p nil v [] plevel 1}}]
   (let [message (if (empty? msg) "pivot" msg)]
-    (cond
-      (= 1 plevel) (s-pivot col t/all? b p v message)
-      (= 2 plevel) (p-pivot col t/all? b p v message)
-      ) ) )
+    (t/sort-pivot-by-value
+      (cond
+        (= 1 plevel) (s-pivot col t/all? b p v message)
+        (= 2 plevel) (p-pivot col t/all? b p v message)
+      ) ) ) )
 
 (defn- s-pivot-compare
   "Compare the results (maps) of two pivots with a specific function. For
@@ -99,7 +103,7 @@
   [col1 col2 basepreds pivotf pivotd msg compf]
   (let [a (pivot col1 msg :b basepreds :p pivotf :v pivotd)
         b (pivot col2 msg :b basepreds :p pivotf :v pivotd)]
-    (t/sort-map-by-value (t/compare-map-with a b compf))
+    (t/sort-map-by-value (t/compare-pivot-with a b compf))
     ) )
 
 (defn- p-pivot-compare
@@ -109,7 +113,7 @@
   [col1 col2 preds pivotf pivotd msg compf]
   (let [a (pivot col1 msg :b preds :p pivotf :v pivotd :plevel 2)
         b (pivot col2 msg :b preds :p pivotf :v pivotd :plevel 2)]
-    (t/sort-map-by-value (t/compare-map-with a b compf))
+    (t/sort-map-by-value (t/compare-pivot-with a b compf))
     ) )
 
 (defn pivot-compare
@@ -131,41 +135,37 @@
 
 ;; **************************************************************************************
 
-(defn- single-pivot-group-matrix
+(defn sort-pivot-map-by-value
+  "Sort by values descending (works when there are non-unique values too).
+  This compares the :value for each MatrixResult"
+  [m mkey]
+  (into (sorted-map-by
+          (fn [k1 k2] (compare [(get-in m [k2 mkey]) k2]
+                               [(get-in m [k1 mkey]) k1]) ) )
+        m) )
+
+
+; todo: create printer without 'function'
+(defn compare-pivot-map-with
+  "Compare values in two maps with a specific 2 arg function. Currently this assumes
+  identical keysets in each map. todo: fix for missing keys (set default value)"
+  [m1 m2 f]
+  (reduce
+    (fn [result [k v]]
+      (assoc result k (when (not (nil? v))
+                        {:result (f (:count v) (get-in m2 [k :count]))
+                         :function (:function v)}) ) )
+    {}
+    m1) )
+
+(defn- single-pivot-group-matrix ; todo: make common with pivot
   "Create a list of functions given a list of values and add
-  meta-data to them with {:name 'msg'-pivot_X :base_msg 'msg' :pivot 'X'}"
+  meta-data to them with {:fx pivotfx :name 'msg'-pivot_X :base_msg 'msg' :pivot 'X'}"
   [pivotf values msg]
-  (let [name (str msg "_")]
-    ; :name will get recalculated later when > 1 pivot groups exist
-    (if (coll? (first values))
-      (map #(with-meta (apply pivotf %) {:name (str name %) :base_msg msg :pivot %}) values)
-      (map #(with-meta (pivotf %) {:name (str name %) :base_msg msg :pivot %}) values)
-      ) ) )
-
-(defn- build-pg-meta
-  "Build a composite meta data string for a predicate group of functions. This
-  uses the :base_msg (should be the same for all functions) and then appends
-  '-pivots_[x|y]' where 'x' is :pivot for function 1 and 'y' is the :pivot for function 2."
-  [pg delim]
-  (loop [p pg
-         text (str (:base_msg (meta (first p))) "_[")]
-    (if (empty? p)
-      (str (subs text 0 (dec (count text))) "]")
-      (recur
-        (next p)
-        (str text (:pivot (meta (first p))) delim))
-      ) ) )
-
-(defn- build-matrix
-  "A function (all?) followed by a vector of base predicates and a list of list of predicate
-  functions (predicate groups)."
-  [f base pgs]
-  ; make a list of the cartesian products from the predicate groups
-  (let [cartesian (apply cmb/cartesian-product pgs)]
-    (for [pg cartesian]
-      ; apply f, e.g. (all?), to the combintation of base_preds + predicate group
-      (with-meta (apply f (into [] (into base pg))) {:name (build-pg-meta pg "|")})
-      ) ) )
+  (if (coll? (first values))
+    (map (fn [v] {:fx (apply pivotf v) :base_msg msg :pivot v}) values)
+    (map (fn [v] {:fx (pivotf v) :base_msg msg :pivot v}) values)
+    ) )
 
 (defn- build-pivot-groups-matrix
   "Build a list of pivot predicates for multiple pivots. In this case, each
@@ -180,48 +180,50 @@
       (recur
         (conj result (single-pivot-group-matrix (first fs) (first data) base_msg))
         (rest fs)
-        (rest data)) )
-    ) )
+        (rest data))
+      ) ) )
 
-(defn sort-pivot-map-by-value
-  "Sort by values descending (works when there are non-unique values too).
-  This compares the :value for each MatrixResult"
-  [m mkey]
-  (into (sorted-map-by
-          (fn [k1 k2] (compare [(get-in m [k2 mkey]) k2]
-                               [(get-in m [k1 mkey]) k1]) ) )
-    m) )
+(defn- build-pg-meta   ; todo: change name
+  "Build a composite meta data string for a predicate group of functions. This
+  uses the :base_msg (should be the same for all functions) and then appends
+  '-pivots_[x|y]' where 'x' is :pivot for function 1 and 'y' is the :pivot for function 2."
+  [pg delim]
+  (loop [p pg
+         text (str (:base_msg (first p)) "_[")]
+    (if (empty? p)
+      (str (subs text 0 (dec (count text))) "]")
+      (recur
+        (next p)
+        (str text (:pivot (first p)) delim))
+      ) ) )
 
-
-; todo: don't store function as metadata, store it next to result
-; todo: create printer without 'function'
-(defn compare-pivot-map-with
-  "Compare values in two maps with a specific 2 arg function. Currently this assumes
-  identical keysets in each map. todo: fix for missing keys (set default value)"
-  [m1 m2 f]
-  (reduce
-    (fn [result [k v]]
-      (assoc-in result [k] (when (not (nil? v))
-                             {:result (f (:count v) (get-in m2 [k :count]))
-                             :function (:function (meta v))})
-        ) )
-    {} m1) )
+(defn- build-matrix
+  "A function (all?) followed by a vector of base predicates and a list of list of predicate
+  functions (predicate groups). Generates a cartesian product based list of every predicate
+  group combination and uses each item with (all?)"
+  [f base pgs]
+  (let [cartesian (into [] (apply cmb/cartesian-product pgs))]
+    (for [pg cartesian]
+      {:fx (apply f (into base (map #(:fx %) pg))) :name (build-pg-meta pg "|")}
+      ) ) )
 
 (defn- update-map-with-pivot-meta
   "Used to update each new pivot result with meta-data from the previous filter group."
   [m fx col plevel]
-  (assoc-in m [(:name (meta fx))] (with-meta {:count (t/count-with col fx :plevel plevel)} {:function fx}) ))
+  (assoc m (:name fx) {:count (t/count-with col (:fx fx) :plevel plevel) :function (:fx fx)}) )
 
 (defn- s-pivot-matrix
   "Evaluate a multi-dimensional array of predicates with their base predicates over
   a collection. The predicate evaluation against the collection is single threaded."
   [col message base_preds pivotfs pivotds]
   (let [pivot_groups (build-pivot-groups-matrix pivotfs pivotds message)
-        flat_matrix (build-matrix t/all? base_preds pivot_groups)]
+        flat_matrix (build-matrix t/all? base_preds pivot_groups)
+        ]
     (sort-pivot-map-by-value
       (reduce
-        (fn [result fx] (update-map-with-pivot-meta result fx col 1))
-         {} flat_matrix)
+        (fn [result fxdata] (update-map-with-pivot-meta result fxdata col 1))
+        {}
+        flat_matrix)
       :count)
     ) )
 
@@ -234,7 +236,8 @@
     (sort-pivot-map-by-value
       (reduce
         (fn [result fx] (update-map-with-pivot-meta result fx col 2))
-        {} flat_matrix)
+        {}
+        flat_matrix)
       :count)
     ) )
 

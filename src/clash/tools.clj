@@ -136,8 +136,7 @@
                result# (if ~verbose (repeatfx n# ~fx :capture true) (repeatfx n# ~fx))
                previous# (:average_time (last results#))
                current_avg# (:average_time result#)
-               current_thold# (if (= 0 i#) 1.0 (deltafn# previous# current_avg#))
-               ]
+               current_thold# (if (= 0 i#) 1.0 (deltafn# previous# current_avg#))]
            (recur (inc i#)
                   (+ total_time# (:total_time result#))
                   (conj results# (merge {:n n# :average_time (:average_time result#)}
@@ -194,6 +193,16 @@
           (fn [k1 k2] (compare [(get m k2) (str k2)]
                                [(get m k1) (str k1)]) ) )
     m) )
+
+(defn sort-pivot-by-value
+  "Sort a pivot result"
+  [pivot_data]
+  (into
+    (sorted-map-by
+      (fn [k1 k2] (compare [(get-in pivot_data [k2 :result]) (str k2)]
+                           [(get-in pivot_data [k1 :result]) (str k1)]))
+      )
+    pivot_data) )
 
 (defn fold-conj
   ;^{:deprecated "1.2.1+, conj 1.7.0+ supports multiple arity conj"}
@@ -281,14 +290,28 @@
     (+ (quot size t) (rem size t))
     ) )
 
-(defn compare-map-with
+(defn compare-pivot-with
   "Compare values in two maps with a specific 2 arg function. Currently this assumes
   identical keysets in each map. todo: fix for missing keys (set default value)"
-  [m1 m2 f]
+  [m1 m2 compf]
   (reduce
     (fn [result [k v]]
       ; Should compare when the value is not nil
-      (assoc result k (when v (f v (-> k m2))) ) )
+      (let [r (:result v)]
+        (assoc result k (when r
+                          (compf r (:result (get m2 k))))
+                      ) ) )
+    {}
+    m1) )
+
+(defn compare-map-with
+  "Compare values in two maps with a specific 2 arg function. Currently this assumes
+  identical keysets in each map. todo: fix for missing keys (set default value)"
+  [m1 m2 compf]
+  (reduce
+    (fn [result [k v]]
+      ; Should compare when the value is not nil
+      (assoc result k (when v (compf v (-> k m2))) ) )
     {}
     m1) )
 
