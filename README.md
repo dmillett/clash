@@ -152,9 +152,10 @@ For example a collection 1 - 100,000:
 ;; The count and the generated partial function (as meta data) used to derive that count
 user=> (pivot-matrix (range 1 100) "r1"  :b [number? even?] :p [divisible-by?] 
                                                             :v [(range 2 5)])
-{"r1_[2]" {:count 49}, 
-"r1_[4]" {:count 24}, 
-"r1_[3]" {:count 16}}
+;; Note that the generated function is also printed (ugly)
+{"r1_[2]" {:count 49 :function #object[]}, 
+"r1_[4]" {:count 24 :function #object[]}, 
+"r1_[3]" {:count 16 :function #object[]}}
 
 ;; Generate a cartesian product combination of predicate groups:
 ; --> (all? number? even? (divisible-by? 2) (divisible-by? 6))
@@ -168,6 +169,7 @@ user=> (pivot-matrix (range 1 100) "r1"  :b [number? even?] :p [divisible-by?]
 (def even-numbers [number? even?])
 (pivot-matrix (range 1 100) "r2" :b even-numbers :p [divisible-by? divisible-by?] 
                                                  :v [(range 2 5) (range 6 8)])
+; The generated function is now included
 {"r2_[3|6]" {:count: 16}, 
 "r2_[2|6]" {:count 16},  
 "r2_[4|6]" {:count 8},  
