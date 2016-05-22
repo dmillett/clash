@@ -23,7 +23,7 @@ into
 
 * Log files with 5+ million lines
 * Most 'count', 'collect', and pivot functions take <= 1s per million rows*
-  * simple data 5 key-values might evaluate at 10+ million rows/s
+  * simple data 5 key-values might evaluate at 20+ million rows/s
   * up to 2 - 3 million rows (30 elements, 2 nest levels) evaluated per second*
 * 95,000 similar maps with 8 keys each in ~0.6 seconds**
 * 400,000 filter groups and 560,000 complex data rows stable for 9 hours and < 4 gb JVM Heap**

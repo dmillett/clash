@@ -330,11 +330,11 @@
           submap (if (empty? kset) mp (select-keys mp kset))]
       (reduce
         (fn [result [k v]]
-          (let [freqkey (get-in result [k v])
-                freq (if freqkey (inc freqkey) 1)]
-            (merge result {k {v freq}})
-            ))
-        target_map submap) ) ) )
+          (if-let [frequency (get-in result [k v])]
+            (assoc result k {v (inc frequency)})
+            (assoc result k {v 1}) ) )
+        target_map
+        submap) ) ) )
 
 (defn merge-value-frequencies
   "Merge two value frequency maps where the value frequency totals will be added
