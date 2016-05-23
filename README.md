@@ -170,12 +170,13 @@ user=> (pivot-matrix (range 1 100) "r1"  :b [number? even?] :p [divisible-by?]
 (pivot-matrix (range 1 100) "r2" :b even-numbers :p [divisible-by? divisible-by?] 
                                                  :v [(range 2 5) (range 6 8)])
 ; The generated function is now included
-{"r2_[3|6]" {:count: 16}, 
-"r2_[2|6]" {:count 16},  
-"r2_[4|6]" {:count 8},  
-"r2_[2|7]" {:count 7},  
-"r2_[4|7]" {:count 3},  
-"r2_[3|7]" {:count 2}}
+(print-pivot-matrix pm)
+("key: r2_[3|6], count: 16", 
+ "key: r2_[2|6], count: 16",  
+ "key: r2_[4|6], count: 8",  
+ "key: r2_[2|7], count: 7",  
+ "key: r2_[4|7], count: 3",  
+ "key: r2_[3|7], count: 2")
 
 ; Get a result set for any of the predicate groups in a matrix
 (def mtrx (pivot-matrix (range 1 100) "foo" :b [even?] :p [divisible-by?] 

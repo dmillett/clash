@@ -200,8 +200,7 @@
   (into
     (sorted-map-by
       (fn [k1 k2] (compare [(get-in pivot_data [k2 :result]) (str k2)]
-                           [(get-in pivot_data [k1 :result]) (str k1)]))
-      )
+                           [(get-in pivot_data [k1 :result]) (str k1)])) )
     pivot_data) )
 
 (defn fold-conj
@@ -234,8 +233,7 @@
       (if (= 1 plevel)
         (if (map? sols) (reduce-kv #(reducefx %1 %3) initval sols) (reduce reducefx initval sols))
         (+ initval (r/fold + (if (map? sols) #(reducefx %1 %3) #(reducefx %1 %2)) sols))
-        ))
-    ) )
+        ) ) ) )
 
 (defn count-from-groups
   "Count all data in a list of groups that satisfies 'predfx'."
@@ -270,9 +268,7 @@
       (if (map? sols)
         (r/fold rinto (fn [r k v] (if (preds v) (conj r [k v]) r)) sols)
         (r/fold rinto (fn [r y] (if (preds y) (conj r y) r)) sols)
-        )
-      )
-    ) )
+        ) ) ) )
 
 (defn collect-from-groups
   "Collect all data in a list of groups that satisfies 'predfx'."
