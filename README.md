@@ -142,7 +142,7 @@ For example a collection 1 - 100,000:
 (pivot-matrix col msg :b common_pred :p pivot_preds :v pivot_values :plevel 2)
 
 ; Compare cartesian predicate results when applied to 2 different collections
-(pivot-matrix-compare col1 col2 msg comparef :b common_preds :p pivot_preds :v pivot_values)
+(pivot-matrix-compare col1 col2 msg comparef :b base_predicates :p pivot_predicates :v pivot_values)
 
 ;; Generate a list of predicate groups to apply to a collection 
 ; --> (all? number? even? (divisible-by? 2))
@@ -150,12 +150,12 @@ For example a collection 1 - 100,000:
 ; --> (all? number? even? (divisible-by? 4))
 ;; Where :b 'common predicates' and :p [f1] is paired with :v [v1]
 ;; The count and the generated partial function (as meta data) used to derive that count
-user=> (pivot-matrix (range 1 100) "r1"  :b [number? even?] :p [divisible-by?] 
-                                                            :v [(range 2 5)])
+user=> (pivot-matrix (range 1 100) "r1" :b [number? even?] :p [divisible-by?] 
+                                                           :v [(range 2 5)])
 ;; Note that the generated function is also printed (ugly)
 {"r1_[2]" {:count 49 :function #object[]}, 
-"r1_[4]" {:count 24 :function #object[]}, 
-"r1_[3]" {:count 16 :function #object[]}}
+ "r1_[4]" {:count 24 :function #object[]}, 
+ "r1_[3]" {:count 16 :function #object[]}}
 
 ;; Generate a cartesian product combination of predicate groups:
 ; --> (all? number? even? (divisible-by? 2) (divisible-by? 6))
@@ -183,12 +183,12 @@ user=> (pivot-matrix (range 1 100) "r1"  :b [number? even?] :p [divisible-by?]
                                                        :v [(range 2 6)]))
 user=> (pprint mtrx) 
 {"foo_[2]" {:count 49},
-"foo_[3]" {:count 24},
-"foo_[4]" {:count 16},
-"foo_[5]" {:count 9}}
+ "foo_[3]" {:count 24},
+ "foo_[4]" {:count 16},
+ "foo_[5]" {:count 9}}
 
 ; All of the even numbers divisible by 5 for 1 - 100
-(pivot-rs hundred mtrx "foo-pivots_[5]")
+(pivot-rs hundred mtrx "foo_[5]")
 user=> (90 80 70 60 50 40 30 20 10)
 
 ; Filter for specific pivots (could do w/o :kterms below)
