@@ -260,7 +260,7 @@
   ; Map data structures will return key-value pairs in a collection
   (collect-with {:a 1 :b 2 :c 3} odd?) => '([:a 1] [:c 3])
   "
-  [sols preds & {:keys [:plevel] :or {:plevel 1}}]
+  [sols preds & {:keys [plevel] :or {plevel 1}}]
   (if (or (nil? sols) (nil? preds))
     '()
     (if (= 1 plevel)
