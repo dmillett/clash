@@ -488,3 +488,20 @@
       (try (pred (first items)) (catch Exception _ false)) (conj result (first items))
       :else (recur (conj result (first items)) (rest items))
       ) ) )
+
+(defn consecutive
+  "Group data in a collection by a specific function using loop/recur. For example, find
+  consecutive even numbers in a collection:
+
+  (consecutive even? [1 2 3 4 6 7 8 4 6 3 12])
+  => [[2] [4 6] [8 4 6] [12]]"
+  [fx? coll]
+  (loop [remain coll, current [], result []]
+    (if (empty? remain)
+      (if (empty? current) result (conj result current))
+      (let [data (first remain)]
+        (if (fx? data)
+          (recur (rest remain) (conj current data) result)
+          (recur (rest remain) [] (if (empty? current) result (conj result current)))
+          )))
+    ) )

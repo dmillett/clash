@@ -395,3 +395,11 @@
     (is (<= (Math/abs (/ (- (:average_time (second r3x)) (:average_time (first r3x))) (:average_time (second r3x)) )) 0.50))
     (is (= 10 (count (:values (first (get-in r4 ["s/split" :results])))) ))
     ) )
+
+(deftest test-consecutive
+  (let [coll1 [1 2 3 4 6 7 8 2 3 6 12 14]
+        coll2 [true true false true false true true]]
+    (are [x y] (= x y)
+               [[2] [4 6] [8 2] [6 12 14]] (consecutive even? coll1)
+               [[true true] [true] [true true]] (consecutive true? coll2)
+               ) ))
