@@ -32,17 +32,33 @@ Convert millions of lines, from text stream or file, like this:
 ```
 05042013-13:24:13.005|sample-server|1.0.0|info|Search,ZOO,25,13.99
 ```
+using
+```clojure
+; Create a target structure, pattern, and parser/adapter
+(defrecord Structure [time action name quantity unit_price])
+(def pattern #"(\d{8}-\d{2}:\d{2}:\d{2}.\d{3})\|.*\|(\w*),(\w*),(\d*),(.*)")
+(defn parser [line] (let [[_ t a n q p] (re-find pattern line)] (Structure. t a n q p)))
+
+; Parse and transform a single line
+(def sample "05042013-13:24:13.005|sample-server|1.0.0|info|Search,ZOO,25,13.99")
+(parser sample)
+```
 into
 ```clojure
-{:time "05042013-13:24:13.005", :action "Search", :name "ZOO", :quantity "25", :unit_price "13.99"}
+; Single line sample
+#user.Structure{:time "05042013-13:24:13.005", :action "Search", :name "ZOO", :quantity "25", :unit_price "13.99"}
+
+; Transform one million log lines (2 - 3 seconds on macbook)
+(def data (transform-lines "logs.txt" parser :max 1000000))
 ```
 
-## Core Transformation Functions
+
 <a name="core-transformations"/>
+## Core Transformation Functions
 Load data structures into memory and analyze or build result sets with predicates.
 
 ```clojure
-; The 'parser' maps a structure onto lines of text (see Example below)
+; The 'parser' maps a structure onto lines of text (see 'packaged examples' below)
 (transform-lines input parser :max xx :tdfx some-xform)
 
 ; Uses reduce, tracks counts and failed line parsings
@@ -50,48 +66,48 @@ Load data structures into memory and analyze or build result sets with predicate
 
 ; Slower, but atomic loads and useful when encountering errors
 (atomic-list-from-file filename parser)
-
-; Analyze and filter data with defined predicates
-(count-with solutions predicates)
-(count-with solutions predicatse :incrf + :initv 10 :plevel 2)
-
-; Build a result set with via filters, etc for each 'solution'
-(collect-with solutions predicates)
-(collect-with solutions predicates :plevel 2)
 ```
 
+
+<a name="utility-functions"/>
 ## Utility Functions
-<a name="utility-functions" />
 Potentially useful functions to help filter and sort data. The resulting function will execute 
 predicates from left to right. These are helpful for counting or collecting data that satisfy 
 predicates.
 
 #### Dictionary value frequencies
 ```clojure
+(def data [{:a "a1" :b "b1"} {:a "a2" :b "b2"} {:a "a2" :c "c1"}]) 
+
 ; How many times do values repeat for specific keys across a collection of maps?
-(collect-value-frequencies [{:a "a1" :b "b1"} {:a "a2" :b "b2"} {:a "a2" :c "c1"}])
-=> {:c {c1 1} :b {b2 1, b1 1}, :a {a2 2, a1 1}}
+(collect-value-frequencies data)
+{:c {c1 1} :b {b2 1, b1 1}, :a {a2 2, a1 1}}
 
 ; Concurrently get ':a' frequency values
-(collect-value-frequencies mvs :kset [:a] :plevel 2)
-=> {:a {a2 2, a1 1}} 
+(collect-value-frequencies data :kset [:a] :plevel 2)
+{:a {a2 2, a1 1}} 
+
+; Grab multiple key:values from nested maps
+(def data2 [{:a {:b "b1" :c "c1"}} {:a {:b "b2" :d "d2}}])
+(collect-value-frequencies data :kset [:b :d] :kpath [:a])
+{:b {"b1" 1, "b2" 1}, :d {"d2" 1}}
 
 ; Pass a function in for nested collections of maps
 (def m1 {:a "a1" :b {:c [{:d "d1"} {:d "d1"} {:d "d2"}]}})
 (collect-value-frequencies-for [m1] #(get-in % [:b :c]))
-=> {:d {"d2" 1 "d1" 2}}
+{:d {"d2" 1 "d1" 2}}
 
 ; Sort inner key values (descending)
 (sort-value-frequencies {:a {"a1" 2 "a2" 5 "a3" 1}})
-=> {:a {"a2" 5 "a1" 2 "a3" 1}}
+
+{:a {"a2" 5 "a1" 2 "a3" 1}}
 ```
 #### Dictionary/List distinctness
 ```clojure
-; Find distinct values for a given ~equality function for maps/lists
-(distinct-by [{:a 1, :b 2} {:a 1, :b 3} {:a 2, :b 4}] #(-> % :a))
-=> ({:a 2 :b 4} {:a 1 :b 2})
+; Distinct values using a function for maps/lists
+(distinct-by [{:a 1, :b 2} {:a 1, :b 3} {:a 2, :b 4}] #(:a %))
+({:a 2 :b 4} {:a 1 :b 2})
 ```
-
 #### Predicate evaluations
 ```clojure
 ; Returns 'true', resembles (every-pred) and (some-fn), but perhaps more readable?
@@ -101,9 +117,21 @@ predicates.
 (until? number? '("foo" 2 "bar"))
 => true
 ```
+#### Count & collect data
+Using one or multiple threads (:plevel 2), count or collect data based on specified 
+predicates.
+```clojure
+; Count with predicates and incrementing function
+(count-with solutions predicates)
+(count-with solutions predicatse :incrf + :initv 10 :plevel 2)
 
-## Pivot & Pivot Matrix Functions
+; Create a result set with predicates
+(collect-with solutions predicates)
+(collect-with solutions predicates :plevel 2)
+```
+
 <a name="pivot"/>
+## Pivot & Pivot Matrix Functions
 This generates a list of predicate function groups (partials) that are applied to a collection of data (single or 
 multi-threaded). Each predicate group is the result of a cartesian product from partial functions and their 
 corresponding values (see example below). This results in a map that contains the count for each predicate group 
@@ -137,7 +165,6 @@ Simple use case for generating higher order functions from a base function and c
 ; Yields the following
 {"inc?_[b]" 2, "inc?_[a]" 2, "inc?_[c]" 0}
 ```
-
 #### Pivot Matrix function
 Is similar to (pivot), but allows for multiple predicate functions and values by creating a cartesian function
 group for all possible predicate combinations. Setting ':plevel 2' will utilize all cpu cores. (pivot-matrix*)
@@ -178,7 +205,6 @@ for a data set. The predicate function group may also be used to retrieve that s
  "key: r2_[4|7], count: 3",  
  "key: r2_[3|7], count: 2")
 ```
-
 #### Pivot utility functions
 Printing, comparing, and retrieving interesting subsets of data from the (pivot-matrix*) result.
 
@@ -212,8 +238,8 @@ user=> {"foo_[3]" {:count 24} "foo_[4]" {:count 16}}
 (filter-pivots mtrx :kterms ["3"])
 ```
 
-## Performance & Debug Utilities
 <a name="performance-debugging"/>
+## Performance & Debug Utilities
 These utility functions are useful for determining performance profiles for a given function within the JVM. This is helpful
 when identifying how many function executions before the JVM optimizes itself for code execution. For example, simple addition
 is optimized in less than 20 executions, while a regular expression might take 100+ executions before realizing best performance.
@@ -247,9 +273,8 @@ debug value: 6, Time(ns): 2100
 Time(ns): 1366.4  
 ```
 
-
-## Packaged Examples
 <a name="examples"/>
+## Packaged Examples
 1. src/clash/example/web_shop_example.clj
 2. test/clash/example/web_shop_example_test.clj
 3. test/resources/web-shop.log
@@ -410,8 +435,9 @@ elapsed time in nano seconds (ns), milliseconds (ms) or seconds(s).
 (def message2 "'cl + grep + cut'")
 (perf (jproc-write command2 output2 ":") message) --> 'cl + grep + cut' Time(ms):18.450
 ```
-## Setup
+
 <a name="setup" />
+## Setup
 1. Retrieve code for stand alone use or as a resource
     * git clone
     * git submodule add  <your-project>/checkouts
@@ -436,8 +462,8 @@ elapsed time in nano seconds (ns), milliseconds (ms) or seconds(s).
 \*Macbook Pro
 \**old 4 core pentium 4 with 8 gigs of RAM
 
-## License
 <a name="license" />
+## License
 Copyright (c) David Millett 2012. All rights reserved.
 The use and distribution terms for this software are covered by the
 Eclipse Public License 1.0 (http://opensource.org/licenses/eclipse-1.0.php)
