@@ -222,10 +222,9 @@
 (defn- s-pivot-matrix
   "Evaluate a multi-dimensional array of predicates with their base predicates over
   a collection. The predicate evaluation against the collection is single threaded."
-  [col message base_preds pivotfs pivotds]
-  (let [pivot_groups (build-pivot-groups pivotfs pivotds message)
-        flat_matrix (build-pivot-matrix t/all? base_preds pivot_groups)
-        ]
+  [col message combfx? basefx? pivotfx? pivotds]
+  (let [pivot_groups (build-pivot-groups pivotfx? pivotds message)
+        flat_matrix (build-pivot-matrix combfx? basefx? pivot_groups)]
     (sort-pivot-map-by-value
       (reduce
         (fn [result fxdata] (execute-pivot-group result fxdata col 1))
@@ -237,9 +236,9 @@
 (defn- p-pivot-matrix
   "Evaluate a multi-dimensional array of predicates with their base predicates over
   a collection. The predicate evaluation against the collection is in parallel (reducers/fold)."
-  [col message base_preds pivotfs pivotds]
-  (let [pivot_groups (build-pivot-groups pivotfs pivotds message)
-        flat_matrix (build-pivot-matrix t/all? base_preds pivot_groups)]
+  [col message combfx? basefx? pivotfx? pivotds]
+  (let [pivot_groups (build-pivot-groups pivotfx? pivotds message)
+        flat_matrix (build-pivot-matrix combfx? basefx? pivot_groups)]
     (sort-pivot-map-by-value
       (reduce
         (fn [result fx] (execute-pivot-group result fx col 2))
@@ -257,9 +256,9 @@
   a collection. The predicate evaluation against the collection is in parallel (reducers/fold).
   This might be beneficial when the flattened cartesian product has a large count
   (maybe > 50 predicate groups) and the workstation has a large number of cores."
-  [col message base_preds pivotfs pivotds]
-  (let [pivot_groups (build-pivot-groups pivotfs pivotds message)
-        flat_matrix (into [] (build-pivot-matrix t/all? base_preds pivot_groups))]
+  [col message combfx? basefx? pivotfx? pivotds]
+  (let [pivot_groups (build-pivot-groups pivotfx? pivotds message)
+        flat_matrix (into [] (build-pivot-matrix combfx? basefx? pivot_groups))]
     (sort-pivot-map-by-value
       (r/fold reducers-merge
         (fn [results fx] (execute-pivot-group results fx col 2))
@@ -282,16 +281,17 @@
   'plevel 3' is multi-threaded for list of predicate groups & applying predicates to a collection
              (note: more beneficial for a large cartesian structure or a good multi-cpu workstation)
   )"
-  [col msg & {:keys [b p v plevel] :or {b [] p [] v [] plevel 1}}]
+  [col msg & {:keys [c b p v plevel] :or {c t/all? b [] p [] v [] plevel 1}}]
   (let [message (if (empty? msg) "pivot" msg)]
     (cond
-      (= 1 plevel) (s-pivot-matrix col message b p v)
-      (= 2 plevel) (p-pivot-matrix col message b p v)
-      (= 3 plevel) (pp-pivot-matrix col message b p v)
+      (= 1 plevel) (s-pivot-matrix col message c b p v)
+      (= 2 plevel) (p-pivot-matrix col message c b p v)
+      (= 3 plevel) (pp-pivot-matrix col message c b p v)
       ) ) )
 
 (defn pivot-matrix-e
-  "Identical to, but more explicit than (pivot-matrix). This expects the following form:
+  "DEPRECATED use (pivot-matrix*)
+  Identical to, but more explicit than (pivot-matrix). This expects the following form:
 
   (pivot-matrix-e col msg :base [number? even?] :pivot [{:f divide-by? :v (range 2 5)}
                                                         {:f divide-by? :v (range 5 8)}]
@@ -302,15 +302,29 @@
     (pivot-matrix col msg :b base :p p :v v :plevel plevel)
     ) )
 
+(defn pivot-matrix*
+  "The preferred version of (pivot-matrix) manifestations. Identical function, but more explicit than (pivot-matrix).
+  This introduces 'combfx?' which is a function to apply across each generated predicate group. Previous incarnations
+  used (clash.tools/all?), while this allows for (any?), (none?), etc. The default behavior is still (all?).
+
+  (pivot-matrix-e col msg :base [number? even?] :pivot [{:f divide-by? :v (range 2 5)}
+                                                        {:f divide-by? :v (range 5 8)}]
+                                                :plevel 2)"
+  [col msg & {:keys [basefx? pivots combfx? plevel] :or {basefx? [] pivots [] combfx? t/all? plevel 1}}]
+  (let [p (map #(:f %) pivots)
+        v (map #(:v %) pivots)]
+    (pivot-matrix col msg :c combfx? :b basefx? :p p :v v :plevel plevel)
+    ) )
+
 (defn pivot-matrix-compare
   "Compare the results (maps) of two pivots with a specific function. For
   example, perhaps it is helpful to compare the ratio of values from col1/col2.
   The output is sorted in descending order.
   (pivot-matrix-compare col1 col2 msg compf :b common_pred :p pivot_preds :v pivot_values)"
-  [col1 col2 msg compf & {:keys [b p v plevel] :or {b [] p [] v [] plevel 2}}]
-  (let [pivota (pivot-matrix col1 msg :b b :p p :v v :plevel plevel)
-        pivotb (pivot-matrix col2 msg :b b :p p :v v :plevel plevel)]
-    (sort-pivot-map-by-value (compare-pivot-map-with pivota pivotb compf) :result)
+  [col1 col2 msg compfx & {:keys [c b p v plevel] :or {c t/all? b [] p [] v [] plevel 2}}]
+  (let [pivota (pivot-matrix col1 msg :c c :b b :p p :v v :plevel plevel)
+        pivotb (pivot-matrix col2 msg :c c :b b :p p :v v :plevel plevel)]
+    (sort-pivot-map-by-value (compare-pivot-map-with pivota pivotb compfx) :result)
     ) )
 
 (defn get-rs-from-matrix
@@ -333,7 +347,7 @@
   "Duplicates (get-rs-from-matrix), but with a better function name.
 
   (def hundred (range 1 100))
-  (def mtrx (pivot-matrix hundred \"foo\" :b [even?] :p [divisible-by?] :v [(range 2 6]))
+  (def mtrx (pivot-matrix* hundred \"foo\" :basefx [even?] :pivots [{:f divisible-by? :v (range 2 6)})
   (get-rs-from-matrix hundred mtrx \"foo-pivots_[5]\")
   => (90 80 70 60 50 40 30 20 10)
   "
@@ -343,7 +357,14 @@
 (defn filter-pivots
   "Find pivot results that match specific terms. To find a range of
   specific result keys, pass in a collection of string terms to match.
-  Filter result counts based on a defined function 'cfx'. todo: (transduce)?"
+  Filter result counts based on a defined function 'cfx'.
+
+  ; Return all the results with 'even' counts
+  (filter-pivots pm :cfx even?)
+
+  ; Return all the results with 'a' and '9' in the key
+  (filter-pivots pm :kterms [\"a\" \"9\"])
+  "
   [pivot_matrix & {:keys [kterms cfx] :or {kterms [] cfx nil}}]
   (if (and (empty? kterms) (nil? cfx))
     pivot_matrix

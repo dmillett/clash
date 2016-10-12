@@ -400,6 +400,6 @@
   (let [coll1 [1 2 3 4 6 7 8 2 3 6 12 14]
         coll2 [true true false true false true true]]
     (are [x y] (= x y)
-               [[2] [4 6] [8 2] [6 12 14]] (consecutive even? coll1)
-               [[true true] [true] [true true]] (consecutive true? coll2)
-               ) ))
+      [[2] [4 6] [8 2] [6 12 14]] (consecutive even? coll1)
+      [[true true] [true] [true true]] (consecutive true? coll2)
+      ) ))

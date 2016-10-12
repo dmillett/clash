@@ -9,7 +9,8 @@
 (ns ^{:author "dmillett"} clash.pivot_test
   (:require [clojure.math.combinatorics :as cmb]
             [clash.core :as c]
-            [clash.tools :as t])
+            [clash.tools :as t]
+            [clojure.string :as s])
   (:use [clojure.test]
         [clash.pivot]))
 
@@ -80,7 +81,7 @@
 
         ; performance testing
         ;lc (into [] (range 1 1000001))
-        ;r9 (t/perf (pivot-matrix lc "r2lc" :b even-numbers :p divyX2 :v [(range 2 11) (range 7 18)] :plevel 3) "")
+        ;r10 (t/perf (pivot-matrix lc "r2lc" :b even-numbers :p divyX2 :v [(range 2 11) (range 7 18)] :plevel 3) "")
         ]
     (are [x y] (= x y)
       3 (count r1)
@@ -120,7 +121,6 @@
       ;
       18 (count r8)
       12 (get-in r8 ["r8_[2|[3 5]]" :count])
-      ;
       ;r1 r1e
       (keys r1) (keys r1e)
       '(49 24 16) (map #(:count %) (vals r1))
@@ -132,6 +132,29 @@
       (keys r3p) (keys r3pe)
       '(49 24 16) (map #(:count %) (vals r3p))
       '(49 24 16) (map #(:count %) (vals r3pe))
+      ;r7 r7e anonymous functions are equivalent
+      (keys r7e) (keys r7)
+      (map #(:count %) (vals r7e)) (map #(:count %) (vals r7))
+      ) ) )
+
+(deftest test-pivot-matrix*
+  (let [data ["foo" "bar" "zoo"]
+        fx? (fn [c] #(s/includes? % c))
+        r1 (pivot-matrix* data "r1" :pivots [{:f fx? :v ["a" "b" "c"]} {:f fx? :v ["r" "d"]}])
+        r2 (pivot-matrix* data "r2" :combfx? t/none? :pivots [{:f fx? :v ["a" "b" "c"]} {:f fx? :v ["r" "d"]}])
+        r3 (pivot-matrix* data "r3" :combfx? t/any? :pivots [{:f fx? :v ["a" "b" "c"]} {:f fx? :v ["r" "d"]}])
+        ]
+    (are [x y] (= x y)
+      1 (get-in r1 ["r1_[b|r]" :count])
+      0 (get-in r1 ["r1_[c|r]" :count])
+      ;
+      3 (get-in r2 ["r2_[c|d]" :count])
+      2 (get-in r2 ["r2_[c|r]" :count])
+      2 (get-in r2 ["r2_[b|r]" :count])
+      ;
+      1 (get-in r3 ["r3_[c|r]" :count])
+      1 (get-in r3 ["r3_[b|r]" :count])
+      0 (get-in r3 ["r3_[c|d]" :count])
       ) ) )
 
 (defn- ratio
@@ -158,8 +181,7 @@
 (deftest test-pivot-matrix-compare
   (let [r1 (pivot-matrix-compare (range 1 50) (range 50 120) "foo" ratio :b [number?]
                                                                          :p [divisible-by?]
-                                                                         :v [(range 2 6)])
-        ]
+                                                                         :v [(range 2 6)])]
     (are [x y] (= x y)
       4 (count r1)
       0.706 (get-in r1 ["foo_[4]" :result])
@@ -187,7 +209,7 @@
   ) )
 
 (deftest test-filter-pivots
-  (let [pm1 (pivot-matrix hundred "find" :p [divisible-by?] :v [(range 2 6)])]
+  (let [pm1 (pivot-matrix* hundred "find" :pivots [{:f divisible-by? :v (range 2 6)}])]
     (are [x y] (= x y)
       pm1 (filter-pivots pm1)
       24 (get-in (filter-pivots pm1 :cfx even?) ["find_[4]" :count])
