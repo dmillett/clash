@@ -12,12 +12,19 @@ optimize execution for a target method (sweetspot).
 Try adding **[clash "1.2.3"]** to your project today
 
 [transformation functions](#core-transformations)
+
 [pivot functionality](#pivot)
+
 [utility functions](#utility-functions)
+
 [performance & debugging](#performance-debugging)
+
 [general performance](#performance)
+
 [packaged examples](#examples)
+
 [setup](#setup)
+
 [license](#license)
 
 ## Simple Usage
