@@ -358,7 +358,7 @@
 (deftest test-data-per-thread
   (is (= 25 (data-per-thread 50 2)))
   ; due to rounding, this bumps data per thread up
-  (is (= 5 (data-per-thread 17 4)))
+  (is (<= 5 (data-per-thread 17 4)))
   ; 6 cores, not 30 results in 10 threads/core
   (is (< 2 (data-per-thread 50 30)))
   )
@@ -403,3 +403,13 @@
       [[2] [4 6] [8 2] [6 12 14]] (consecutive even? coll1)
       [[true true] [true] [true true]] (consecutive true? coll2)
       ) ))
+
+(deftest test-filter-value-frequencies
+  (let [freq1 {:a {"a1" 2 "a2" 1} :b {"b1" 1 "b3" 3}}]
+    (are [x y] (= x y)
+      freq1 (filter-value-frequencies freq1 nil)
+      {:a {"a1" 2}} (filter-value-frequencies freq1 (fn [[k _]] (= "a1" k)))
+      {:a {"a1" 2}} (filter-value-frequencies freq1 (fn [[k v]] (and (= "a1" k) (even? v))))
+      {} (filter-value-frequencies freq1 (fn [[k v]] (and (= "a1" k) (odd? v))))
+      {:a {"a2" 1}, :b {"b1" 1, "b3" 3}} (filter-value-frequencies freq1 (fn [[_ v]] (odd? v)))
+      ) ) )

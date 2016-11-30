@@ -407,6 +407,25 @@
     (fn [result [k v]] (assoc result k (sort-map-by-value v)) )
     {} vfreqs) )
 
+(defn filter-value-frequencies
+  "Filter the result of (collect-value-frequencies) based on a function for frequency
+  keys, values, or both. For example, find all data with an even number of occurrences:
+
+  {:a {\"a1\" 2 \"a2\" 1} :b {\"b1\" 1 \"b3\" 3}}
+
+  (filter-value-frequencies vf (fn [[_ v]] (even? v)))
+  => {:a {\"a1\" 2}}
+  "
+  [data_freqs filterfn]
+  (if filterfn
+    (reduce (fn [r [k v]]
+              (let [fd (into {} (filter filterfn v))]
+                (if (empty? fd) r (assoc r k fd))))
+      {}
+      data_freqs)
+    data_freqs
+    ) )
+
 (defn distinct-by
   "Collect distinct or unique items accoridng to a function 'eqfx'.
   This creates a Map structure where the keys are given by 'eqfx'

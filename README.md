@@ -97,10 +97,15 @@ predicates.
 (collect-value-frequencies-for [m1] #(get-in % [:b :c]))
 {:d {"d2" 1 "d1" 2}}
 
-; Sort inner key values (descending)
-(sort-value-frequencies {:a {"a1" 2 "a2" 5 "a3" 1}})
+(def vfreqs {:a {"a1" 2 "a2" 5 "a3" 1}})
 
+; Sort inner key values (descending)
+(sort-value-frequencies vfreqs)
 {:a {"a2" 5 "a1" 2 "a3" 1}}
+
+; Filter frequencies by keys, values, or both
+(filter-value-frequencies vfreqs (fn [[_ v]] (even? v)))
+{:a {"a1" 2}}
 ```
 #### Dictionary/List distinctness
 ```clojure
