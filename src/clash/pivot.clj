@@ -377,3 +377,27 @@
         :else (fx3 (filter (t/all? fx1 fx2) pivot_matrix))
         ) )
     ) )
+
+(defn haystack
+  "Use value frequencies for a collection of like data (maps/defrecords) to generate
+  pivot functions and values for (pivot-matrix).
+
+  cmaps: a collection of map/defrecord/etc data
+  msg: a base message used for. See '(pivot-matrix)
+  kpath: the nested structure within each data. See '(collect-value-frequencies)
+  kset: the specific keys to calculate frequency values for at depth. See '(collect-value-frequencies)
+  combfx: how to combine pivot function matrix. Defaults to '(all?). See '(pivot-matrix)
+  plevel: concurrency. Default to 1 (single threaded). Use 2 for all threads. See '(pivot-matrix), '(collect-value-frequencies)"
+  ; todo: 'freqvalsfx': function to apply to values resulting from '(collect-value-frequencies)
+  ; todo: improve messages to indicate which keys' values are used
+  [cmaps & {:keys [msg kpath kset freqsfx combfx plevel] :or {msg "haystack" combfx t/all? plevel 1}}]
+  (let [vfrqs (t/collect-value-frequencies cmaps :kpath kpath :kset kset :plevel plevel)
+        fvfreqs (t/filter-value-frequencies vfrqs freqsfx)
+        keypaths (map #(conj kpath %) (keys fvfreqs))
+        pivot_kfx (fn [k v] #(= v (get-in % k)))
+        pivot_fxs(into [] (map (fn [k] (partial pivot_kfx k)) keypaths))
+        pivot_vals (into [] (map keys (vals fvfreqs)))
+        msg2 (str msg "_" kpath)
+        ]
+    (pivot-matrix cmaps msg2 :p pivot_fxs :v pivot_vals :c combfx :plevel plevel)
+    ) )
