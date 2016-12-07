@@ -220,34 +220,34 @@
 (deftest test-haystack
   (let [d1 [{:a {:c "c"} :b {:d "d"}} {:a {:c "c1"} :b {:d "d"}} {:a {:c "c"} :b {:d "d1"}} {:a {:c "c1"} :b {:d "d"}}]
         d2 [{:a {:b 1 :c 2 :d 3}} {:a {:b 1 :c 3 :d 3}} {:a {:b 2 :c 3 :d 3}}]
-        h1 (haystack d1 :kpath [:a])
-        h2 (haystack d2 :kpath [:a])
-        h3 (haystack d2 :kpath [:a] :kset [:b :c])
-        h4 (haystack d2 :kpath [:a] :kset [:b :c] :freqsfx (fn [[_ v]] (even? v)))
-        h5 (haystack d2 :kpath [:a] :kset [:b :c] :freqsfx (fn [[k _]] (even? k)))
+        h1 (haystack d1 :vfkpath [:a] :vffx #(t/sort-value-frequencies %))
+        h2 (haystack d2 :vfkpath [:a])
+        h3 (haystack d2 :vfkpath [:a] :vfkset [:b :c])
+        h4 (haystack d2 :vfkpath [:a] :vfkset [:b :c] :vfkvfx (fn [[_ v]] (even? v)))
+        h5 (haystack d2 :vfkpath [:a] :vfkset [:b :c] :vfkvfx (fn [[k _]] (even? k)))
         ]
 
     (are [x y] (= x y)
       2 (count h1)
-      2 (:count (get h1 "haystack_[:a]_[c]"))
-      2 (:count (get h1 "haystack_[:a]_[c1]"))
+      2 (:count (get h1 "haystack([:a :c])_[c]"))
+      2 (:count (get h1 "haystack([:a :c])_[c1]"))
       ;
       4 (count h2)
-      1 (:count (get h2 "haystack_[:a]_[2|3|3]"))
-      1 (:count (get h2 "haystack_[:a]_[1|3|3]"))
-      1 (:count (get h2 "haystack_[:a]_[1|2|3]"))
-      0 (:count (get h2 "haystack_[:a]_[2|2|3]"))
+      1 (:count (get h2 "haystack([:a :b]|[:a :c]|[:a :d])_[2|3|3]"))
+      1 (:count (get h2 "haystack([:a :b]|[:a :c]|[:a :d])_[1|3|3]"))
+      1 (:count (get h2 "haystack([:a :b]|[:a :c]|[:a :d])_[1|2|3]"))
+      0 (:count (get h2 "haystack([:a :b]|[:a :c]|[:a :d])_[2|2|3]"))
       ;
       4 (count h3)
-      1 (:count (get h3 "haystack_[:a]_[2|3]"))
-      1 (:count (get h3 "haystack_[:a]_[1|3]"))
-      1 (:count (get h3 "haystack_[:a]_[1|2]"))
-      0 (:count (get h3 "haystack_[:a]_[2|2]"))
+      1 (:count (get h3 "haystack([:a :b]|[:a :c])_[2|3]"))
+      1 (:count (get h3 "haystack([:a :b]|[:a :c])_[1|3]"))
+      1 (:count (get h3 "haystack([:a :b]|[:a :c])_[1|2]"))
+      0 (:count (get h3 "haystack([:a :b]|[:a :c])_[2|2]"))
       ;
       ; value frequencies: '{:b {1 2, 2 1}, :c {2 1, 3 2}}'
       1 (count h4)
-      1 (:count (get h4 "haystack_[:a]_[1|3]"))
-      ;
+      1 (:count (get h4 "haystack([:a :b]|[:a :c])_[1|3]"))
+      ;;
       1 (count h5)
-      0 (:count (get h5 "haystack_[:a]_[2|2]"))
+      0 (:count (get h5 "haystack([:a :b]|[:a :c])_[2|2]"))
       )))

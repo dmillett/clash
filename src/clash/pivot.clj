@@ -6,7 +6,8 @@
 ;   the terms of this license.
 ;   You must not remove this notice, or any other, from this software.
 (ns ^{:author "dmillett"} clash.pivot
-  (:require [clojure.core.reducers :as r]
+  (:require [clojure.string :as s]
+            [clojure.core.reducers :as r]
             [clojure.math.combinatorics :as cmb]
             [clash.tools :as t]) )
 
@@ -383,21 +384,25 @@
   pivot functions and values for (pivot-matrix).
 
   cmaps: a collection of map/defrecord/etc data
-  msg: a base message used for. See '(pivot-matrix)
-  kpath: the nested structure within each data. See '(collect-value-frequencies)
-  kset: the specific keys to calculate frequency values for at depth. See '(collect-value-frequencies)
-  combfx: how to combine pivot function matrix. Defaults to '(all?). See '(pivot-matrix)
+  pvmsg: a base message used for. See '(pivot-matrix)
+  pvfx(todo): a specific pivot function:value group
+  pvcombfx: how to combine pivot function matrix. Defaults to '(all?). See '(pivot-matrix)
+  vfkpath: the nested structure within each data. See '(collect-value-frequencies)
+  vfkset: the specific keys to calculate frequency values for at depth. See '(collect-value-frequencies)
+  vffx: a 1 arg function that can be applied to the entire key/value groups (ex: sort, etc)
+  vfkvfx: a 2 arg function to filter keys and/or values (curried into [[k v]])
   plevel: concurrency. Default to 1 (single threaded). Use 2 for all threads. See '(pivot-matrix), '(collect-value-frequencies)"
-  ; todo: 'freqvalsfx': function to apply to values resulting from '(collect-value-frequencies)
-  ; todo: improve messages to indicate which keys' values are used
-  [cmaps & {:keys [msg kpath kset freqsfx combfx plevel] :or {msg "haystack" combfx t/all? plevel 1}}]
-  (let [vfrqs (t/collect-value-frequencies cmaps :kpath kpath :kset kset :plevel plevel)
-        fvfreqs (t/filter-value-frequencies vfrqs freqsfx)
-        keypaths (map #(conj kpath %) (keys fvfreqs))
+  ; todo: include explicit pivot [f:v] with 'pvfx'
+  [cmaps & {:keys [pvmsg pvcombfx pvfx vfkpath vfkset vffx vfkvfx plevel]
+            :or {pvmsg "haystack" pvcombfx t/all? plevel 1}}]
+  (let [vfrqs (t/collect-value-frequencies cmaps :kpath vfkpath :kset vfkset :plevel plevel)
+        fvfreqs (t/filter-value-frequencies vfrqs vfkvfx)
+        ffreqs (if vffx (vffx fvfreqs) fvfreqs)
+        keypaths (map #(conj vfkpath %) (keys ffreqs))
         pivot_kfx (fn [k v] #(= v (get-in % k)))
         pivot_fxs(into [] (map (fn [k] (partial pivot_kfx k)) keypaths))
-        pivot_vals (into [] (map keys (vals fvfreqs)))
-        msg2 (str msg "_" kpath)
+        pivot_vals (into [] (map keys (vals ffreqs)))
+        msg2 (str pvmsg "(" (apply str (interpose "|" keypaths)) ")")
         ]
-    (pivot-matrix cmaps msg2 :p pivot_fxs :v pivot_vals :c combfx :plevel plevel)
+    (pivot-matrix cmaps msg2 :p pivot_fxs :v pivot_vals :c pvcombfx :plevel plevel)
     ) )
