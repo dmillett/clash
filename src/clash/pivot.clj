@@ -387,19 +387,19 @@
   pvmsg: a base message used for. See '(pivot-matrix)
   pvfx(todo): a specific pivot function:value group
   pvcombfx: how to combine pivot function matrix. Defaults to '(all?). See '(pivot-matrix)
+  pivots: todo explicit pivots similar to what's constructed in (pivot) or (pivot-matrix)
+  pvfx: a comparison function generated with value frequency data and row data, defaults to (=)
   vfkpath: the nested structure within each data. See '(collect-value-frequencies)
   vfkset: the specific keys to calculate frequency values for at depth. See '(collect-value-frequencies)
-  vffx: a 1 arg function that can be applied to the entire key/value groups (ex: sort, etc)
-  vfkvfx: a 2 arg function to filter keys and/or values (curried into [[k v]])
+  vffx: a 1 arg function that can be applied to the entire key/value groups (ex: filter, sort, etc)
   plevel: concurrency. Default to 1 (single threaded). Use 2 for all threads. See '(pivot-matrix), '(collect-value-frequencies)"
   ; todo: include explicit pivot [f:v] with 'pvfx'
-  [cmaps & {:keys [pvmsg pvcombfx pvfx vfkpath vfkset vffx vfkvfx plevel]
-            :or {pvmsg "haystack" pvcombfx t/all? plevel 1}}]
-  (let [vfrqs (t/collect-value-frequencies cmaps :kpath vfkpath :kset vfkset :plevel plevel)
-        fvfreqs (t/filter-value-frequencies vfrqs vfkvfx)
-        ffreqs (if vffx (vffx fvfreqs) fvfreqs)
+  [cmaps & {:keys [pvmsg pvcombfx pivots pvfx vfkpath vfkset vffx plevel]
+            :or {pvmsg "haystack" pvcombfx t/all? pvfx = plevel 1}}]
+  (let [vfreqs (t/collect-value-frequencies cmaps :kpath vfkpath :kset vfkset :plevel plevel)
+        ffreqs (if vffx (vffx vfreqs) vfreqs)
         keypaths (map #(conj vfkpath %) (keys ffreqs))
-        pivot_kfx (fn [k v] #(= v (get-in % k)))
+        pivot_kfx (fn [k v] #(pvfx v (get-in % k)))
         pivot_fxs(into [] (map (fn [k] (partial pivot_kfx k)) keypaths))
         pivot_vals (into [] (map keys (vals ffreqs)))
         msg2 (str pvmsg "(" (apply str (interpose "|" keypaths)) ")")

@@ -220,13 +220,14 @@
 (deftest test-haystack
   (let [d1 [{:a {:c "c"} :b {:d "d"}} {:a {:c "c1"} :b {:d "d"}} {:a {:c "c"} :b {:d "d1"}} {:a {:c "c1"} :b {:d "d"}}]
         d2 [{:a {:b 1 :c 2 :d 3}} {:a {:b 1 :c 3 :d 3}} {:a {:b 2 :c 3 :d 3}}]
+        vffx1 #(t/filter-value-frequencies % (fn [[_ v]] (even? v)))
+        vffx2 #(t/filter-value-frequencies % (fn [[k _]] (even? k)))
         h1 (haystack d1 :vfkpath [:a] :vffx #(t/sort-value-frequencies %))
         h2 (haystack d2 :vfkpath [:a])
         h3 (haystack d2 :vfkpath [:a] :vfkset [:b :c])
-        h4 (haystack d2 :vfkpath [:a] :vfkset [:b :c] :vfkvfx (fn [[_ v]] (even? v)))
-        h5 (haystack d2 :vfkpath [:a] :vfkset [:b :c] :vfkvfx (fn [[k _]] (even? k)))
+        h4 (haystack d2 :vfkpath [:a] :vfkset [:b :c] :vffx vffx1)
+        h5 (haystack d2 :vfkpath [:a] :vfkset [:b :c] :vffx vffx2)
         ]
-
     (are [x y] (= x y)
       2 (count h1)
       2 (:count (get h1 "haystack([:a :c])_[c]"))
