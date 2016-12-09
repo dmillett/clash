@@ -380,8 +380,9 @@
     ) )
 
 (defn haystack
-  "Use value frequencies for a collection of like data (maps/defrecords) to generate
-  pivot functions and values for (pivot-matrix).
+  "Correlate the value of specific data schema 'keys', based on frequency, across a collection of data.
+  This combines (collect-value-frequencies) and (pivot-matrix) functions, and only requires knowledge
+  of the data schema and constraints about the data values.
 
   cmaps: a collection of map/defrecord/etc data
 

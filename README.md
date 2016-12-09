@@ -246,15 +246,20 @@ user=> {"foo_[3]" {:count 24} "foo_[4]" {:count 16}}
 
 <a name="haystack"/></a>
 ## Haystack Functionality
-Combines (collect-value-frequencies) and (pivot-matrix) to identify intersections between value frequencies for specific 
-keys and which rows of data hold true for those values. See the simple example below where value frequencies are created and
-then functions are generated to see which rows hold data with that value. (<-- poor wording)
+Combines (collect-value-frequencies) and (pivot-matrix) to correlate the frequency of specific data schema keys across
+a collection of data. For example, find the 5 most frequent values for specific keys (like :price :quantity), and let
+(haystack) figure out which data rows in a collection have the 'most frequent' values. The result indicates how many 
+data rows satisfied the constraints and provides the corresponding function to retrieve that result set from the 
+collection (see 'pivot-rs).
 
+*haystack generates the functions for schema key paths and evaluates those against generic/specific constraints*
+
+#### Correlation for a subset of schema keys 
 ```clojure
-; Find for key paths [:a :b] and [:a :c]
+; Find for key paths [:a :b] and [:a :c] ... ignore schema path [:a :d]
 (def data [{:a {:b 1 :c 2 :d 3}} {:a {:b 1 :c 3 :d 3}} {:a {:b 2 :c 3 :d 3}}])
 
-; Generates functions to evaluate 4 value combinations
+; Generates functions to evaluate 4 value combinations for all possible values
 (def hstack1 (haystack data :kpath [:a] :kset [:b :c]))
 
 ; vf([key-path 1]|[key-path 2]|[key-path N])
@@ -278,7 +283,26 @@ then functions are generated to see which rows hold data with that value. (<-- p
   #object[clash.tools$all_QMARK_$fn__1532 0x5c789083 "clash.tools$all_QMARK_$fn__1532@5c789083"]}}
 ```
 
-Here is a more complex example combining an existing pivot function with generated value frequency functions.
+#### Find the rows based on the most frequent value for a schema key
+
+```clojure
+; Top 1 (or N) occuring values for any data schema key (t -> clash.tools)
+(def top1 (partial t/reduce-vfreqs #(take 1 (t/sort-map-by-value %)))
+
+(haystack data :kpath [:a] :vffx top1)
+{"haystack_vf([:a :b]|[:a :c]|[:a :d])_[1|3|3]"
+ {:count 1,
+  :function
+  #object[clash.tools$all_QMARK_$fn__1532 0x31c221a7 "clash.tools$all_QMARK_$fn__1532@31c221a7"]}}
+
+; Get the data row(s) result set that satisfies the constraints
+(pivot-rs data h1 "haystack_vf([:a :b]|[:a :c]|[:a :d])_[1|3|3]")
+({:a {:b 1, :c 3, :d 3}})
+
+```
+
+#### Correlation with existing pivot function and schema key paths
+
 ```clojure
 ; Does any data row have a {:a {:d _}} that is evenly divisible by [3, 4]? 
 (defn dmod? [n] #(try (zero? (mod (get-in % [:a :d]) n)) (catch NullPointerException _ false)))

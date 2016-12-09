@@ -224,7 +224,7 @@
         ;
         vffx1 #(t/filter-value-frequencies % (fn [[_ v]] (even? v)))
         vffx2 #(t/filter-value-frequencies % (fn [[k _]] (even? k)))
-        top2 (partial t/reduce-vfreqs #(take 1 (t/sort-map-by-value %)))
+        top1 (partial t/reduce-vfreqs #(take 1 (t/sort-map-by-value %)))
         dmod? (fn [n] #(try (zero? (mod (get-in % [:a :d]) n)) (catch NullPointerException _ false)))
         ;
         h1 (haystack d1 :kpath [:a] :vffx #(t/sort-value-frequencies %))
@@ -234,7 +234,7 @@
         h4 (haystack d2 :kpath [:a] :kset [:b :c] :vffx vffx1)
         h4p (haystack d2 :kpath [:a] :kset [:b :c] :vffx vffx1 :plevel 2)
         h5 (haystack d2 :kpath [:a] :kset [:b :c] :vffx vffx2)
-        h6 (haystack d2 :kpath [:a] :vffx top2)
+        h6 (haystack d2 :kpath [:a] :vffx top1)
         h7 (haystack d2 :msg "d2_[dmod]" :kpath [:a] :pivots [{:f dmod? :v [3]}])
         h8 (haystack d3 :msg "d3_[dmod]" :kpath [:a] :kset [:b :c] :pivots [{:f dmod? :v [3]}])
         h8p (haystack d3 :msg "d3_[dmod]" :kpath [:a] :kset [:b :c] :pivots [{:f dmod? :v [3]}] :plevel 2)
