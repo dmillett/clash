@@ -15,6 +15,8 @@ Try adding **[clash "1.2.3"]** to your project today
 
 [pivot functionality](#pivot)
 
+[haystack functionality](#haystack)
+
 [utility functions](#utility-functions)
 
 [performance & debugging](#performance-debugging)
@@ -52,8 +54,7 @@ into
 (def data (transform-lines "logs.txt" parser :max 1000000))
 ```
 
-
-<a name="core-transformations"/>
+<a name="core-transformations"/></a>
 ## Core Transformation Functions
 Load data structures into memory and analyze or build result sets with predicates.
 
@@ -69,7 +70,7 @@ Load data structures into memory and analyze or build result sets with predicate
 ```
 
 
-<a name="utility-functions"/>
+<a name="utility-functions"/></a>
 ## Utility Functions
 Potentially useful functions to help filter and sort data. The resulting function will execute 
 predicates from left to right. These are helpful for counting or collecting data that satisfy 
@@ -135,7 +136,7 @@ predicates.
 (collect-with solutions predicates :plevel 2)
 ```
 
-<a name="pivot"/>
+<a name="pivot"/></a>
 ## Pivot & Pivot Matrix Functions
 This generates a list of predicate function groups (partials) that are applied to a collection of data (single or 
 multi-threaded). Each predicate group is the result of a cartesian product from partial functions and their 
@@ -243,7 +244,70 @@ user=> {"foo_[3]" {:count 24} "foo_[4]" {:count 16}}
 (filter-pivots mtrx :kterms ["3"])
 ```
 
-<a name="performance-debugging"/>
+<a name="haystack"/></a>
+## Haystack Functionality
+Combines (collect-value-frequencies) and (pivot-matrix) to identify intersections between value frequencies for specific 
+keys and which rows of data hold true for those values. See the simple example below where value frequencies are created and
+then functions are generated to see which rows hold data with that value. (<-- poor wording)
+
+```clojure
+; Find for key paths [:a :b] and [:a :c]
+(def data [{:a {:b 1 :c 2 :d 3}} {:a {:b 1 :c 3 :d 3}} {:a {:b 2 :c 3 :d 3}}])
+
+; Generates functions to evaluate 4 value combinations
+(def hstack1 (haystack data :kpath [:a] :kset [:b :c]))
+
+; vf([key-path 1]|[key-path 2]|[key-path N])
+; Note that none of the data has a nested map for {:a {:b 2 :c2}}, --> :count 0
+(pprint hstack1)
+{"haystack_vf([:a :b]|[:a :c])_[2|3]"
+ {:count 1,
+  :function
+  #object[clash.tools$all_QMARK_$fn__1532 0xcd6fdab "clash.tools$all_QMARK_$fn__1532@cd6fdab"]},
+ "haystack_vf([:a :b]|[:a :c])_[1|3]"
+ {:count 1,
+  :function
+  #object[clash.tools$all_QMARK_$fn__1532 0x779f98a2 "clash.tools$all_QMARK_$fn__1532@779f98a2"]},
+ "haystack_vf([:a :b]|[:a :c])_[1|2]"
+ {:count 1,
+  :function
+  #object[clash.tools$all_QMARK_$fn__1532 0x5efae983 "clash.tools$all_QMARK_$fn__1532@5efae983"]},
+ "haystack_vf([:a :b]|[:a :c])_[2|2]"
+ {:count 0,
+  :function
+  #object[clash.tools$all_QMARK_$fn__1532 0x5c789083 "clash.tools$all_QMARK_$fn__1532@5c789083"]}}
+```
+
+Here is a more complex example combining an existing pivot function with generated value frequency functions.
+```clojure
+; Does any data row have a {:a {:d _}} that is evenly divisible by [3, 4]? 
+(defn dmod? [n] #(try (zero? (mod (get-in % [:a :d]) n)) (catch NullPointerException _ false)))
+
+(def data [{:a {:b 1 :c 2}} {:a {:b 1 :c 3}} {:a {:b 2 :c 3}}])
+
+; Check if any nested map for [:a] has a [:d] value divisible by 3? And check for [:b, :c] paths
+(haystack data :msg "d3_[dmod]" :kpath [:a] :kset [:b :c] :pivots [{:f dmod? :v [3]}])
+
+{"d3_[dmod]_vf([:a :b]|[:a :c])_[[3]|2|3]"
+ {:count 1,
+  :function
+  #object[clash.tools$all_QMARK_$fn__1532 0x6ba96652 "clash.tools$all_QMARK_$fn__1532@6ba96652"]},
+ "d3_[dmod]_vf([:a :b]|[:a :c])_[[3]|1|3]"
+ {:count 1,
+  :function
+  #object[clash.tools$all_QMARK_$fn__1532 0x3d2354dc "clash.tools$all_QMARK_$fn__1532@3d2354dc"]},
+ "d3_[dmod]_vf([:a :b]|[:a :c])_[[3]|1|2]"
+ {:count 1,
+  :function
+  #object[clash.tools$all_QMARK_$fn__1532 0x194f4ea4 "clash.tools$all_QMARK_$fn__1532@194f4ea4"]},
+ "d3_[dmod]_vf([:a :b]|[:a :c])_[[3]|2|2]"
+ {:count 0,
+  :function
+  #object[clash.tools$all_QMARK_$fn__1532 0x3a16e450 "clash.tools$all_QMARK_$fn__1532@3a16e450"]}}
+```
+
+
+<a name="performance-debugging"/></a>
 ## Performance & Debug Utilities
 These utility functions are useful for determining performance profiles for a given function within the JVM. This is helpful
 when identifying how many function executions before the JVM optimizes itself for code execution. For example, simple addition
@@ -278,7 +342,7 @@ debug value: 6, Time(ns): 2100
 Time(ns): 1366.4  
 ```
 
-<a name="examples"/>
+<a name="examples"/></a>
 ## Packaged Examples
 1. src/clash/example/web_shop_example.clj
 2. test/clash/example/web_shop_example_test.clj
@@ -441,7 +505,7 @@ elapsed time in nano seconds (ns), milliseconds (ms) or seconds(s).
 (perf (jproc-write command2 output2 ":") message) --> 'cl + grep + cut' Time(ms):18.450
 ```
 
-<a name="setup" />
+<a name="setup"/></a>
 ## Setup
 1. Retrieve code for stand alone use or as a resource
     * git clone
@@ -449,14 +513,14 @@ elapsed time in nano seconds (ns), milliseconds (ms) or seconds(s).
 2. Install Leiningen and update the **project.clj**
     * Adjust based on number and complexity of structured objects
 
-### notes
-<a name="notes" />
+### General Notes
+<a name="notes"/></a>
 * requires "/bin/sh" functionality
 * works best with java 1.8
 * built with leiningen (thanks technomancy)
 * clojure 1.8 (thank rich, et al)
 
-<a name="performance"/>
+<a name="performance"/></a>
 * Log/text files with 5+ million lines
 * Most (count), (collect), and (pivot) take <= 1s per million rows*
   * simple data 5 key-values might evaluate at 20+ million rows/s
@@ -467,7 +531,7 @@ elapsed time in nano seconds (ns), milliseconds (ms) or seconds(s).
 \*Macbook Pro
 \**old 4 core pentium 4 with 8 gigs of RAM
 
-<a name="license" />
+<a name="license"/></a>
 ## License
 Copyright (c) David Millett 2012. All rights reserved.
 The use and distribution terms for this software are covered by the

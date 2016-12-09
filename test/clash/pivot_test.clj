@@ -220,35 +220,59 @@
 (deftest test-haystack
   (let [d1 [{:a {:c "c"} :b {:d "d"}} {:a {:c "c1"} :b {:d "d"}} {:a {:c "c"} :b {:d "d1"}} {:a {:c "c1"} :b {:d "d"}}]
         d2 [{:a {:b 1 :c 2 :d 3}} {:a {:b 1 :c 3 :d 3}} {:a {:b 2 :c 3 :d 3}}]
+        d3 [{:a {:b 1 :c 2}} {:a {:b 1 :c 3}} {:a {:b 2 :c 3}}]
+        ;
         vffx1 #(t/filter-value-frequencies % (fn [[_ v]] (even? v)))
         vffx2 #(t/filter-value-frequencies % (fn [[k _]] (even? k)))
-        h1 (haystack d1 :vfkpath [:a] :vffx #(t/sort-value-frequencies %))
-        h2 (haystack d2 :vfkpath [:a])
-        h3 (haystack d2 :vfkpath [:a] :vfkset [:b :c])
-        h4 (haystack d2 :vfkpath [:a] :vfkset [:b :c] :vffx vffx1)
-        h5 (haystack d2 :vfkpath [:a] :vfkset [:b :c] :vffx vffx2)
+        top2 (partial t/reduce-vfreqs #(take 1 (t/sort-map-by-value %)))
+        dmod? (fn [n] #(try (zero? (mod (get-in % [:a :d]) n)) (catch NullPointerException _ false)))
+        ;
+        h1 (haystack d1 :kpath [:a] :vffx #(t/sort-value-frequencies %))
+        h1p (haystack d1 :kpath [:a] :vffx #(t/sort-value-frequencies %) :plevel 2)
+        h2 (haystack d2 :kpath [:a])
+        h3 (haystack d2 :kpath [:a] :kset [:b :c])
+        h4 (haystack d2 :kpath [:a] :kset [:b :c] :vffx vffx1)
+        h4p (haystack d2 :kpath [:a] :kset [:b :c] :vffx vffx1 :plevel 2)
+        h5 (haystack d2 :kpath [:a] :kset [:b :c] :vffx vffx2)
+        h6 (haystack d2 :kpath [:a] :vffx top2)
+        h7 (haystack d2 :msg "d2_[dmod]" :kpath [:a] :pivots [{:f dmod? :v [3]}])
+        h8 (haystack d3 :msg "d3_[dmod]" :kpath [:a] :kset [:b :c] :pivots [{:f dmod? :v [3]}])
+        h8p (haystack d3 :msg "d3_[dmod]" :kpath [:a] :kset [:b :c] :pivots [{:f dmod? :v [3]}] :plevel 2)
         ]
     (are [x y] (= x y)
       2 (count h1)
-      2 (:count (get h1 "haystack([:a :c])_[c]"))
-      2 (:count (get h1 "haystack([:a :c])_[c1]"))
+      2 (:count (get h1 "haystack_vf([:a :c])_[c]"))
+      2 (:count (get h1 "haystack_vf([:a :c])_[c1]"))
+      (map #(:count %) (vals h1)) (map #(:count %) (vals h1p))
       ;
       4 (count h2)
-      1 (:count (get h2 "haystack([:a :b]|[:a :c]|[:a :d])_[2|3|3]"))
-      1 (:count (get h2 "haystack([:a :b]|[:a :c]|[:a :d])_[1|3|3]"))
-      1 (:count (get h2 "haystack([:a :b]|[:a :c]|[:a :d])_[1|2|3]"))
-      0 (:count (get h2 "haystack([:a :b]|[:a :c]|[:a :d])_[2|2|3]"))
+      1 (:count (get h2 "haystack_vf([:a :b]|[:a :c]|[:a :d])_[2|3|3]"))
+      1 (:count (get h2 "haystack_vf([:a :b]|[:a :c]|[:a :d])_[1|3|3]"))
+      1 (:count (get h2 "haystack_vf([:a :b]|[:a :c]|[:a :d])_[1|2|3]"))
+      0 (:count (get h2 "haystack_vf([:a :b]|[:a :c]|[:a :d])_[2|2|3]"))
       ;
       4 (count h3)
-      1 (:count (get h3 "haystack([:a :b]|[:a :c])_[2|3]"))
-      1 (:count (get h3 "haystack([:a :b]|[:a :c])_[1|3]"))
-      1 (:count (get h3 "haystack([:a :b]|[:a :c])_[1|2]"))
-      0 (:count (get h3 "haystack([:a :b]|[:a :c])_[2|2]"))
+      1 (:count (get h3 "haystack_vf([:a :b]|[:a :c])_[2|3]"))
+      1 (:count (get h3 "haystack_vf([:a :b]|[:a :c])_[1|3]"))
+      1 (:count (get h3 "haystack_vf([:a :b]|[:a :c])_[1|2]"))
+      0 (:count (get h3 "haystack_vf([:a :b]|[:a :c])_[2|2]"))
       ;
       ; value frequencies: '{:b {1 2, 2 1}, :c {2 1, 3 2}}'
       1 (count h4)
-      1 (:count (get h4 "haystack([:a :b]|[:a :c])_[1|3]"))
-      ;;
+      1 (:count (get h4 "haystack_vf([:a :b]|[:a :c])_[1|3]"))
+      (map #(:count %) (vals h4)) (map #(:count %) (vals h4p))
+      ;
       1 (count h5)
-      0 (:count (get h5 "haystack([:a :b]|[:a :c])_[2|2]"))
+      0 (:count (get h5 "haystack_vf([:a :b]|[:a :c])_[2|2]"))
+      ;
+      1 (count h6)
+      1 (:count (get h6 "haystack_vf([:a :b]|[:a :c]|[:a :d])_[1|3|3]"))
+      ;
+      4 (count h7)
+      1 (:count (get h7 "d2_[dmod]_vf([:a :b]|[:a :c]|[:a :d])_[[3]|2|3|3]"))
+      '(1 1 1 0) (map #(:count %) (vals h7))
+      ;
+      4 (count h8)
+      '(0 0 0 0) (map #(:count %) (vals h8))
+      (map #(:count %) (vals h8)) (map #(:count %) (vals h8p))
       )))
