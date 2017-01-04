@@ -252,6 +252,14 @@ a collection of data. For example, find the 5 most frequent values for specific 
 data rows satisfied the constraints and provides the corresponding function to retrieve that result set from the 
 collection (see 'pivot-rs).
 
+For example, find out when purchases with the largest markup happened?
+```clojure
+; For rows of data like:
+{:name "foo" :time {:hour 1 :minute 10 :second 20} :price {:markup .10 :base 1.00 :tax 0.05}}
+
+(haystack purchases :vfkpsets [{:kp [:time] :ks [:hour :minute]} {:kp [:price] :ks [:markup]}])
+```
+
 *haystack generates the functions for schema key paths and evaluates those against generic/specific constraints*
 
 #### Correlation for a subset of schema keys 
@@ -260,24 +268,24 @@ collection (see 'pivot-rs).
 (def data [{:a {:b 1 :c 2 :d 3}} {:a {:b 1 :c 3 :d 3}} {:a {:b 2 :c 3 :d 3}}])
 
 ; Generates functions to evaluate 4 value combinations for all possible values
-(def hstack1 (haystack data :kpath [:a] :kset [:b :c]))
+(def hstack1 (haystack data :vfkpsets [{:kp [:a] :ks [:b :c]}]))
 
 ; vf([key-path 1]|[key-path 2]|[key-path N])
 ; Note that none of the data has a nested map for {:a {:b 2 :c2}}, --> :count 0
 (pprint hstack1)
-{"haystack_vf([:a :b]|[:a :c])_[2|3]"
+{"haystack([:a :b]|[:a :c])_[2|3]"
  {:count 1,
   :function
   #object[clash.tools$all_QMARK_$fn__1532 0xcd6fdab "clash.tools$all_QMARK_$fn__1532@cd6fdab"]},
- "haystack_vf([:a :b]|[:a :c])_[1|3]"
+ "haystack([:a :b]|[:a :c])_[1|3]"
  {:count 1,
   :function
   #object[clash.tools$all_QMARK_$fn__1532 0x779f98a2 "clash.tools$all_QMARK_$fn__1532@779f98a2"]},
- "haystack_vf([:a :b]|[:a :c])_[1|2]"
+ "haystack([:a :b]|[:a :c])_[1|2]"
  {:count 1,
   :function
   #object[clash.tools$all_QMARK_$fn__1532 0x5efae983 "clash.tools$all_QMARK_$fn__1532@5efae983"]},
- "haystack_vf([:a :b]|[:a :c])_[2|2]"
+ "haystack([:a :b]|[:a :c])_[2|2]"
  {:count 0,
   :function
   #object[clash.tools$all_QMARK_$fn__1532 0x5c789083 "clash.tools$all_QMARK_$fn__1532@5c789083"]}}
@@ -289,14 +297,14 @@ collection (see 'pivot-rs).
 ; Top 1 (or N) occuring values for any data schema key (t -> clash.tools)
 (def top1 (partial t/reduce-vfreqs #(take 1 (t/sort-map-by-value %)))
 
-(haystack data :kpath [:a] :vffx top1)
-{"haystack_vf([:a :b]|[:a :c]|[:a :d])_[1|3|3]"
+(haystack data :vfkpsets [{:kp [:a]}] :vffx top1)
+{"haystack([:a :b]|[:a :c]|[:a :d])_[1|3|3]"
  {:count 1,
   :function
   #object[clash.tools$all_QMARK_$fn__1532 0x31c221a7 "clash.tools$all_QMARK_$fn__1532@31c221a7"]}}
 
 ; Get the data row(s) result set that satisfies the constraints
-(pivot-rs data h1 "haystack_vf([:a :b]|[:a :c]|[:a :d])_[1|3|3]")
+(pivot-rs data h1 "haystack([:a :b]|[:a :c]|[:a :d])_[1|3|3]")
 ({:a {:b 1, :c 3, :d 3}})
 
 ```

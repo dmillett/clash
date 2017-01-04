@@ -319,6 +319,7 @@
 
   (value-frequencies {:a a1}) => {:a {a1 1}}
   (value-frequencies {} {:a 1 :b {:c1 2}} :kpath [:b]) => {:c {2 1}}"
+  ([] {})
   ([m] (value-frequencies {} m))
   ([target_map m & {:keys [kset kpath] :or {kset [] kpath []}}]
     (let [kpmap (if (empty? kpath) m (get-in m kpath))
@@ -346,10 +347,9 @@
   [items & {:keys [kset kpath] :or {kset [] kpath []}}]
   (reduce
     (fn [result m]
-      (merge-value-frequencies result (value-frequencies {} m :kset kset :kpath kpath)) )
+      (merge-value-frequencies result (value-frequencies {} m :kset kset :kpath kpath)))
     {}
-    items)
-  )
+    items))
 
 (defn- pcollect-value-frequencies
   "Uses (reducers/fold) to build the result."
@@ -396,6 +396,41 @@
       (fn [result item] (merge-value-frequencies result
                           (collect-value-frequencies (fx item) :kset kset :kpath kpath) ))
       map_items
+      ) ) )
+
+(defn- mv-freqs-datarow
+  "Handle (value-frequencies) for a single {:kp [] :ks []} from (mv-freqs)"
+  [data kpsets target]
+  (if (empty? kpsets)
+    (value-frequencies {} data)
+    (reduce
+      (fn [result kpset]
+        (merge result
+          (if-let [fx (:vffx kpset)]
+            (value-frequencies {} (fx data) :kpath (:kp kpset) :kset (:ks kpset))
+            (value-frequencies {} data :kpath (:kp kpset) :kset (:ks kpset))
+            )))
+      target
+      kpsets) ) )
+
+(defn mv-freqs
+  "A replacement for (collect-value-frequencies) that supports multiple key-path, key-sets per data
+  schema. This supports finding value frequencies for multiple schema keys at different nest levels.
+
+  'kpsets' A vector of maps that detail schema paths and sets or a custom fx
+  'kp' A specific schema path
+  'ks' The schema keys for the 'kp' above
+  'kvfx' A function for retrieving collection data from nested structures, or other
+
+  Ex: (mv-freqs data :kpsets [{:kp [:cost] :ks [:amount :tax]} {:kvfx #(some-fn)}])
+  "
+  [items & {:keys [kpsets target plevel] :or {kpsets [] target {} plevel 1}}]
+  (if (= 1 plevel)
+    (reduce (fn [result item] (merge-value-frequencies result (mv-freqs-datarow item kpsets target))) {} items)
+    (r/fold
+      merge-value-frequencies
+      (fn [result item] (merge-value-frequencies result (mv-freqs-datarow item kpsets target)))
+      items
       ) ) )
 
 (defn sort-value-frequencies
