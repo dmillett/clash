@@ -221,7 +221,7 @@
   (let [d1 [{:a {:c "c"} :b {:d "d"}}, {:a {:c "c1"} :b {:d "d"}}, {:a {:c "c"} :b {:d "d1"}}, {:a {:c "c1"} :b {:d "d"}}]
         d2 [{:a {:b 1 :c 2 :d 3}}, {:a {:b 1 :c 3 :d 3}}, {:a {:b 2 :c 3 :d 3}}]
         d3 [{:a {:b 1 :c 2}} {:a {:b 1 :c 3}} {:a {:b 2 :c 3}}]
-        d4 [{:a {:b "b1" :c "c1"} :d "d"}, {:a {:b "b2" :c "c1"} :d "d"}]
+        d4 [{:a {:b "b1" :c "c1"} :d "d" :e "e1"}, {:a {:b "b2" :c "c1"} :d "d" :e "e2"}]
         ;
         vffx1 #(t/filter-value-frequencies % (fn [[_ v]] (even? v)))
         vffx2 #(t/filter-value-frequencies % (fn [[k _]] (even? k)))
@@ -242,6 +242,8 @@
         h8p (haystack d3 :pvmsg "d3_[dmod]" :vfkpsets [{:kp [:a] :ks [:b :c]}] :pivots [{:f dmod? :v [3]}] :plevel 2)
         h9 (haystack d4 :vfkpsets [{:kp [:a] :ks [:c]}, {:ks [:d]}])
         h10 (haystack d4 :vfkpsets [{:ks [:d]}])
+        h11 (haystack d4 :vfkpsets [{:ks [:d :e]}])
+        h12 (haystack d4 :vfkpsets [{:kp [:a] :ks [:c]} {:ks [:d :e]}])
         ]
     (are [x y] (= x y)
       2 (count h1)
@@ -281,7 +283,10 @@
       ;
       1 (count h9)
       2 (:count (get h9 "haystack([:a :c]|[:d])_[c1|d]"))
-      ;
       1 (count h10)
       2 (:count (get h10 "haystack([:d])_[d]"))
+      2 (count h11)
+      1 (:count (get h11 "haystack([:d]|[:e])_[d|e2]"))
+      2 (count h12)
+      1 (:count (get h12 "haystack([:a :c]|[:d]|[:e])_[c1|d|e1]"))
       )))

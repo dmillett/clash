@@ -388,7 +388,7 @@
            (cond
              (and kp ks) (map #(conj kp %) ks)
              kp (map #(conj kp %) freq_keys)
-             ks (conj [] ks)
+             ks (map #(conj [] %) ks)
              ) ) )
        kpsets)))
 

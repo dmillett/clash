@@ -22,6 +22,15 @@
   [line]
   (tt/regex-group-into-map line simple-structure detailed-pattern) )
 
+(defrecord Structure [time action name quantity unit_price])
+
+(defn weblog-parser-dr
+  "defrecord objects offer better performance and work well with pivot, haystack, etc."
+  [line]
+  (if-let [[_ t a n q up] (re-find detailed-pattern line)]
+    (->Structure t a n q up)
+    ) )
+
 (defn name?
   "A predicate to check 'stock' name against the current solution."
   [name]

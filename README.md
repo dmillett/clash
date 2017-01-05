@@ -9,7 +9,7 @@ Clash makes it fast and easy to determine how many times a specific value exists
 across millions of rows of data. This includes performance macros to determine approximately when the JVM will
 optimize execution for a target method (sweetspot).
 
-Try adding **[clash "1.3.0"]** to your project today
+Try adding **[clash "1.3.1"]** to your project today
 
 [transformation functions](#core-transformations)
 
@@ -39,7 +39,7 @@ using
 ; Create a target structure, pattern, and parser/adapter
 (defrecord Structure [time action name quantity unit_price])
 (def pattern #"(\d{8}-\d{2}:\d{2}:\d{2}.\d{3})\|.*\|(\w*),(\w*),(\d*),(.*)")
-(defn parser [line] (let [[_ t a n q p] (re-find pattern line)] (Structure. t a n q p)))
+(defn parser [line] (if-let [[_ t a n q p] (re-find pattern line)] (->Structure t a n q p)))
 
 ; Parse and transform a single line
 (def sample "05042013-13:24:13.005|sample-server|1.0.0|info|Search,ZOO,25,13.99")
@@ -255,7 +255,10 @@ collection (see 'pivot-rs).
 For example, find out when purchases with the largest markup happened?
 ```clojure
 ; For rows of data like:
-{:name "foo" :time {:hour 1 :minute 10 :second 20} :price {:markup .10 :base 1.00 :tax 0.05}}
+[{:name "foo" :time {:hour 1 :minute 10 :second 20} :price {:markup 0.10 :base 1.00 :tax 0.05}}
+{:name "bar" :time {:hour 1 :minute 10 :second 50} :price {:markup 0.07 :base 1.15 :tax 0.06}}
+{:name "foo" :time {:hour 1 :minute 12 :second 05} :price {:markup 0.10 :base 1.00 :tax 0.05}}
+]
 
 (haystack purchases :vfkpsets [{:kp [:time] :ks [:hour :minute]} {:kp [:price] :ks [:markup]}])
 ```
@@ -295,9 +298,9 @@ For example, find out when purchases with the largest markup happened?
 
 ```clojure
 ; Top 1 (or N) occuring values for any data schema key (t -> clash.tools)
-(defn topN [n] (partial t/reduce-vfreqs #(take n (t/sort-map-by-value %)))
+(defn top [n] (partial t/reduce-vfreqs #(take n (t/sort-map-by-value %)))
 
-(haystack data :vfkpsets [{:kp [:a]}] :vffx top1)
+(haystack data :vfkpsets [{:kp [:a]}] :vffx (top 1))
 {"haystack([:a :b]|[:a :c]|[:a :d])_[1|3|3]"
  {:count 1,
   :function
