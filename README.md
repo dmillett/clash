@@ -295,7 +295,7 @@ For example, find out when purchases with the largest markup happened?
 
 ```clojure
 ; Top 1 (or N) occuring values for any data schema key (t -> clash.tools)
-(def top1 (partial t/reduce-vfreqs #(take 1 (t/sort-map-by-value %)))
+(defn topN [n] (partial t/reduce-vfreqs #(take n (t/sort-map-by-value %)))
 
 (haystack data :vfkpsets [{:kp [:a]}] :vffx top1)
 {"haystack([:a :b]|[:a :c]|[:a :d])_[1|3|3]"

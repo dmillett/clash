@@ -218,9 +218,10 @@
       ) ) )
 
 (deftest test-haystack
-  (let [d1 [{:a {:c "c"} :b {:d "d"}} {:a {:c "c1"} :b {:d "d"}} {:a {:c "c"} :b {:d "d1"}} {:a {:c "c1"} :b {:d "d"}}]
-        d2 [{:a {:b 1 :c 2 :d 3}} {:a {:b 1 :c 3 :d 3}} {:a {:b 2 :c 3 :d 3}}]
+  (let [d1 [{:a {:c "c"} :b {:d "d"}}, {:a {:c "c1"} :b {:d "d"}}, {:a {:c "c"} :b {:d "d1"}}, {:a {:c "c1"} :b {:d "d"}}]
+        d2 [{:a {:b 1 :c 2 :d 3}}, {:a {:b 1 :c 3 :d 3}}, {:a {:b 2 :c 3 :d 3}}]
         d3 [{:a {:b 1 :c 2}} {:a {:b 1 :c 3}} {:a {:b 2 :c 3}}]
+        d4 [{:a {:b "b1" :c "c1"} :d "d"}, {:a {:b "b2" :c "c1"} :d "d"}]
         ;
         vffx1 #(t/filter-value-frequencies % (fn [[_ v]] (even? v)))
         vffx2 #(t/filter-value-frequencies % (fn [[k _]] (even? k)))
@@ -239,6 +240,8 @@
         h7 (haystack d2 :pvmsg "d2_[dmod]" :vfkpsets [{:kp [:a]}] :pivots [{:f dmod? :v [3]}])
         h8 (haystack d3 :pvmsg "d3_[dmod]" :vfkpsets [{:kp [:a] :ks [:b :c]}] :pivots [{:f dmod? :v [3]}])
         h8p (haystack d3 :pvmsg "d3_[dmod]" :vfkpsets [{:kp [:a] :ks [:b :c]}] :pivots [{:f dmod? :v [3]}] :plevel 2)
+        h9 (haystack d4 :vfkpsets [{:kp [:a] :ks [:c]}, {:ks [:d]}])
+        h10 (haystack d4 :vfkpsets [{:ks [:d]}])
         ]
     (are [x y] (= x y)
       2 (count h1)
@@ -275,4 +278,10 @@
       4 (count h8)
       '(0 0 0 0) (map #(:count %) (vals h8))
       (map #(:count %) (vals h8)) (map #(:count %) (vals h8p))
+      ;
+      1 (count h9)
+      2 (:count (get h9 "haystack([:a :c]|[:d])_[c1|d]"))
+      ;
+      1 (count h10)
+      2 (:count (get h10 "haystack([:d])_[d]"))
       )))

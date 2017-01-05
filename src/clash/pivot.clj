@@ -378,6 +378,20 @@
         ) )
     ) )
 
+(defn- haystack-keypaths
+  "Determine the appropriate schema key paths from value frequencies and the original criteria."
+  [kpsets freq_keys]
+  (apply concat
+     (map
+       (fn [kps]
+         (let [kp (:kp kps) ks (:ks kps)]
+           (cond
+             (and kp ks) (map #(conj kp %) ks)
+             kp (map #(conj kp %) freq_keys)
+             ks (conj [] ks)
+             ) ) )
+       kpsets)))
+
 (defn haystack
   "Correlate the value of specific data schema 'keys', based on frequency, across a collection of data.
   This combines (collect-value-frequencies) and (pivot-matrix) functions, and only requires knowledge
@@ -400,17 +414,15 @@
           See '(pivot-matrix), '(collect-value-frequencies)"
   [map_data & {:keys [pvmsg pvpredfx pivots pvfx vfkpsets vffx plevel]
                :or {pvmsg "haystack", pvpredfx t/all?, pvfx =, plevel 1}}]
-  ; todo: mv-freqs is ignoring ':ks' and returning all
   (let [vfreqs (t/mv-freqs map_data :kpsets vfkpsets :plevel plevel)
         ffreqs (if vffx (vffx vfreqs) vfreqs)
-        keypaths (filter identity (apply concat (map (fn [kps] (conj [] (:kp kps))) vfkpsets)))
-        keypaths2 (for [kps keypaths vf (keys ffreqs)] (conj kps vf))
+        keypaths (haystack-keypaths vfkpsets (keys ffreqs))
         pivot_kfx (fn [k v] #(pvfx v (get-in % k)))
-        pivot_fxs (map (fn [k] (partial pivot_kfx k)) keypaths2)
+        pivot_fxs (map (fn [k] (partial pivot_kfx k)) keypaths)
         pivot_vals (map keys (vals ffreqs))
         pivotfns (concat (map #(:f %) pivots) pivot_fxs)
         pivotvals (if pivots (conj pivot_vals (map #(:v %) pivots)) pivot_vals)
-        msg2 (str pvmsg "(" (apply str (interpose "|" keypaths2)) ")")
+        msg2 (str pvmsg "(" (apply str (interpose "|" keypaths)) ")")
         ]
 
     (pivot-matrix map_data msg2 :p pivotfns :v pivotvals :c pvpredfx :plevel plevel)
