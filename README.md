@@ -9,7 +9,7 @@ Clash makes it fast and easy to determine how many times a specific value exists
 across millions of rows of data. This includes performance macros to determine approximately when the JVM will
 optimize execution for a target method (sweetspot).
 
-Try adding **[clash "1.2.3"]** to your project today
+Try adding **[clash "1.3.0"]** to your project today
 
 [transformation functions](#core-transformations)
 
