@@ -1,4 +1,4 @@
-(defproject clash "1.2.3"
+(defproject clash "1.3.0"
   :description "A clojure library that applies customizable structures to text files
    and quick analysis via filter groups, maps, etc. This is useful for quickly searchin
    or indexing large text files before spending proportionally more effort on Hadoop or
@@ -8,7 +8,7 @@
             :url "http://www.eclipse.org/legal/epl-v10.html" }
   :scm {:name "git" :url "https://github.com/dmillett/clash" }
   :dependencies [[org.clojure/clojure "1.8.0"]
-                 [org.clojure/math.combinatorics "0.1.1"]]
+                 [org.clojure/math.combinatorics "0.1.3"]]
   :jvm-opts ["-Xms256m" "-Xmx256m"]
   ;:global-vars {*warn-on-reflection* true}
   :repl-options {:init (do
