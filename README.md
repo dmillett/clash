@@ -261,11 +261,13 @@ For example, find out when purchases with the largest markup happened?
 {:name "foo" :time {:hour 1 :minute 12 :second 14} :price {:markup 0.12 :base 1.00 :tax 0.05}}
 ]
 
-; Grap the top 'n' schema values, by frequency
+; The top 'n' values for a schema path/set 
+(defn top-freqs [n] (partial reduce-vfreqs #(take n (sort-map-by-value %))))
+
+; Grap the most frequent schema values for ':time' and ':price' schema paths
 (def hstack (haystack purchases :vffx (top-freqs 1) :vfkpsets [{:kp [:time] :ks [:hour :minute]} {:kp [:price] :ks [:markup]}]))
 
-; Where each key represents the schema path|s_value|s
-; Use ':function' with (pivot-rs) to create a result set with those criteria
+; Count, when true, for the schema & value combinations ([path 1]|[path n]_[value 1]|[value n])
 (pprint hstack)
 {"haystack([:time :hour]|[:time :minute]|[:price :markup])_[1|10|0.1]"
  {:count 2,
