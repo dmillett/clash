@@ -252,30 +252,33 @@ a collection of data. For example, find the 5 most frequent values for specific 
 data rows satisfied the constraints and provides the corresponding function to retrieve that result set from the 
 collection (see 'pivot-rs).
 
-For example, find out when purchases with the largest markup happened?
+**For example, find out when purchases with the largest markup happened?**
 ```clojure
-; For 'purchase' rows of data like:
+; A tiny subset of mock purchase data
+(def purchases
 [{:name "foo" :time {:hour 1 :minute 10 :second 20} :price {:markup 0.10 :base 1.00 :tax 0.05}}
 {:name "bar" :time {:hour 1 :minute 10 :second 50} :price {:markup 0.07 :base 1.15 :tax 0.06}}
 {:name "foo" :time {:hour 1 :minute 10 :second 52} :price {:markup 0.10 :base 1.00 :tax 0.05}}
 {:name "foo" :time {:hour 1 :minute 12 :second 14} :price {:markup 0.12 :base 1.00 :tax 0.05}}
-]
+])
 
 ; The top 'n' values for a schema path/set 
 (defn top-freqs [n] (partial reduce-vfreqs #(take n (sort-map-by-value %))))
 
-; Grap the most frequent schema values for ':time' and ':price' schema paths
-(def hstack (haystack purchases :vffx (top-freqs 1) :vfkpsets [{:kp [:time] :ks [:hour :minute]} {:kp [:price] :ks [:markup]}]))
+; Grab the most frequent schema values for ':time' and ':price' schema paths
+; Use ':plevel 2' (all cores) for larger datasets
+user=> (def hstack (haystack purchases :vffx (top-freqs 1) :vfkpsets [{:kp [:time] :ks [:hour :minute]} 
+                                                                      {:kp [:price] :ks [:markup]}]))
 
 ; Count, when true, for the schema & value combinations ([path 1]|[path n]_[value 1]|[value n])
-(pprint hstack)
+user=> (pprint hstack)
 {"haystack([:time :hour]|[:time :minute]|[:price :markup])_[1|10|0.1]"
  {:count 2,
   :function
   #object[clash.tools$all_QMARK_$fn__3155 0x6137ad7c "clash.tools$all_QMARK_$fn__3155@6137ad7c"]}}
   
 ; Get the result set for those criteria
-(pivot-rs purchase hstack "haystack([:time :hour]|[:time :minute]|[:price :markup])_[1|10|0.1]")
+user=> (pivot-rs purchase hstack "haystack([:time :hour]|[:time :minute]|[:price :markup])_[1|10|0.1]")
 ({:name "foo", :time {:hour 1, :minute 10, :second 20}, :price {:markup 0.1, :base 1.0, :tax 0.05}} 
 {:name "foo", :time {:hour 1, :minute 10, :second 52}, :price {:markup 0.1, :base 1.0, :tax 0.05}})  
 ```
