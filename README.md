@@ -257,30 +257,25 @@ For example, find out when purchases with the largest markup happened?
 ; For 'purchase' rows of data like:
 [{:name "foo" :time {:hour 1 :minute 10 :second 20} :price {:markup 0.10 :base 1.00 :tax 0.05}}
 {:name "bar" :time {:hour 1 :minute 10 :second 50} :price {:markup 0.07 :base 1.15 :tax 0.06}}
-{:name "foo" :time {:hour 1 :minute 12 :second 05} :price {:markup 0.10 :base 1.00 :tax 0.05}}
+{:name "foo" :time {:hour 1 :minute 10 :second 52} :price {:markup 0.10 :base 1.00 :tax 0.05}}
+{:name "foo" :time {:hour 1 :minute 12 :second 14} :price {:markup 0.12 :base 1.00 :tax 0.05}}
 ]
 
-(def hstk (haystack purchases :vfkpsets [{:kp [:time] :ks [:hour :minute]} {:kp [:price] :ks [:markup]}]))
+; Grap the top 'n' schema values, by frequency
+(def hstack (haystack purchases :vffx (top-freqs 1) :vfkpsets [{:kp [:time] :ks [:hour :minute]} {:kp [:price] :ks [:markup]}]))
 
 ; Where each key represents the schema path|s_value|s
 ; Use ':function' with (pivot-rs) to create a result set with those criteria
-(pprint hstack1)
-{"haystack([:time :hour]|[:time :minute]|[:price :markup])_[1|12|0.1]"
- {:count 1,
+(pprint hstack)
+{"haystack([:time :hour]|[:time :minute]|[:price :markup])_[1|10|0.1]"
+ {:count 2,
   :function
-  #object[clash.tools$all_QMARK_$fn__1543 0x3157c776 "clash.tools$all_QMARK_$fn__1543@3157c776"]},
- "haystack([:time :hour]|[:time :minute]|[:price :markup])_[1|10|0.1]"
- {:count 1,
-  :function
-  #object[clash.tools$all_QMARK_$fn__1543 0x5dc6337e "clash.tools$all_QMARK_$fn__1543@5dc6337e"]},
- "haystack([:time :hour]|[:time :minute]|[:price :markup])_[1|10|0.07]"
- {:count 1,
-  :function
-  #object[clash.tools$all_QMARK_$fn__1543 0x48dffe5a "clash.tools$all_QMARK_$fn__1543@48dffe5a"]},
- "haystack([:time :hour]|[:time :minute]|[:price :markup])_[1|12|0.07]"
- {:count 0,
-  :function
-  #object[clash.tools$all_QMARK_$fn__1543 0x208ad1cb "clash.tools$all_QMARK_$fn__1543@208ad1cb"]}}
+  #object[clash.tools$all_QMARK_$fn__3155 0x6137ad7c "clash.tools$all_QMARK_$fn__3155@6137ad7c"]}}
+  
+; Get the result set for those criteria
+(pivot-rs purchase hstack "haystack([:time :hour]|[:time :minute]|[:price :markup])_[1|10|0.1]")
+({:name "foo", :time {:hour 1, :minute 10, :second 20}, :price {:markup 0.1, :base 1.0, :tax 0.05}} 
+{:name "foo", :time {:hour 1, :minute 10, :second 52}, :price {:markup 0.1, :base 1.0, :tax 0.05}})  
 ```
 
 *haystack generates the functions for schema key paths and evaluates those against generic/specific constraints*

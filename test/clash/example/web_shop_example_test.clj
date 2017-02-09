@@ -58,11 +58,11 @@
       7 (count list_result)
       ) ) )
 
-(defn top [n] (partial reduce-vfreqs #(take n (sort-map-by-value %))))
-
 (deftest test-haystack
   (let [result (transform-lines web-log-file weblog-parser-dr)
-        hstack1 (haystack result :vfkpsets [{:ks [:action :name]}] :vffx (top 2))]
+        hstack1 (haystack result :vfkpsets [{:ks [:action :name]}] :vffx (top-freqs 2))]
+    ;(println result)
+    ;(println hstack1)
     (are [x y] (= x y)
       4 (count hstack1)
       2 (:count (get hstack1 "haystack([:action]|[:name])_[Search|FOO]"))

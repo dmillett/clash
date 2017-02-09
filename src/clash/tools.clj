@@ -473,6 +473,11 @@
     {}
     vfreqs))
 
+(defn top-freqs
+  "The top 'n' value frequencies for applicable keys."
+  [n]
+  (partial reduce-vfreqs #(take n (sort-map-by-value %))))
+
 (defn distinct-by
   "Collect distinct or unique items accoridng to a function 'eqfx'.
   This creates a Map structure where the keys are given by 'eqfx'
