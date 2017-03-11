@@ -91,12 +91,6 @@
       0.6 (:c r1)
       ) ) )
 
-;
-; {top key { nested-key : frequency } }
-; {:a {1 1, 3 1}, :b {2 1, 4 1}, :c {5 1}} ; :a-1 appears 1 time, :a-3 appears 1 time
-(def mps1 [{:a 1 :b 2} {:a 3 :b 4 :c 5}])
-(def mps2 [{:foo {:a "x" :b "y"}} {:foo {:a "xx" :b "yy" :c "zz"}}])
-
 (deftest test-value-frequencies
   (let [r1 (value-frequencies {:a "a1" :b "b1"})
         r2 (value-frequencies {:a {"a1" 3}} {:a "a1" :b "b1"})
@@ -167,44 +161,6 @@
       r5 r2
       r6 r3
       ) ) )
-
-(def mvs2 [{:a "a1" :b "b1" :c {:d "d1" :e "e1"}} {:a "a2" :b "b2"} {:a "a2" :c {:d "d1"} :f [{:g "g1"} {:g "g2"}]}])
-
-(deftest test-mv-freqs
-  (let [r1 (mv-freqs mvs)
-        r2 (mv-freqs mvs :kpsets [{:kp [:b]}])
-        r3 (mv-freqs mvs :kpsets [{:ks [:a :c]}])
-        r4 (mv-freqs mvs :plevel 2)
-        r5 (mv-freqs mvs :kpsets [{:kp [:b]}] :plevel 2)
-        r6 (mv-freqs mvs :kpsets [{:ks [:a :c]}] :plevel 2)
-        r7 (mv-freqs mvs2 :kpsets [{:kp [:c] :ks [:d]} {:ks [:a]}])
-        r8 (mv-freqs mvs2 :kpsets [{:kp [:c] :ks [:d]}])
-        ]
-    (println r8)
-    (are [x y] (= x y)
-      4 (count r1)
-      1 (get-in r1 [:d "d1"])
-      1 (get-in r1 [:c "c2"])
-      1 (get-in r1 [:c "c1"])
-      1 (get-in r1 [:b "b3"])
-      1 (get-in r1 [:b "b2"])
-      1 (get-in r1 [:b "b1"])
-      2 (get-in r1 [:a "a2"])
-      1 (get-in r1 [:a "a1"])
-      ; r2
-      0 (count r2)
-      ; r3
-      2 (count r3)
-      1 (get-in r3 [:c "c2"])
-      1 (get-in r3 [:c "c1"])
-      2 (get-in r3 [:a "a2"])
-      1 (get-in r3 [:a "a1"])
-      ;
-      r4 r1
-      r5 r2
-      r6 r3
-     {:d {"d1" 2}, :a {"a1" 1, "a2" 2}} r7
-     ) ) )
 
 (deftest test-sort-value-frequencies
   (let [r1 (sort-value-frequencies {:a {"a1" 2 "a2" 5 "a3" 1}})
@@ -454,6 +410,7 @@
 
 (deftest test-mv-freqs
   (let [data1 [{:a {:b "b1" :c "c1"} :d {:e "e1"}} {:a {:b "b1" :c "c2"}}]
+        data2 [{:a {:e [{:f "f1"} {:f "f2"} {:f "f2"}]}}]
         freqs1 (mv-freqs data1)
         freqs1p (mv-freqs data1 :plevel 2)
         freqs2 (mv-freqs data1 :kpsets [{:kp [:a]}])
@@ -464,7 +421,10 @@
         freqs4p (mv-freqs data1 :kpsets [{:kp [:a] :ks [:c]} {:kp [:d] :ks [:f]}])
         freqs5 (mv-freqs data1 :kpsets [{:kp [:g]}])
         freqs5p (mv-freqs data1 :kpsets [{:kp [:g]}])
+        ; Needs work
+        freqs6 (mv-freqs data2 :kpsets [{:kvfx #(mv-freqs (get-in % [:a :e]))}])
         ]
+    ;(println "freqs6: " freqs6)
     (are [x y] (= x y)
       2 (count freqs1)
       {:a {{:b "b1", :c "c1"} 1, {:b "b1", :c "c2"} 1}, :d {{:e "e1"} 1}} freqs1

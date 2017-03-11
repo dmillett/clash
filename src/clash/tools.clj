@@ -325,13 +325,12 @@
     (let [kpmap (if (empty? kpath) m (get-in m kpath))
           mp (if (map? kpmap) kpmap {})
           submap (if (empty? kset) mp (select-keys mp kset))]
-      (reduce
-        (fn [result [k v]]
-          (if-let [frequency (get-in result [k v])]
-            (assoc result k {v (inc frequency)})
-            (assoc result k {v 1}) ) )
-        target_map
-        submap) ) ) )
+      (persistent!
+        (reduce
+          (fn [result [k v]]
+            (assoc! result k {v (inc (get-in result [k v] 0))}) )
+          (transient target_map)
+          submap)) ) ) )
 
 (defn merge-value-frequencies
   "Merge two value frequency maps where the value frequency totals will be added
@@ -406,7 +405,7 @@
     (reduce
       (fn [result kpset]
         (merge result
-          (if-let [fx (:vffx kpset)]
+          (if-let [fx (:kvfx kpset)]
             (value-frequencies {} (fx data) :kpath (:kp kpset) :kset (:ks kpset))
             (value-frequencies {} data :kpath (:kp kpset) :kset (:ks kpset))
             )))
@@ -414,8 +413,8 @@
       kpsets) ) )
 
 (defn mv-freqs
-  "A replacement for (collect-value-frequencies) that supports multiple key-path, key-sets per data
-  schema. This supports finding value frequencies for multiple schema keys at different nest levels.
+  "Map value frequencies, is a replacement for (collect-value-frequencies) that supports multiple key-path,
+  key-sets per data schema. This supports finding value frequencies for multiple schema keys at different nest levels.
 
   'kpsets' A vector of maps that detail schema paths and sets or a custom fx
   'kp' A specific schema path

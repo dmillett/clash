@@ -78,20 +78,26 @@ predicates.
 
 #### Dictionary value frequencies
 ```clojure
-(def data [{:a "a1" :b "b1"} {:a "a2" :b "b2"} {:a "a2" :c "c1"}]) 
+; Sample of mock purchase data
+(def purchases 
+  [{:name "foo" :time {:hour 1 :minute 10 :second 20} :price {:markup 0.10 :base 1.00 :tax 0.05}}
+   {:name "bar" :time {:hour 1 :minute 10 :second 50} :price {:markup 0.07 :base 1.15 :tax 0.06}}
+   {:name "foo" :time {:hour 1 :minute 10 :second 52} :price {:markup 0.10 :base 1.00 :tax 0.05}}
+   {:name "foo" :time {:hour 1 :minute 12 :second 14} :price {:markup 0.12 :base 1.00 :tax 0.05}}
+  ])
 
-; How many times do values repeat for specific keys across a collection of maps?
-(collect-value-frequencies data)
-{:c {c1 1} :b {b2 1, b1 1}, :a {a2 2, a1 1}}
+; Find value frequencies for ':time
+(mv-freqs purchases :kpsets [{:ks [:name]}])
+{:name {"foo" 3, "bar" 1}}
 
-; Concurrently get ':a' frequency values
-(collect-value-frequencies data :kset [:a] :plevel 2)
-{:a {a2 2, a1 1}} 
+; Find value frequencies for different schema paths
+(mv-freqs purchases :kpsets [{:ks [:name]} {:kp [:time] :ks [:hour :minute]} {:kp [:price] :ks [:base :tax]}])
+{:name {"foo" 3, "bar" 1}, 
+ :hour {1 4}, 
+ :minute {10 3, 12 1}, 
+ :base {1.0 3, 1.15 1}, 
+ :tax {0.05 3, 0.06 1}}
 
-; Grab multiple key:values from nested maps
-(def data2 [{:a {:b "b1" :c "c1"}} {:a {:b "b2" :d "d2}}])
-(collect-value-frequencies data :kset [:b :d] :kpath [:a])
-{:b {"b1" 1, "b2" 1}, :d {"d2" 1}}
 
 ; Pass a function in for nested collections of maps
 (def m1 {:a "a1" :b {:c [{:d "d1"} {:d "d1"} {:d "d2"}]}})
