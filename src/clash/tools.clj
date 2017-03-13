@@ -406,7 +406,7 @@
       (fn [result kpset]
         (merge result
           (if-let [fx (:kvfx kpset)]
-            (value-frequencies {} (fx data) :kpath (:kp kpset) :kset (:ks kpset))
+            (fx data)
             (value-frequencies {} data :kpath (:kp kpset) :kset (:ks kpset))
             )))
       target
@@ -419,9 +419,13 @@
   'kpsets' A vector of maps that detail schema paths and sets or a custom fx
   'kp' A specific schema path
   'ks' The schema keys for the 'kp' above
-  'kvfx' A function for retrieving collection data from nested structures, or other
+  'kvfx' A function for retrieving collection data from nested structures, or other, this is painful right now (see below)
 
-  Ex: (mv-freqs data :kpsets [{:kp [:cost] :ks [:amount :tax]} {:kvfx #(some-fn)}])
+  typical usage:
+  (mv-freqs data :kpsets [{:kp [:cost] :ks [:amount :tax]} {:kvfx #(some-fn)}])
+
+  Nested array of maps (ugly):
+  (mv-freqs data :kpsets [{:kvfx #(mv-freqs (:key %) :kpsets [{:ks [:subkey]}])}])
   "
   [items & {:keys [kpsets target plevel] :or {kpsets [] target {} plevel 1}}]
   (if (= 1 plevel)
