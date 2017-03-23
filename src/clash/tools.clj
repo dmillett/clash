@@ -463,13 +463,13 @@
     data_freqs
     ) )
 
-(defn reduce-vfreqs [fx vfreqs]
+(defn reduce-vfreqs
   "Apply a function to a value-frequencies data structure and get a
   value-frequencies structure as a result (todo: explore transducers).
 
   ; Get the 5 most frequent values for each keypath (use in 'haystack)
-  (partial reduce-vfreqs #(take 5 (sort-map-by-value %)))
-  "
+  (partial reduce-vfreqs #(take 5 (sort-map-by-value %)))"
+  [fx vfreqs]
   (reduce-kv
     (fn [r k v] (assoc r k (into {} (fx v))))
     {}

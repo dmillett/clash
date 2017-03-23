@@ -12,8 +12,7 @@
     clash.command
   (:use [clojure.java.io :only (reader writer)]
         [clojure.string :only (split)]
-        [clash.text_tools]
-        ))
+        [clash.text_tools :refer :all]))
 
 ;; Linux/Unix "/bin/sh", "-c"
 ;; Mac

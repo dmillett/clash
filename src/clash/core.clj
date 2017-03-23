@@ -51,7 +51,7 @@
   {:deprecated 1.2}
   ([input parser] (atomic-map-from-file input nil nil parser nil nil))
   ([input parser max] (atomic-map-from-file input nil nil parser nil max))
-  ([input predicate transformer parser key max]
+  ([input predicate transformer parser kkey max]
     (let [result (atom {})]
       (with-open [input_reader (reader input)]
         (try
@@ -60,7 +60,7 @@
                           (or (nil? predicate) (predicate line)))
                   :let [transformed (transform-text transformer line)
                         structure (parser transformed)
-                        k (if-not (nil? key) (key structure) (System/nanoTime))
+                        k (if-not (nil? kkey) (kkey structure) (System/nanoTime))
                         current (hash-map k structure)]]
             (if-not (nil? current)
               (swap! result merge current)) )

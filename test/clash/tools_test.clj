@@ -52,9 +52,10 @@
 (deftest test-perfd
   (let [r1 (perfd (+ 1 1))
         r2 (perfd (+ 1 2) "= 3? ")]
-    (= 2 r1)
-    (= 3 r2)
-    ) )
+    (are [x y] (= x y)
+      2 r1
+      3 r2
+      ) ) )
 
 (deftest test-sort-map-by-value
   (let [m1 {:a 1 :b 2 :c 3}

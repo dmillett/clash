@@ -9,7 +9,7 @@
   (:require [clash.text_tools :as tt]
             [clojure.string :as s]
             [clojure.java.io :as jio])
-  (:use [clash.core]) )
+  (:use [clash.core :refer :all]) )
 
 (def simple-structure [:time :action :name :quantity :unit_price])
 
