@@ -10,8 +10,7 @@
     ^{:author "dmillett"
       :doc "Some potentially useful tools with command.clj or other."}
   clash.tools
-  (:require [clojure.core.reducers :as r]
-            [clojure.string :as s])
+  (:require [clojure.core.reducers :as r])
   (:use [clojure.java.io :only (reader)])
   (:import [java.text.SimpleDateFormat]
            [java.text SimpleDateFormat]))
@@ -243,7 +242,7 @@
 (defn- rinto
   "For reducers, will use a list as for 0 or 1 args."
   ([] [])
-  ([c1] (into [] c1))
+  ([c1] (vec c1))
   ([c1 c2] (into c1 c2)))
 
 (defn collect-with
@@ -264,7 +263,7 @@
   (if (or (nil? sols) (nil? preds))
     '()
     (if (= 1 plevel)
-      (if (map? sols) (filter (fn [[_ v]] (preds v)) sols) (filter #(preds %1) sols))
+      (if (map? sols) (filter (fn [[_ v]] (preds v)) sols) (filter preds sols))
       (if (map? sols)
         (r/fold rinto (fn [r k v] (if (preds v) (conj r [k v]) r)) sols)
         (r/fold rinto (fn [r y] (if (preds y) (conj r y) r)) sols)
@@ -307,7 +306,7 @@
   (reduce
     (fn [result [k v]]
       ; Should compare when the value is not nil
-      (assoc result k (when v (compf v (-> k m2))) ) )
+      (assoc result k (when v (compf v (m2 k))) ) )
     {}
     m1) )
 

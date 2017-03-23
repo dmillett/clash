@@ -45,11 +45,11 @@
   is more performant than using log-line-to-map to return a 'sub-map' of values"
   [^String structure, keys, ^String delim]
   ; See clojure 1.8 (index-of)
-  (let [indices (map #(+ 1 (.indexOf structure %)) keys)
+  (let [indices (map #(inc (.indexOf structure %)) keys)
         cut (str "cut -d" \" delim \" " -f")]
     (if (empty? indices)
       (str cut "1-" (count structure))
-      (str cut (apply str (interpose \, indices))) )) )
+      (str cut (s/join "," indices)) )) )
 
 (defn text-structure-to-map
   "Split a structured text into map and return some/all entries. A specific
@@ -57,7 +57,7 @@
   a sub-map of the original map."
   ([line pattern structure] (text-structure-to-map line pattern structure []))
   ([line pattern structure keys]
-    (when-not (empty? line)
+    (when (seq line)
       (let [result (zipmap structure (s/split line pattern))]
         (if (empty? keys)
           result
@@ -69,8 +69,7 @@
   pattern/structure results in nil."
   ([text structure pattern] (regex-group-into-map text structure pattern []))
   ([text structure pattern sub-keys]
-    (if (or (empty? text) (nil? pattern) (nil? structure))
-      nil ; breakout
+    (when-not (or (empty? text) (nil? pattern) (nil? structure))
       (let [matches (re-find pattern text)]
         (if-not (and (nil? matches) (< (count matches) 1))
           (let [result (zipmap structure (rest matches))]
@@ -88,10 +87,9 @@
             will return ({:a a :b b :c c} {:a d :b e :c f})"
   ([text structure pattern] (regex-groups-into-maps text structure pattern []))
   ([text structure pattern sub-keys]
-    (if (or (empty? text) (empty? structure) (nil? pattern))
-       nil
+    (when-not (or (empty? text) (empty? structure) (nil? pattern))
        (let [text_groups (re-seq pattern text)]
-         (when-not (empty? text_groups)
+         (when (seq text_groups)
            (if (empty? sub-keys)
              (map #(zipmap structure (rest %)) text_groups)
              (map #(select-keys (zipmap structure (rest %)) sub-keys) text_groups)) ))) ))

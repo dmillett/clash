@@ -33,13 +33,13 @@
   "Get a Java Process for a Runtime system execution."
   [command]
   (let [updated (pipe command)]
-    (. (Runtime/getRuntime) exec updated)) )
+    (.exec (Runtime/getRuntime) updated)) )
 
 
 (defn jproc-instream
   "Get the input stream for a Java Process."
   [command]
-  (. (jproc command) getInputStream))
+  (.getInputStream (jproc command)))
 
  
 (defn jproc-reader

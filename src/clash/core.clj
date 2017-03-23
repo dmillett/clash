@@ -147,7 +147,7 @@
   If errors are encountered, try (transform-lines-verbose) or (atomic-list-from-file)
   "
   [input parser & {:keys [max tdfx] :or {max nil tdfx nil}}]
-  (let [transducefx (if tdfx tdfx (comp (map parser) (filter identity)))]
+  (let [transducefx (or tdfx (comp (map parser) (filter identity)))]
     (try
       (with-open [ireader (reader input)]
         (if max

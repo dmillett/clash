@@ -8,7 +8,8 @@
 (ns ^{:author "dmillett"} clash.pivot
   (:require [clojure.core.reducers :as r]
             [clojure.math.combinatorics :as cmb]
-            [clash.tools :as t]) )
+            [clash.tools :as t]
+            [clojure.string :as s]) )
 
 (defn- pivot-name
   "Build a pivot name"
@@ -163,7 +164,7 @@
   [m1 m2 f]
   (reduce
     (fn [result [k v]]
-      (assoc result k (when (not (nil? v))
+      (assoc result k (when-not (nil? v)
                         {:result (f (:count v) (get-in m2 [k :count]))
                          :function (:function v)}) ) )
     {}
@@ -209,7 +210,7 @@
   functions (predicate groups). Generates a cartesian product based list of every predicate
   group combination and uses each item with (all?)"
   [f base pgs]
-  (let [cartesian (into [] (apply cmb/cartesian-product pgs))]
+  (let [cartesian (vec (apply cmb/cartesian-product pgs))]
     (for [pg cartesian]
       {:fx (apply f (into base (map #(:fx %) pg))) :name (pivot-matrix-name pg "|")}
       ) ) )
@@ -258,7 +259,7 @@
   (maybe > 50 predicate groups) and the workstation has a large number of cores."
   [col message combfx? basefx? pivotfx? pivotds]
   (let [pivot_groups (build-pivot-groups pivotfx? pivotds message)
-        flat_matrix (into [] (build-pivot-matrix combfx? basefx? pivot_groups))]
+        flat_matrix (vec (build-pivot-matrix combfx? basefx? pivot_groups))]
     (sort-pivot-map-by-value
       (r/fold reducers-merge
         (fn [results fx] (execute-pivot-group results fx col 2))
@@ -297,8 +298,8 @@
                                                         {:f divide-by? :v (range 5 8)}]
                                                 :plevel 2)"
   [col msg & {:keys [base pivot plevel] :or {base [] pivot [] plevel 1}}]
-  (let [p (map #(:f %) pivot)
-        v (map #(:v %) pivot)]
+  (let [p (map :f pivot)
+        v (map :v pivot)]
     (pivot-matrix col msg :b base :p p :v v :plevel plevel)
     ) )
 
@@ -311,8 +312,8 @@
                                                         {:f divide-by? :v (range 5 8)}]
                                                 :plevel 2)"
   [col msg & {:keys [basefx? pivots combfx? plevel] :or {basefx? [] pivots [] combfx? t/all? plevel 1}}]
-  (let [p (map #(:f %) pivots)
-        v (map #(:v %) pivots)]
+  (let [p (map :f pivots)
+        v (map :v pivots)]
     (pivot-matrix col msg :c combfx? :b basefx? :p p :v v :plevel plevel)
     ) )
 
@@ -381,16 +382,15 @@
 (defn- haystack-keypaths
   "Determine the appropriate schema key paths from value frequencies and the original criteria."
   [kpsets freq_keys]
-  (apply concat
-     (map
-       (fn [kps]
-         (let [kp (:kp kps) ks (:ks kps)]
-           (cond
-             (and kp ks) (map #(conj kp %) ks)
-             kp (map #(conj kp %) freq_keys)
-             ks (map #(conj [] %) ks)
-             ) ) )
-       kpsets)))
+  (mapcat
+    (fn [kps]
+      (let [kp (:kp kps) ks (:ks kps)]
+        (cond
+          (and kp ks) (map #(conj kp %) ks)
+          kp (map #(conj kp %) freq_keys)
+          ks (map vector ks)
+          ) ) )
+    kpsets))
 
 (defn haystack
   "Correlate the value of specific data schema 'keys', based on frequency, across a collection of data.
@@ -420,9 +420,9 @@
         pivot_kfx (fn [k v] #(pvfx v (get-in % k)))
         pivot_fxs (map (fn [k] (partial pivot_kfx k)) keypaths)
         pivot_vals (map keys (vals ffreqs))
-        pivotfns (concat (map #(:f %) pivots) pivot_fxs)
-        pivotvals (if pivots (conj pivot_vals (map #(:v %) pivots)) pivot_vals)
-        msg2 (str pvmsg "(" (apply str (interpose "|" keypaths)) ")")
+        pivotfns (concat (map :f pivots) pivot_fxs)
+        pivotvals (if pivots (conj pivot_vals (map :v pivots)) pivot_vals)
+        msg2 (str pvmsg "(" (s/join "|" keypaths) ")")
         ]
 
     (pivot-matrix map_data msg2 :p pivotfns :v pivotvals :c pvpredfx :plevel plevel)
