@@ -215,17 +215,14 @@
         result5 ((all? number? (any? (divisible-by? 6) (divisible-by? 4))) 16)]
 
     (is result1)
-    (is (not ((all? number? even?) "10")))
     (is (not result2))
     (is result3)
-    ;(is (not ((any? number? even?) "10")))
     (is result4)
     (is result5)
     ) )
 
 (deftest test-none
   (is ((none? number?) "5"))
-  ;(is ((none? number? even?) "5"))
   (is ((none? seq? odd?) 10))
   (is (not ((none? number? even?) 10)))
   (is ((none? even? (divisible-by? 4)) 9))

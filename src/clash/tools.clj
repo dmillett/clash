@@ -500,39 +500,41 @@
   "Pass value(s) implicitly and a list of predicates explicitly for evaluation.
   If all predicates return 'true', then function returns 'true'. Otherwise
   function returns 'false'. Could not pass a function list to (every-pred)
-  successfully.
-  Example:
-  ((all? number? odd?) 10) --> false. Resembles (every-pred)"
+  successfully. Ex: ((all? number? odd?) 10) --> false. Resembles (every-pred)"
   [& predicates]
-  (fn [data]
-    (reduce
-      (fn [result pred?] (if (pred? data) result (reduced false)))
-      true
-      predicates) ) )
+  (fn [item]
+    (loop [result true
+           preds predicates]
+      (if (or (not result) (empty? preds))
+        result
+        (recur ((first preds) item) (rest preds))
+        ) ) ) )
 
 (defn none?
   "Returns 'false' if any of the predicates returns true. This could be used with
-  (filter) or (count-with), etc.
-
-  Example:
-  ((none? number? even?) true)"
+  (filter) or (count-with), etc. Example
+  "
   [& predicates]
-  (fn [data]
-    (reduce
-      (fn [result pred?] (if (pred? data) (reduced false) result))
-      true
-      predicates) ) )
+  (fn [item]
+    (loop [result false
+           ps predicates]
+      (if (or result (empty? ps))
+        (not result)
+        (recur ((first ps) item) (rest ps))
+        ) ) ) )
 
 (defn any?
   "Pass value(s) implicitly and a list of predicates explicitly for evaluation.
   If any predicate returns 'true', then function returns 'true'. Otherwise
   function returns 'false'. Ex: ((any? number? odd?) 10) --> true. Resembles (some-fn)"
   [& predicates]
-  (fn [data]
-    (reduce
-      (fn [result pred?] (if (pred? data) (reduced true) result))
-      false
-      predicates) ) )
+  (fn [item]
+    (loop [result false
+           preds predicates]
+      (if (or result (empty? preds))
+        result
+        (recur ((first preds) item) (rest preds))
+        ) ) ) )
 
 (defn until?
   "Returns 'true' for the first item in a collection that satisfies the predicate.
@@ -549,7 +551,7 @@
 (defn take-until
   "A compliment to (take-while). Gather values of a collection into a list until
   the predicate is satisfied. Otherwise returns an empty list. A lazy implementation
-  is slated for 1.7 (this one not be lazy). (reduce) is not as fast"
+  is slated for 1.7 (this one not be lazy)."
   [pred coll]
   (loop [result '()
          items coll]
@@ -559,16 +561,6 @@
       (try (pred (first items)) (catch Exception _ false)) (conj result (first items))
       :else (recur (conj result (first items)) (rest items))
       ) ) )
-
-(defn take-until2
-  "A compliment to (take-while). Gather values of a collection into a list until
-  the predicate is satisfied. Otherwise returns an empty list. A lazy implementation
-  is slated for 1.7 (this one not be lazy)."
-  [pred coll]
-  (reduce
-    (fn [r c] (let [result (conj r c)] (try (if (pred c) (reduced result) result) (catch Exception _ result))))
-    '()
-    coll) )
 
 (defn consecutive
   "Group data in a collection by a specific function using loop/recur. For example, find
