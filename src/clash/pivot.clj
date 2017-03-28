@@ -308,13 +308,20 @@
   This introduces 'combfx?' which is a function to apply across each generated predicate group. Previous incarnations
   used (clash.tools/all?), while this allows for (any?), (none?), etc. The default behavior is still (all?).
 
-  (pivot-matrix-e col msg :base [number? even?] :pivot [{:f divide-by? :v (range 2 5)}
-                                                        {:f divide-by? :v (range 5 8)}]
-                                                :plevel 2)"
+  keywords:
+  :basefx? - applies these predicates to entire data collection. Example: (all? number? even?), Defaults to []
+             (decreases the initial collection size - also unnecessary DEPRECATED)
+  :combfx? - combfx which function to use to to combine generated fuctions. Defaults to (all?)
+  :plevel - level of parallel processing. Default, single threaded (1); battery crusher, all threads (2)
+  :pivots - A vector of function-data pairs. Use {:f divide-by? :v (range 1 10)}. Defaults to []
+
+  (pivot-matrix* col, msg, :plevel 2, :basefx [number? even?] :pivots [{:f divide-by? :v (range 2 5)}
+                                                          {:f divide-by? :v (range 5 8)}])"
   [col msg & {:keys [basefx? pivots combfx? plevel] :or {basefx? [] pivots [] combfx? t/all? plevel 1}}]
   (let [p (map :f pivots)
-        v (map :v pivots)]
-    (pivot-matrix col msg :c combfx? :b basefx? :p p :v v :plevel plevel)
+        v (map :v pivots)
+        datacol (if (empty? basefx?) col (t/collect-with col (apply t/all? basefx?) :plevel plevel))]
+    (pivot-matrix datacol msg :c combfx? :b [] :p p :v v :plevel plevel)
     ) )
 
 (defn pivot-matrix-compare

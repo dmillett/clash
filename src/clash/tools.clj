@@ -496,6 +496,16 @@
       {}
       col)))
 
+;; Notes
+; From a performance aspect, the "loop - recur" implementation was about 40% faster when
+; used with (pivot-matrix) functions for large data sets. My test case was
+; 5,000,000+ rows with 240 combinations of (all? hour-of-day minute-of-hour) or 12,000,000,000 iterations
+;
+; Sample reducer functions
+; (fn [data] (reduce (fn [result p?] (if (p? data) result (reduced false))) true predicates))
+;
+; (fn [data] (reduce (fn [r p?] (if (and r (p? data)) r (reduced false))) (x? data) predicates))
+;
 (defn all?
   "Pass value(s) implicitly and a list of predicates explicitly for evaluation.
   If all predicates return 'true', then function returns 'true'. Otherwise
