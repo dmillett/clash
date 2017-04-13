@@ -141,7 +141,7 @@
   (let [data ["foo" "bar" "zoo"]
         fx? (fn [c] #(s/includes? % c))
         r1 (pivot-matrix* data "r1" :pivots [{:f fx? :v ["a" "b" "c"]} {:f fx? :v ["r" "d"]}])
-        r2 (pivot-matrix* data "r2" :combfx? t/none? :pivots [{:f fx? :v ["a" "b" "c"]} {:f fx? :v ["r" "d"]}])
+        r2 (pivot-matrix* data "r2" :combfx? t/none? :refine false :pivots [{:f fx? :v ["a" "b" "c"]} {:f fx? :v ["r" "d"]}])
         r3 (pivot-matrix* data "r3" :combfx? t/any? :pivots [{:f fx? :v ["a" "b" "c"]} {:f fx? :v ["r" "d"]}])
         ]
     (are [x y] (= x y)

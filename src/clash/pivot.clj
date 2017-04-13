@@ -212,7 +212,7 @@
   [f base pgs]
   (let [cartesian (vec (apply cmb/cartesian-product pgs))]
     (for [pg cartesian]
-      {:fx (apply f (into base (map #(:fx %) pg))) :name (pivot-matrix-name pg "|")}
+      {:fx (apply f (into base (map :fx pg))) :name (pivot-matrix-name pg "|")}
       ) ) )
 
 (defn- execute-pivot-group
@@ -312,16 +312,21 @@
   :basefx? - applies these predicates to entire data collection. Example: (all? number? even?), Defaults to []
              (decreases the initial collection size - also unnecessary DEPRECATED)
   :combfx? - combfx which function to use to to combine generated fuctions. Defaults to (all?)
+  :refine - reduce the collection size when paired with (all?). Set ':refine false' when using (none?)
   :plevel - level of parallel processing. Default, single threaded (1); battery crusher, all threads (2)
   :pivots - A vector of function-data pairs. Use {:f divide-by? :v (range 1 10)}. Defaults to []
 
   (pivot-matrix* col, msg, :plevel 2, :basefx [number? even?] :pivots [{:f divide-by? :v (range 2 5)}
                                                           {:f divide-by? :v (range 5 8)}])"
-  [col msg & {:keys [basefx? pivots combfx? plevel] :or {basefx? [] pivots [] combfx? t/all? plevel 1}}]
+  [col msg & {:keys [basefx? pivots combfx? refine plevel] :or {basefx? [] pivots [] combfx? t/all? refine true plevel 1}}]
   (let [p (map :f pivots)
         v (map :v pivots)
-        datacol (if (empty? basefx?) col (t/collect-with col (apply t/all? basefx?) :plevel plevel))]
-    (pivot-matrix datacol msg :c combfx? :b [] :p p :v v :plevel plevel)
+        ; todo: explore transducer here
+        datacol (if (empty? basefx?) col (t/collect-with col (apply t/all? basefx?) :plevel plevel))
+        pvfns (map #(t/fns-with t/any? %) pivots)
+        refined (if refine (t/collect-with datacol (apply t/all? pvfns) :plevel plevel) datacol)
+        ]
+    (pivot-matrix refined msg :c combfx? :b [] :p p :v v :plevel plevel)
     ) )
 
 (defn pivot-matrix-compare
@@ -430,9 +435,9 @@
         pivotfns (concat (map :f pivots) pivot_fxs)
         pivotvals (if pivots (conj pivot_vals (map :v pivots)) pivot_vals)
         msg2 (str pvmsg "(" (s/join "|" keypaths) ")")
+        pivots (reduce-kv (fn [r k v] (conj r {:f k :v v})) [] (zipmap pivotfns pivotvals))
         ]
-
-    (pivot-matrix map_data msg2 :p pivotfns :v pivotvals :c pvpredfx :plevel plevel)
+    (pivot-matrix* map_data msg2 :pivots pivots :c pvpredfx :plevel plevel)
     ) )
 
 

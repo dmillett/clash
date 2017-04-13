@@ -10,7 +10,8 @@
     ^{:author "dmillett"
       :doc "Some potentially useful tools with command.clj or other."}
   clash.tools
-  (:require [clojure.core.reducers :as r])
+  (:require [clojure.core.reducers :as r]
+            [clojure.string :as s])
   (:use [clojure.java.io :only (reader)])
   (:import [java.text.SimpleDateFormat]
            [java.text SimpleDateFormat]))
@@ -207,6 +208,17 @@
   "Acts like (conj) but intended for reducers/fold and zero arity."
   ([] '())
   ([a b] (conj a b)) )
+
+(defn fns-with
+  "Composes higher order functions from a specific function and a collection of
+  values. Where args has the following form: {:f afn :v [v1 v2 v3]} or {:f afn :v [[v1 v2] [v3 v4]]}
+  Think of using with (all?), (any?), or (none?).  "
+  [fx args]
+  (let [fn (:f args) v (:v args)]
+    (if (coll? (first v))
+      (apply fx (map #(apply fn %) v))
+      (apply fx (map fn v))
+      ) ) )
 
 (defn count-with
   "Tally a count for all of the members of a collection that satisfy the predicate or
