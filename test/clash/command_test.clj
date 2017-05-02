@@ -31,8 +31,7 @@
 (comment 
 (deftest test-jproc-dump
   (perf (jproc-dump command1 "") "console (dump) test")
-  )
-)
+  ))
 
 ; Using (perf) instead of (time)
 (deftest test-jproc-write
@@ -71,5 +70,4 @@
 (comment
 (deftest test-with-jproc-dump
   (with-jproc-dump command2 ":" last)
-  )
-)
+  ))

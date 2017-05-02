@@ -1,4 +1,4 @@
-(defproject clash "1.3.3"
+(defproject clash "1.4.0"
   :description "A clojure library that applies customizable structures to text files
    and quick analysis via filter groups, maps, etc. This is useful for quickly searchin
    or indexing large text files before spending proportionally more effort on Hadoop or
@@ -19,6 +19,7 @@
                          (use 'clash.core)
                          (use 'clash.pivot)
                          (use 'clash.text_tools)
+                         (use 'clash.command)
                          (use 'clash.example.web_shop_example)
                          (use 'clash.example.web_shop_example_test)
                          (defn load-local-resource

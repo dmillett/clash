@@ -10,8 +10,21 @@
   (:require [clash.text_tools :as tt])
   (:use [clojure.test]
         [clash.core]
+        [clash.command]
         [clash.command_test]
-        [clash.tools]) )
+        [clash.tools]
+        [clojure.java.io :only (delete-file)]) )
 
 ;; For more examples, see stock_example_test
 
+(def regex_input (str tresource "/regex.txt"))
+(def regex_output (str tresource "/java-regex-output.txt"))
+;(def awk_regex (str "cat " regex_input "| awk 'match($0, /,(\\"MoreInfo\\":.*),\\"Order/, m) { print m[1] }' > awk-regex-output.txt"))
+(defn regex1
+  [text]
+  (let [[_ m] (re-find #",(\\\"MoreInfo\\\":.*),\\\"Order" text)] m))
+
+(deftest test-pre-process
+  (pre-process regex_input regex_output :fx regex1)
+  (with-jproc-dump (str "wc " regex_output " | awk '{print $3}'") " from wc of java-regex-output.txt" str)
+  (delete-file regex_output))

@@ -280,7 +280,6 @@
     1 (count-with medium_complexity (every-pred is-fur-odd? (is-zoo? "ZAP")) :plevel 1)
     ) )
 
-(def foo-numbers '(2 3 4 5 9 11 12 15 20 21 25 26 27))
 (def foo-numbers-mixed '(2 3 4 5 9 "a" 11 12 15 20 21 "b" 25 26 27))
 
 (deftest test-count-with

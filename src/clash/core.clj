@@ -187,3 +187,30 @@
           ) )
       (catch Exception e (println "Exception:" (.getMessage e))))
   ) )
+
+(defn- twriter
+  "A writer for transducers."
+  [owrite delim]
+  (fn
+    ([])
+    ([result])
+    ([result current] (.write owrite (str current delim))) ) )
+
+(defn pre-process
+  "Transform input (stream) to output (stream) with a transducer function. This can be used for 'cleaning'
+  input or files before parsing them into memory. For example, parsing large JSON/XML schema to extract a subset is
+   much slower than converting a subset of that data extracted via regular expression(s).
+
+   This is usually much faster than 'awk' for regex groups and 'jq'. Although 'jq' is also faster than 'awk'.
+   "
+  [input output & {:keys [max fx tdfx delim] :or {max -1 fx identity tdfx nil delim "\n"}}]
+  (let [transfx (if tdfx tdfx (comp (map fx) (filter identity)))]
+    (try
+      (with-open [iread (reader input)
+                  owrite (writer output :append true)]
+        (if (pos? max)
+          (transduce transfx (twriter owrite delim) (take max (line-seq iread)))
+          (transduce transfx (twriter owrite delim) (line-seq iread))
+          ) )
+      (catch Exception e (println "transform exception:" (.getMessage e))))
+    ) )
