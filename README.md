@@ -9,7 +9,7 @@ Clash makes it fast and easy to determine how many times a specific value exists
 across millions of rows of data. This includes performance macros to determine approximately when the JVM will
 optimize execution for a target method (sweetspot).
 
-Try adding **[clash "1.4.0"]** to your project today
+Try adding **[clash "1.4.1"]** to your project today
 
 [transformation functions](#core-transformations)
 
@@ -70,7 +70,7 @@ Load data structures into memory and analyze or build result sets with predicate
 
 ; Extract subsets of large JSON or XML data without unneccessary parsing
 ; For regex groups, this is much faster than 'awk' or 'jq'
-(pre-process istream ostream :fx (regex-magic))
+(disect istream ostream :fx (regex-magic))
 ```
 
 

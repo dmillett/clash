@@ -142,6 +142,15 @@
   It is possible to specify the max number of good results or to specify a specific
   transducing xform function. For example, get the first 10 lines:
 
+  consumes:
+  'input' - An input stream handled with clojure.io.reader
+  'parser' - Transforms & maps to a defined structure (or just transforms things like JSON, XML, etc)
+  'tdfx' - A transducing function that transforms/maps data (default: (-> identity parser)
+  'max' - The maximum number of rows to transform
+
+  produces:
+
+  example:
   (transform-lines \"some-file.txt\" some-parser :max 10 :tdfx (filter identity))
 
   If errors are encountered, try (transform-lines-verbose) or (atomic-list-from-file)
@@ -158,17 +167,21 @@
     ) )
 
 (defn transform-lines-verbose
-  "Transform the text with a reducer into a vector instead of
-  (doseq) into an atom. This will attempt to count every line,
-  parse every line, and store the results. It produces this:
+  "Transform the text with a reducer into a vector instead of (doseq) into an atom. This will
+  attempt to count every line, parse every line, and store the results. It produces this:
 
+  consumes:
+  'input' - An input stream handled with clojure.io.reader
+  'parser' - Transforms & maps to a defined structure (or just transforms things like JSON, XML, etc)
+  'max' - The maximum number of rows to transform
+
+  produces:
   {:c 1  ; the count of lines processed
    :p [] ; the transformed lines
    :f [] ; the lines that failed to transform
   }
 
-  It seems that local variables in the (let) assignment improve
-  performance a little bit."
+  It seems that local variables in the (let) assignment improve performance a little bit."
   [input parser & {:keys [max] :or {max nil}}]
   (let [result {:c 0 :p [] :f []}
         rdfx (fn [m line]
@@ -196,15 +209,26 @@
     ([result])
     ([result current] (.write owrite (str current delim))) ) )
 
-(defn pre-process
+(defn disect
   "Transform input (stream) to output (stream) with a transducer function. This can be used for 'cleaning'
-  input or files before parsing them into memory. For example, parsing large JSON/XML schema to extract a subset is
+  input or files before parsing them into memory. For example, parsing large JSON/XML schema just to extract a subset is
    much slower than converting a subset of that data extracted via regular expression(s).
+
+   consumes:
+   'input' - An input stream (clojure.io.reader) with data to process/clean handled
+   'output' - An output stream (clojure.io.writer) writes the processed data with a delimiter
+   'delim' - Which delimiter to separate transformed data for 'output' (defaults to '\n')
+   'max' - The maximum number of data to clean via rows from line-seq reader (defaults to -1 = all)
+   'fx' - The final step in a transducer flow that manipulates/transforms data (-> identity fx)
+   'tdfx' - Specify a transducer function to use instead to transform data
+
+   produces:
+   A transformed output stream via clojure.io.writer (file, stream, etc)
 
    This is usually much faster than 'awk' for regex groups and 'jq'. Although 'jq' is also faster than 'awk'.
    "
   [input output & {:keys [max fx tdfx delim] :or {max -1 fx identity tdfx nil delim "\n"}}]
-  (let [transfx (if tdfx tdfx (comp (map fx) (filter identity)))]
+  (let [transfx (or tdfx (comp (map fx) (filter identity)))]
     (try
       (with-open [iread (reader input)
                   owrite (writer output :append true)]

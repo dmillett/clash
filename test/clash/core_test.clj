@@ -24,7 +24,7 @@
   [text]
   (let [[_ m] (re-find #",(\\\"MoreInfo\\\":.*),\\\"Order" text)] m))
 
-(deftest test-pre-process
-  (pre-process regex_input regex_output :fx regex1)
+(deftest test-disect
+  (disect regex_input regex_output :fx regex1)
   (with-jproc-dump (str "wc " regex_output " | awk '{print $3}'") " from wc of java-regex-output.txt" str)
   (delete-file regex_output))
