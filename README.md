@@ -30,7 +30,7 @@ Try adding **[clash "1.4.1"]** to your project today
 [license](#license)
 
 ## Simple Usage
-Convert millions of lines, from text stream or file, like this:
+Convert, into memory, millions of lines, from text/csv/json/etc stream or file, like this:
 ```
 05042013-13:24:13.005|sample-server|1.0.0|info|Search,ZOO,25,13.99
 ```
@@ -39,6 +39,8 @@ using
 ; Create a target structure, pattern, and parser/adapter
 (defrecord Structure [time action name quantity unit_price])
 (def pattern #"(\d{8}-\d{2}:\d{2}:\d{2}.\d{3})\|.*\|(\w*),(\w*),(\d*),(.*)")
+
+; Could use split for each line of CSV or cheshire to read/parse each line of JSON
 (defn parser [line] (if-let [[_ t a n q p] (re-find pattern line)] (->Structure t a n q p)))
 
 ; Parse and transform a single line
@@ -47,11 +49,11 @@ using
 ```
 into
 ```clojure
-; Single line sample
-#user.Structure{:time "05042013-13:24:13.005", :action "Search", :name "ZOO", :quantity "25", :unit_price "13.99"}
-
 ; Transform one million log lines (2 - 3 seconds on macbook)
 (def data (transform-lines "logs.txt" parser :max 1000000))
+
+; Single line sample
+#user.Structure{:time "05042013-13:24:13.005", :action "Search", :name "ZOO", :quantity "25", :unit_price "13.99"}
 ```
 
 <a name="core-transformations"/></a>
@@ -59,20 +61,19 @@ into
 Load data structures into memory and analyze or build result sets with predicates.
 
 ```clojure
-; The 'parser' maps a structure onto lines of text (see 'packaged examples' below)
+; Using a transducer function, the 'parser' maps a structure onto lines of content (see 'packaged examples' below)
 (transform-lines input parser :max xx :tdfx some-xform)
 
-; Uses reduce, tracks counts and failed line parsings
+; Using a reducer function, tracks counts and failed line parsings
 (transform-lines-verbose filename parser :max xx)
 
 ; Slower, but atomic loads and useful when encountering errors
 (atomic-list-from-file filename parser)
 
-; Extract subsets of large JSON or XML data without unneccessary parsing
-; For regex groups, this is much faster than 'awk' or 'jq'
+; Pre-process or extract subsets of large JSON or XML data without unnecessary parsing
+; For large JSON regex groups, this is much faster than 'awk' or 'jq'
 (disect istream ostream :fx (regex-magic))
 ```
-
 
 <a name="utility-functions"/></a>
 ## Utility Functions
@@ -90,28 +91,23 @@ predicates.
    {:name "foo" :time {:hour 1 :minute 12 :second 14} :price {:markup 0.12 :base 1.00 :tax 0.05}}
   ])
 
-; Find value frequencies for ':time
+; Find value frequencies for ':name
 (mv-freqs purchases :kpsets [{:ks [:name]}])
 {:name {"foo" 3, "bar" 1}}
 
-; Find value frequencies for different schema paths
-(mv-freqs purchases :kpsets [{:ks [:name]} {:kp [:time] :ks [:hour :minute]} {:kp [:price] :ks [:base :tax]}])
+; Find value frequencies for different schema paths and fields
+(mv-freqs purchases :kpsets [{:ks [:name]} 
+                             {:kp [:time] :ks [:hour :minute]} 
+                             {:kp [:price] :ks [:base :tax]}])
+                             
 {:name {"foo" 3, "bar" 1}, 
  :hour {1 4}, 
  :minute {10 3, 12 1}, 
  :base {1.0 3, 1.15 1}, 
  :tax {0.05 3, 0.06 1}}
 
-
-; Pass a function in for nested collections of maps
-(def m1 {:a "a1" :b {:c [{:d "d1"} {:d "d1"} {:d "d2"}]}})
-(collect-value-frequencies-for [m1] #(get-in % [:b :c]))
-{:d {"d2" 1 "d1" 2}}
-
-(def vfreqs {:a {"a1" 2 "a2" 5 "a3" 1}})
-
 ; Sort inner key values (descending)
-(sort-value-frequencies vfreqs)
+(sort-value-frequencies {:a {"a1" 2 "a2" 5 "a3" 1}})
 {:a {"a2" 5 "a1" 2 "a3" 1}}
 
 ; Filter frequencies by keys, values, or both
@@ -133,7 +129,7 @@ predicates.
 (until? number? '("foo" 2 "bar"))
 => true
 ```
-#### Count & collect data
+#### Count & collect data (1 or all threads)
 Using one or multiple threads (:plevel 2), count or collect data based on specified 
 predicates.
 ```clojure
@@ -144,114 +140,6 @@ predicates.
 ; Create a result set with predicates
 (collect-with solutions predicates)
 (collect-with solutions predicates :plevel 2)
-```
-
-<a name="pivot"/></a>
-## Pivot & Pivot Matrix Functions
-This generates a list of predicate function groups (partials) that are applied to a collection of data (single or 
-multi-threaded). Each predicate group is the result of a cartesian product from partial functions and their 
-corresponding values (see example below). This results in a map that contains the count for each predicate group 
-'match' in descending order.
-
-The predicate functions should be contextually relevant for the collection of data (e.g. don't use numeric predicates 
-with a list of strings).
-
-Since it is hard for the JVM to keep the collections for large collections and predicate groups, only the count and 
-underlying function are returned. Invidual result sets for any of the predicate groups may be obtained with 
-(get-rs-from-matrix)
-
-For example a collection 1 - 100,000:
-
-1. Identify how many are divisible-by? 2, 3, 4, 5, 6, etc
-2. Identify how many are also even?
-3. Get the values from the collection for even? and (divisible-by? 5)
-
-#### Pivot function
-Simple use case for generating higher order functions from a base function and collection of arguments.
-```clojure
-; Use a vector instead of a list for r/fold parallelism
-(pivot col msg :b common_pred? :p pivot_pred? :v pivot_values :plevel 2)
-
-; Does a word contain a sub-string?
-(defn str-inc? [c] #(clojure.string/includes? % c))
-
-; Which of these words have these characters?
-(pivot ["foo" "bar" "" bam"] "inc?" :b [#(not (empty? %))] :p inc? :v ["a" "b" "c"])
-
-; Yields the following
-{"inc?_[b]" 2, "inc?_[a]" 2, "inc?_[c]" 0}
-```
-#### Pivot Matrix function
-Is similar to (pivot), but allows for multiple predicate functions and values by creating a cartesian function
-group for all possible predicate combinations. Setting ':plevel 2' will utilize all cpu cores. (pivot-matrix*)
-will build a result that includes: predicate key name, predicate function group, and the count of 'true' results
-for a data set. The predicate function group may also be used to retrieve that specific subset of data.
-```clojure
-; combfx? -> all?, any?, none? (defaults to all?) 
-(pivot-matrix* col msg :basefx? commonpred? :combfx? all? :pivots pivots :plevel 2)
-
-;; Generate predicate groups (where combfx? --> all?) 
-; --> (all? number? even? (divisible-by? 2))
-; --> (all? number? even? (divisible-by? 3))
-; --> (all? number? even? (divisible-by? 4))
-(pivot-matrix* (range 1 100) "r100" :basefx? [number? even?] :pivots [{:f divisible-by? :v (range 2 5}])
-
-; Where ':function' can be used to retrieve the result set
-{"r1_[2]" {:count 49 :function #object[]}, 
- "r1_[4]" {:count 24 :function #object[]}, 
- "r1_[3]" {:count 16 :function #object[]}}
-
-;; Generate a cartesian product combination of predicate groups:
-; --> (all? number? even? (divisible-by? 2) (divisible-by? 6))
-; --> (all? number? even? (divisible-by? 2) (divisible-by? 7)) 
-; --> (all? number? even? (divisible-by? 3) (divisible-by? 6))
-; --> (all? number? even? (divisible-by? 3) (divisible-by? 7)) 
-; --> (all? number? even? (divisible-by? 4) (divisible-by? 6))
-; --> (all? number? even? (divisible-by? 4) (divisible-by? 7)) 
-(def even-numbers? [number? even?])
-(pivot-matrix* (range 1 100) "r2" :basefx? even-numbers? :pivots [{:f divisible-by? :v (range 2 5)}
-                                                                  {:f divisible-by? :v (range 6 8)]) 
-                      
-; The generated function is now included
-(print-pivot-matrix pm)
-("key: r2_[3|6], count: 16", 
- "key: r2_[2|6], count: 16",  
- "key: r2_[4|6], count: 8",  
- "key: r2_[2|7], count: 7",  
- "key: r2_[4|7], count: 3",  
- "key: r2_[3|7], count: 2")
-```
-#### Pivot utility functions
-Printing, comparing, and retrieving interesting subsets of data from the (pivot-matrix*) result.
-
-```clojure
-; Get a result set for any of the predicate groups in a matrix
-(def mtrx (pivot-matrix* (range 1 100) "foo" :basefx? [even?] :pivots [{:f divisible-by? :v (range 2 6)}]) 
-                                                      
-(pprint mtrx) 
-{"foo_[2]" {:count 49},
- "foo_[3]" {:count 24},
- "foo_[4]" {:count 16},
- "foo_[5]" {:count 9}}
-
-; All of the even numbers divisible by 5 for 1 - 100
-(pivot-rs hundred mtrx "foo_[5]")
-user=> (90 80 70 60 50 40 30 20 10)
-
-; Filter for specific pivots (could do w/o :kterms below)
-(filter-pivots hundred :kterms ["4" "3"] :cfx even?)
-user=> {"foo_[3]" {:count 24} "foo_[4]" {:count 16}}
-
-; Compare 2 collections of similar data and compare with function (ratio)
-(def c1 (range 1 50))
-(def c2 (range 50 120))
-(pivot-matrix-compare c1 c2 "foo" ratio :b [number?] :p [divisible-by?] :v [(range 2 6)])
-
-; Find results where the count > 20
-(filter-pivots mtrx :cfx #(> % 20))
-
-; Find results where key name contains "3"
-(filter-pivots mtrx :kterms ["3"])
 ```
 
 <a name="haystack"/></a>
@@ -371,6 +259,114 @@ user=> (pivot-rs purchase hstack "haystack([:time :hour]|[:time :minute]|[:price
   #object[clash.tools$all_QMARK_$fn__1532 0x3a16e450 "clash.tools$all_QMARK_$fn__1532@3a16e450"]}}
 ```
 
+
+<a name="pivot"/></a>
+## Pivot & Pivot Matrix Functions
+This generates a list of predicate function groups (partials) that are applied to a collection of data (single or 
+multi-threaded). Each predicate group is the result of a cartesian product from partial functions and their 
+corresponding values (see example below). This results in a map that contains the count for each predicate group 
+'match' in descending order.
+
+The predicate functions should be contextually relevant for the collection of data (e.g. don't use numeric predicates 
+with a list of strings).
+
+Since it is hard for the JVM to keep the collections for large collections and predicate groups, only the count and 
+underlying function are returned. Invidual result sets for any of the predicate groups may be obtained with 
+(get-rs-from-matrix)
+
+For example a collection 1 - 100,000:
+
+1. Identify how many are divisible-by? 2, 3, 4, 5, 6, etc
+2. Identify how many are also even?
+3. Get the values from the collection for even? and (divisible-by? 5)
+
+#### Pivot function
+Simple use case for generating higher order functions from a base function and collection of arguments.
+```clojure
+; Use a vector instead of a list for r/fold parallelism
+(pivot col msg :b common_pred? :p pivot_pred? :v pivot_values :plevel 2)
+
+; Does a word contain a sub-string?
+(defn str-inc? [c] #(clojure.string/includes? % c))
+
+; Which of these words have these characters?
+(pivot ["foo" "bar" "" bam"] "inc?" :b [#(not (empty? %))] :p inc? :v ["a" "b" "c"])
+
+; Yields the following
+{"inc?_[b]" 2, "inc?_[a]" 2, "inc?_[c]" 0}
+```
+#### Pivot Matrix function
+Is similar to (pivot), but allows for multiple predicate functions and values by creating a cartesian function
+group for all possible predicate combinations. Setting ':plevel 2' will utilize all cpu cores. (pivot-matrix*)
+will build a result that includes: predicate key name, predicate function group, and the count of 'true' results
+for a data set. The predicate function group may also be used to retrieve that specific subset of data.
+```clojure
+; combfx? -> all?, any?, none? (defaults to all?) 
+(pivot-matrix* col msg :basefx? commonpred? :combfx? all? :pivots pivots :plevel 2)
+
+;; Generate predicate groups (where combfx? --> all?) 
+; --> (all? number? even? (divisible-by? 2))
+; --> (all? number? even? (divisible-by? 3))
+; --> (all? number? even? (divisible-by? 4))
+(pivot-matrix* (range 1 100) "r100" :basefx? [number? even?] :pivots [{:f divisible-by? :v (range 2 5}])
+
+; Where ':function' can be used to retrieve the result set
+{"r1_[2]" {:count 49 :function #object[]}, 
+ "r1_[4]" {:count 24 :function #object[]}, 
+ "r1_[3]" {:count 16 :function #object[]}}
+
+;; Generate a cartesian product combination of predicate groups:
+; --> (all? number? even? (divisible-by? 2) (divisible-by? 6))
+; --> (all? number? even? (divisible-by? 2) (divisible-by? 7)) 
+; --> (all? number? even? (divisible-by? 3) (divisible-by? 6))
+; --> (all? number? even? (divisible-by? 3) (divisible-by? 7)) 
+; --> (all? number? even? (divisible-by? 4) (divisible-by? 6))
+; --> (all? number? even? (divisible-by? 4) (divisible-by? 7)) 
+(def even-numbers? [number? even?])
+(pivot-matrix* (range 1 100) "r2" :basefx? even-numbers? :pivots [{:f divisible-by? :v (range 2 5)}
+                                                                  {:f divisible-by? :v (range 6 8)]) 
+                      
+; The generated function is now included
+(print-pivot-matrix pm)
+("key: r2_[3|6], count: 16", 
+ "key: r2_[2|6], count: 16",  
+ "key: r2_[4|6], count: 8",  
+ "key: r2_[2|7], count: 7",  
+ "key: r2_[4|7], count: 3",  
+ "key: r2_[3|7], count: 2")
+```
+#### Pivot utility functions
+Printing, comparing, and retrieving interesting subsets of data from the (pivot-matrix*) result.
+
+```clojure
+; Get a result set for any of the predicate groups in a matrix
+(def mtrx (pivot-matrix* (range 1 100) "foo" :basefx? [even?] :pivots [{:f divisible-by? :v (range 2 6)}]) 
+                                                      
+(pprint mtrx) 
+{"foo_[2]" {:count 49},
+ "foo_[3]" {:count 24},
+ "foo_[4]" {:count 16},
+ "foo_[5]" {:count 9}}
+
+; All of the even numbers divisible by 5 for 1 - 100
+(pivot-rs hundred mtrx "foo_[5]")
+user=> (90 80 70 60 50 40 30 20 10)
+
+; Filter for specific pivots (could do w/o :kterms below)
+(filter-pivots hundred :kterms ["4" "3"] :cfx even?)
+user=> {"foo_[3]" {:count 24} "foo_[4]" {:count 16}}
+
+; Compare 2 collections of similar data and compare with function (ratio)
+(def c1 (range 1 50))
+(def c2 (range 50 120))
+(pivot-matrix-compare c1 c2 "foo" ratio :b [number?] :p [divisible-by?] :v [(range 2 6)])
+
+; Find results where the count > 20
+(filter-pivots mtrx :cfx #(> % 20))
+
+; Find results where key name contains "3"
+(filter-pivots mtrx :kterms ["3"])
+```
 
 <a name="performance-debugging"/></a>
 ## Performance & Debug Utilities
