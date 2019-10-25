@@ -15,6 +15,7 @@
   :jvm-opts ["-Xms256m" "-Xmx256m"]
   ;:global-vars {*warn-on-reflection* true}
   :repl-options {:init (do
+                         (use 'clash.shape)
                          (use 'clash.tools)
                          (use 'clash.core)
                          (use 'clash.pivot)
