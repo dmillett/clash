@@ -11,16 +11,16 @@ optimize execution for a target method (sweetspot).
 
 Try adding **[clash "1.4.1"]** to your project today
 
-[transformation functions](#core-transformations)
-[pivot functionality](#pivot)
-[haystack functionality](#haystack)
-[data shape](#data-shape)
-[utility functions](#utility-functions)
-[performance & debugging](#performance-debugging)
-[general performance](#performance)
-[packaged examples](#packaged-examples)
-[setup](#setup)
-[license](#license)
+ * [transformation functions](#core-transformations)
+ * [pivot functionality](#pivot)
+ * [haystack functionality](#haystack)
+ * [data shape](#data-shape)
+ * [utility functions](#utility-functions)
+ * [performance & debugging](#performance-debugging)
+ * [general performance](#performance)
+ * [packaged examples](#packaged-examples)
+ * [setup](#setup)
+ * [license](#license)
 
 ## Simple Usage
 Convert, into memory, millions of lines, from text/csv/json/etc stream or file, like this:
