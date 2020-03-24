@@ -6,6 +6,8 @@
 ;   the terms of this license.
 ;   You must not remove this notice, or any other, from this software.
 (ns clash.shape_test
+  (:require [clojure.data.json :as json]
+            [cheshire.core :as js])
   (:use [clojure.test]
         [clash.shape]))
 
@@ -33,4 +35,22 @@
       1 (get freqs "A.D")
       2 (get freqs "A.E.F.@f")
       1 (get freqs "A.E.F")
+      ) ) )
+
+(def json1 "{\"a\":1, \"b\":2, \"c\":[3,4,5]}")
+(def json2 "{\"a\":1, \"b\":{\"c\":3, \"d\":4}}")
+(def json3 "{\"a\":1, \"b\":[{\"c\":2, \"d\":3},{\"c\":4, \"d\":5},{\"c\":6, \"d\":7}]}")
+(def json4 "{\"a\":1, \"b\":[{\"c\":2, \"d\":{\"e\":[8,9]}},{\"c\":4, \"d\":{\"e\":[10,11]}},{\"c\":6, \"d\":{\"f\":true}}]}")
+
+(deftest test-flatten-json
+  (let [d1 (flatten-json (js/parse-string json1))
+        d2 (flatten-json (js/parse-string json2))
+        d3 (flatten-json (js/parse-string json3))
+        d4 (flatten-json (js/parse-string json4))]
+    (are [x y] (= x y)
+      {"a" [1] "b" [2] "c" [3 4 5]} d1
+      {"a" [1], "b.c" [3], "b.d" [4]} d2
+      {"a" [1], "b.c" [2 4 6], "b.d" [3 5 7]} d3
+      {"a" [1], "b.c" [2 4 6], "b.d.e" [8 9 10 11], "b.d.f" [true]} d4
+      {"a" [1 1 1 1], "b" [2], "c" [3 4 5], "b.c" [3 2 4 6 2 4 6], "b.d" [4 3 5 7], "b.d.e" [8 9 10 11], "b.d.f" [true]} (merge-data d1 d2 d3 d4)
       ) ) )

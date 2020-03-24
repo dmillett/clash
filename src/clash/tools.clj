@@ -13,8 +13,7 @@
   (:require [clojure.core.reducers :as r]
             [clojure.string :as s])
   (:use [clojure.java.io :only (reader)])
-  (:import [java.text.SimpleDateFormat]
-           [java.text SimpleDateFormat]))
+  (:import java.text.SimpleDateFormat))
 
 (defn data-to-file
   "Dump a clojure data structure to an EDN file using (with-out-str). This

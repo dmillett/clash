@@ -7,11 +7,13 @@
 ;   You must not remove this notice, or any other, from this software.
 
 (ns clash.shape
-  (:require [clojure.java.io :as io]
+  (:require [clojure.spec.alpha :as spec]
+            [clojure.java.io :as io]
             [clojure.xml :as x]
-            ))
+            [clojure.data.json :as json]
+            [cheshire.core :as cc]
+            [clojure.string :as str]))
 
-; todo: spec?
 (defn sstream
   "Convert a String or text to an input stream for parsing"
   [text]
@@ -19,7 +21,6 @@
     (io/input-stream (.getBytes text))
     ) )
 
-; todo: spec
 (defn xml-parser
   "Use clojure.xml to parse a string or an input-stream."
   [xmltext]
@@ -39,7 +40,7 @@
     (assoc data keypath [value])
     ) )
 
-(defn- merge-data
+(defn merge-data
   "Merge keypaths and data"
   [& ms]
   (apply merge-with
@@ -49,7 +50,6 @@
         [r n]))
     ms) )
 
-; todo: spec
 (defn flatten-xml
   "This takes xml text or xml data (via clojure.xml) to flatten into key:value map that
   determines what the nested XML structure looks like and what values it has. For example:
@@ -85,7 +85,30 @@
        ) )
    ) )
 
-; todo: spec
+(defn flatten-json
+  "Flatten a parsed JSON object (cheshire or something similar) and flatten the structure
+  into a single depth map. For example:
+
+   (flatten-json (ch/parse-string {\"a\":1, \"b\":{\"c\":3, \"d\":4}}))
+
+   {\"a\" [1], \"b.c\" [3], \"b.d\" [4]}
+   "
+  ([json] (if (string? json) (flatten-json (cc/parse-string json) "" {}) (flatten-json json "" {})))
+  ([json keypath data]
+   {:pre (spec/explain map? json)}
+   (let [kfx (fn [kpath k] (cond (empty? kpath) k (empty? k) kpath :default (str kpath "." k)))]
+     (reduce
+       (fn [result current]
+         (let [[k v] (if (= clojure.lang.MapEntry (type current)) current ["" current])]
+         (cond
+           (vector? v) (merge-data result (flatten-json v (kfx keypath k) {}))
+           (map? v) (merge-data result (flatten-json v (kfx keypath k) {}))
+           :default (add-keypath-value result (kfx keypath k) v)
+           )))
+       data
+       json)
+      )))
+
 (defn flat-data-frequencies
   "Get the frequency count for each key path in a flattened data structure. That makes it
   possible to sort by frequency and prioritize analysis or code optimization.
@@ -96,4 +119,8 @@
   {A.@ax 1, A.@a 1, A.B.C.@c 2}
   "
   [flattened_data]
-  (reduce (fn [result [k v]] (assoc result k (count v))) {} flattened_data))
+  {:pre (spec/explain map? flattened_data)}
+  (reduce
+    (fn [result [k v]] (assoc result k (count v)))
+    {}
+    flattened_data))
