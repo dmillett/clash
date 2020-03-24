@@ -47,6 +47,7 @@
         d2 (flatten-json (js/parse-string json2))
         d3 (flatten-json (js/parse-string json3))
         d4 (flatten-json (js/parse-string json4))]
+
     (are [x y] (= x y)
       {"a" [1] "b" [2] "c" [3 4 5]} d1
       {"a" [1], "b.c" [3], "b.d" [4]} d2

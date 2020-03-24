@@ -12,21 +12,14 @@ optimize execution for a target method (sweetspot).
 Try adding **[clash "1.4.1"]** to your project today
 
 [transformation functions](#core-transformations)
-
 [pivot functionality](#pivot)
-
 [haystack functionality](#haystack)
-
+[data shape](#data-shape)
 [utility functions](#utility-functions)
-
 [performance & debugging](#performance-debugging)
-
 [general performance](#performance)
-
-[packaged examples](#examples)
-
+[packaged examples](#packaged-examples)
 [setup](#setup)
-
 [license](#license)
 
 ## Simple Usage
@@ -75,73 +68,6 @@ Load data structures into memory and analyze or build result sets with predicate
 (disect istream ostream :fx (regex-magic))
 ```
 
-<a name="utility-functions"/></a>
-## Utility Functions
-Potentially useful functions to help filter and sort data. The resulting function will execute 
-predicates from left to right. These are helpful for counting or collecting data that satisfy 
-predicates.
-
-#### Dictionary value frequencies
-```clojure
-; Sample of mock purchase data
-(def purchases 
-  [{:name "foo" :time {:hour 1 :minute 10 :second 20} :price {:markup 0.10 :base 1.00 :tax 0.05}}
-   {:name "bar" :time {:hour 1 :minute 10 :second 50} :price {:markup 0.07 :base 1.15 :tax 0.06}}
-   {:name "foo" :time {:hour 1 :minute 10 :second 52} :price {:markup 0.10 :base 1.00 :tax 0.05}}
-   {:name "foo" :time {:hour 1 :minute 12 :second 14} :price {:markup 0.12 :base 1.00 :tax 0.05}}
-  ])
-
-; Find value frequencies for ':name
-(mv-freqs purchases :kpsets [{:ks [:name]}])
-{:name {"foo" 3, "bar" 1}}
-
-; Find value frequencies for different schema paths and fields
-(mv-freqs purchases :kpsets [{:ks [:name]} 
-                             {:kp [:time] :ks [:hour :minute]} 
-                             {:kp [:price] :ks [:base :tax]}])
-                             
-{:name {"foo" 3, "bar" 1}, 
- :hour {1 4}, 
- :minute {10 3, 12 1}, 
- :base {1.0 3, 1.15 1}, 
- :tax {0.05 3, 0.06 1}}
-
-; Sort inner key values (descending)
-(sort-value-frequencies {:a {"a1" 2 "a2" 5 "a3" 1}})
-{:a {"a2" 5 "a1" 2 "a3" 1}}
-
-; Filter frequencies by keys, values, or both
-(filter-value-frequencies vfreqs (fn [[_ v]] (even? v)))
-{:a {"a1" 2}}
-```
-#### Dictionary/List distinctness
-```clojure
-; Distinct values using a function for maps/lists
-(distinct-by [{:a 1, :b 2} {:a 1, :b 3} {:a 2, :b 4}] #(:a %))
-({:a 2 :b 4} {:a 1 :b 2})
-```
-#### Predicate evaluations
-```clojure
-; Returns 'true', resembles (every-pred) and (some-fn), but perhaps more readable?
-((all? number? even?) 10)
-((any? number? even?) 11)
-((none? odd?) 10)
-(until? number? '("foo" 2 "bar"))
-=> true
-```
-#### Count & collect data (1 or all threads)
-Using one or multiple threads (:plevel 2), count or collect data based on specified 
-predicates.
-```clojure
-; Count with predicates and incrementing function
-(count-with solutions predicates)
-(count-with solutions predicatse :incrf + :initv 10 :plevel 2)
-
-; Create a result set with predicates
-(collect-with solutions predicates)
-(collect-with solutions predicates :plevel 2)
-```
-
 <a name="haystack"/></a>
 ## Haystack Functionality
 Combines (collect-value-frequencies) and (pivot-matrix) to correlate the frequency of specific data schema keys across
@@ -165,25 +91,25 @@ collection (see 'pivot-rs).
 
 ; Grab the most frequent schema values for ':time' and ':price' schema paths
 ; Use ':plevel 2' (all cores) for larger datasets
-user=> (def hstack (haystack purchases :vffx (top-freqs 1) :vfkpsets [{:kp [:time] :ks [:hour :minute]} 
-                                                                      {:kp [:price] :ks [:markup]}]))
+(def hstack (haystack purchases :vffx (top-freqs 1) :vfkpsets [{:kp [:time] :ks [:hour :minute]} 
+                                                               {:kp [:price] :ks [:markup]}]))
 
 ; Count, when true, for the schema & value combinations ([path 1]|[path n]_[value 1]|[value n])
-user=> (pprint hstack)
+(pprint hstack)
 {"haystack([:time :hour]|[:time :minute]|[:price :markup])_[1|10|0.1]"
  {:count 2,
   :function
   #object[clash.tools$all_QMARK_$fn__3155 0x6137ad7c "clash.tools$all_QMARK_$fn__3155@6137ad7c"]}}
   
 ; Get the result set for those criteria
-user=> (pivot-rs purchase hstack "haystack([:time :hour]|[:time :minute]|[:price :markup])_[1|10|0.1]")
+(pivot-rs purchase hstack "haystack([:time :hour]|[:time :minute]|[:price :markup])_[1|10|0.1]")
 ({:name "foo", :time {:hour 1, :minute 10, :second 20}, :price {:markup 0.1, :base 1.0, :tax 0.05}} 
 {:name "foo", :time {:hour 1, :minute 10, :second 52}, :price {:markup 0.1, :base 1.0, :tax 0.05}})  
 ```
 
 *haystack generates the functions for schema key paths and evaluates those against generic/specific constraints*
 
-#### Correlation for a subset of schema keys 
+### Correlation for a subset of schema keys 
 ```clojure
 ; Find for key paths [:a :b] and [:a :c] ... ignore schema path [:a :d]
 (def data [{:a {:b 1 :c 2 :d 3}} {:a {:b 1 :c 3 :d 3}} {:a {:b 2 :c 3 :d 3}}])
@@ -212,7 +138,7 @@ user=> (pivot-rs purchase hstack "haystack([:time :hour]|[:time :minute]|[:price
   #object[clash.tools$all_QMARK_$fn__1532 0x5c789083 "clash.tools$all_QMARK_$fn__1532@5c789083"]}}
 ```
 
-#### Find the rows based on the most frequent value for a schema key
+### Find the rows based on the most frequent value for a schema key
 
 ```clojure
 ; Top 1 (or N) occuring values for any data schema key (t -> clash.tools)
@@ -230,7 +156,7 @@ user=> (pivot-rs purchase hstack "haystack([:time :hour]|[:time :minute]|[:price
 
 ```
 
-#### Correlation with existing pivot function and schema key paths
+### Correlation with existing pivot function and schema key paths
 
 ```clojure
 ; Does any data row have a {:a {:d _}} that is evenly divisible by [3, 4]? 
@@ -259,7 +185,6 @@ user=> (pivot-rs purchase hstack "haystack([:time :hour]|[:time :minute]|[:price
   #object[clash.tools$all_QMARK_$fn__1532 0x3a16e450 "clash.tools$all_QMARK_$fn__1532@3a16e450"]}}
 ```
 
-
 <a name="pivot"/></a>
 ## Pivot & Pivot Matrix Functions
 This generates a list of predicate function groups (partials) that are applied to a collection of data (single or 
@@ -280,7 +205,7 @@ For example a collection 1 - 100,000:
 2. Identify how many are also even?
 3. Get the values from the collection for even? and (divisible-by? 5)
 
-#### Pivot function
+### Pivot function
 Simple use case for generating higher order functions from a base function and collection of arguments.
 ```clojure
 ; Use a vector instead of a list for r/fold parallelism
@@ -295,7 +220,7 @@ Simple use case for generating higher order functions from a base function and c
 ; Yields the following
 {"inc?_[b]" 2, "inc?_[a]" 2, "inc?_[c]" 0}
 ```
-#### Pivot Matrix function
+### Pivot Matrix function
 Is similar to (pivot), but allows for multiple predicate functions and values by creating a cartesian function
 group for all possible predicate combinations. Setting ':plevel 2' will utilize all cpu cores. (pivot-matrix*)
 will build a result that includes: predicate key name, predicate function group, and the count of 'true' results
@@ -335,7 +260,7 @@ for a data set. The predicate function group may also be used to retrieve that s
  "key: r2_[4|7], count: 3",  
  "key: r2_[3|7], count: 2")
 ```
-#### Pivot utility functions
+### Pivot utility functions
 Printing, comparing, and retrieving interesting subsets of data from the (pivot-matrix*) result.
 
 ```clojure
@@ -368,6 +293,114 @@ user=> {"foo_[3]" {:count 24} "foo_[4]" {:count 16}}
 (filter-pivots mtrx :kterms ["3"])
 ```
 
+<a name="data-shape"/></a>
+## Data Shape
+When encountering a lot of JSON and/or XML data of unknown structure, it is helpful to flatten each
+structure into a single depth map the captures which structures and values occur the most. Some nested
+fields might occur a few times per thousand records and be prioritized lower.
+
+These four JSON structures are similar, but not identical in structure:
+```json
+{"a":1, "b":[{"c":2, "d":3},{"c":4, "d":5},{"c":6, "d":7}]},
+{"a":1, "b":{"c":3, "d":4}}
+{"a":1, "b":[{"c":2, "d":{"e":[8,9]}},{"c":4, "d":{"e":[10,11]}},{"c":6, "d":{"f":true}}]},
+{"a":1, "b":2, "c":[3,4,5]}
+```
+
+The new keys represent the path to the original structure ('.' delimited)
+```clojure
+(apply merge-data (map #(flatten-json %) [json1 json2 json3 json4]))
+{"a" [1 1 1 1], ; occurs 4 times
+"b" [2], ; occurs 1 time
+"c" [3 4 5], 
+"b.c" [3 2 4 6 2 4 6], ; occurs 7 times (most frequent)
+"b.d" [4 3 5 7], 
+"b.d.e" [8 9 10 11], 
+"b.d.f" [true]}
+
+(flatten-data-frequencies (apply merge-data (map #(flatten-json %) [json1 json2 json3 json4])))
+{"a" 4, "b" 1, "c" 3, "b.c" 7, "b.d" 4, "b.d.e" 4, "b.d.f" 1}
+```
+
+### XML
+
+```clojure
+(def xml1 "<A a=\"a1\" ax=\"ax1\"><B><C c=\"c1\"/><C c=\"c2\">foo</C><C>bar</C></B><D>zoo</D><E><F f=\"f1\">cats</F><F f=\"f1\"/></E></A>")
+(flatten-xml xml1)
+
+; Yields
+{"A.@ax" ["ax1"], "A.@a" ["a1"], "A.B.C.@c" ["c1" "c2"], "A.B.C" ["foo" "bar"], "A.D" ["zoo"], "A.E.F.@f" ["f1" "f1"], "A.E.F" ["cats"]}
+(flatten-data-frequencies xmlflat1)
+{"A.@ax" 1, "A.@a" 1, "A.B.C.@c" 2, "A.B.C" 2, "A.D" 1, "A.E.F.@f" 2, "A.E.F" 1}
+```
+
+<a name="utility-functions"/></a>
+## Utility Functions
+Potentially useful functions to help filter and sort data. The resulting function will execute 
+predicates from left to right. These are helpful for counting or collecting data that satisfy 
+predicates.
+
+### Dictionary value frequencies
+```clojure
+; Sample of mock purchase data
+(def purchases 
+  [{:name "foo" :time {:hour 1 :minute 10 :second 20} :price {:markup 0.10 :base 1.00 :tax 0.05}}
+   {:name "bar" :time {:hour 1 :minute 10 :second 50} :price {:markup 0.07 :base 1.15 :tax 0.06}}
+   {:name "foo" :time {:hour 1 :minute 10 :second 52} :price {:markup 0.10 :base 1.00 :tax 0.05}}
+   {:name "foo" :time {:hour 1 :minute 12 :second 14} :price {:markup 0.12 :base 1.00 :tax 0.05}}
+  ])
+
+; Find value frequencies for ':name
+(mv-freqs purchases :kpsets [{:ks [:name]}])
+{:name {"foo" 3, "bar" 1}}
+
+; Find value frequencies for different schema paths and fields
+(mv-freqs purchases :kpsets [{:ks [:name]} 
+                             {:kp [:time] :ks [:hour :minute]} 
+                             {:kp [:price] :ks [:base :tax]}])
+                             
+{:name {"foo" 3, "bar" 1}, 
+ :hour {1 4}, 
+ :minute {10 3, 12 1}, 
+ :base {1.0 3, 1.15 1}, 
+ :tax {0.05 3, 0.06 1}}
+
+; Sort inner key values (descending)
+(sort-value-frequencies {:a {"a1" 2 "a2" 5 "a3" 1}})
+{:a {"a2" 5 "a1" 2 "a3" 1}}
+
+; Filter frequencies by keys, values, or both
+(filter-value-frequencies vfreqs (fn [[_ v]] (even? v)))
+{:a {"a1" 2}}
+```
+### Dictionary/List distinctness
+```clojure
+; Distinct values using a function for maps/lists
+(distinct-by [{:a 1, :b 2} {:a 1, :b 3} {:a 2, :b 4}] #(:a %))
+({:a 2 :b 4} {:a 1 :b 2})
+```
+### Predicate evaluations
+```clojure
+; Returns 'true', resembles (every-pred) and (some-fn), but perhaps more readable?
+((all? number? even?) 10)
+((any? number? even?) 11)
+((none? odd?) 10)
+(until? number? '("foo" 2 "bar"))
+=> true
+```
+### Count & collect data (1 or all threads)
+Using one or multiple threads (:plevel 2), count or collect data based on specified 
+predicates.
+```clojure
+; Count with predicates and incrementing function
+(count-with solutions predicates)
+(count-with solutions predicatse :incrf + :initv 10 :plevel 2)
+
+; Create a result set with predicates
+(collect-with solutions predicates)
+(collect-with solutions predicates :plevel 2)
+```
+
 <a name="performance-debugging"/></a>
 ## Performance & Debug Utilities
 These utility functions are useful for determining performance profiles for a given function within the JVM. This is helpful
@@ -375,21 +408,21 @@ when identifying how many function executions before the JVM optimizes itself fo
 is optimized in less than 20 executions, while a regular expression might take 100+ executions before realizing best performance.
 
 ```clojure
-=> (perf (+ 3 3))
+(perf (+ 3 3))
 Time(ns): 168
 6
 
 ; Evaluate function performance (debug, etc)
-=> (perfd (+ 3 3)
+(perfd (+ 3 3)
 debug value: 6, Time(ns): 2100
 
 ; By default, capture of function values will not occur
-=> (repeatfx 5 (+ 4 4) :capture true)
+(repeatfx 5 (+ 4 4) :capture true)
 {:total_time 6832, :values [8 8 8 8 8], :average_time 1366.4}
 
 ; What is the Hotspot performance curve for a function.
 ; Use ':verbose true' to see System/heap stats
-=> (sweetspot (clojure.string/split "This is a test" #" "))
+(sweetspot (clojure.string/split "This is a test" #" "))
 {:system {},
  :total 94774,
  :count 3,
@@ -399,11 +432,11 @@ debug value: 6, Time(ns): 2100
   {:n 30, :average_time 1121.033}]}
   
 ; To format time, use the elapsed function
-=> (elapsed (:average_time (repeatfx 5 (+ 4 4))))
+(elapsed (:average_time (repeatfx 5 (+ 4 4))))
 Time(ns): 1366.4  
 ```
 
-<a name="examples"/></a>
+<a name="packaged-examples"/></a>
 ## Packaged Examples
 1. src/clash/example/web_shop_example.clj
 2. test/clash/example/web_shop_example_test.clj
@@ -453,18 +486,17 @@ lein repl
 ```
 ```clojure
 ; With exact parser (and regex) - reads specific lines
-user=> (def sols (transform-lines web-log-file weblog-parser))
-#'user/sols
-user=> (count sols)
+(def sols (transform-lines web-log-file weblog-parser))
+(count sols)
 7
 
-user=> (first sols)
+(first sols)
 {:time "05042013-13:24:12.000", :action "Search", :name "FOO", :quantity "5", :unit_price "15.00"}
 
 ; Create a larger fileset from weblog
-user=> (def weblog load-weblog)
-user=> (def weblog_40k (grow-weblog 5000 weblog))
-user=> (lines-to-file "larger-40k-shop.log" weblog_40k)
+(def weblog load-weblog)
+(def weblog_40k (grow-weblog 5000 weblog))
+(lines-to-file "larger-40k-shop.log" weblog_40k)
 ```
 
 #### Single conditions and incrementing functions
@@ -477,7 +509,7 @@ user=> (lines-to-file "larger-40k-shop.log" weblog_40k)
   (fn [line] (and (= name (-> line :name)) (= action (-> line :action)))) )
 
 ; A count of all "Search" actions for "FOO"
-user=> (count-with solutions (name-action? "FOO" "Search"))
+(count-with solutions (name-action? "FOO" "Search"))
 2    
 
 ; A running total of a specific key field  
@@ -486,11 +518,11 @@ user=> (count-with solutions (name-action? "FOO" "Search"))
   (fn [solution count] (+ count (read-string (-> solution :quantity))) ) )  
     
 ; Incrementing count based on quantity for each structure
-user=> (count-with sols (name? "FOO") :incrf increment-with-quanity)
+(count-with sols (name? "FOO") :incrf increment-with-quanity)
 9
 
 ; Collecting a sequence of all matching solutions
-user=> (count (collect-with sols (name-action? "BAR" "Purchase")))
+(count (collect-with sols (name-action? "BAR" "Purchase")))
 1
 ```
 
@@ -507,11 +539,11 @@ user=> (count (collect-with sols (name-action? "BAR" "Purchase")))
   (fn [line] (> max (read-string (-> line :unit_price)))) )
 
 ; Using (all?)
-user=> (count-with @sols (all? (price-higher? 12.10) (price-lower? 14.50) ) )
+(count-with @sols (all? (price-higher? 12.10) (price-lower? 14.50) ) )
 1
 
 ; Using (all?) and (any?) together
-user=> (count-with @sols (all? (any? (price-higher? 12.20) (price-lower? 16.20)) ) )
+(count-with @sols (all? (any? (price-higher? 12.20) (price-lower? 16.20)) ) )
 4
 ```
 
@@ -523,11 +555,11 @@ a regular expression.
     
 ; Return all keys
 (regex-groups-into-maps "a,b,c,d" [:a :b] #"(\w),(\w)")
-=> ({:a "a" :b "b"} {:a "c" :b "d"})    
+({:a "a" :b "b"} {:a "c" :b "d"})    
     
 ; Only return ':a' keys
 (regex-groups-into-maps "a,b,c,d" [:a :b] #"(\w),(\w)" [:a])
-=> ({:a "a"} {:a "c"})
+({:a "a"} {:a "c"})
 ```
 ## Shell Command Interaction
 Applying linux/unix shell commands in conjunction with Clojure to a text file. It's
