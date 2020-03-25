@@ -6,7 +6,8 @@
 ;   the terms of this license.
 ;   You must not remove this notice, or any other, from this software.
 (ns clash.example.web_shop_example_test
-  (:require [clash.text_tools :as tt])
+  (:require [clash.text_tools :as tt]
+            [clojure.string :as s])
   (:use [clojure.test]
         [clash.example.web_shop_example]
         [clash.core]
@@ -19,7 +20,7 @@
 (defn is-search-or-price?
   "If the current line contains 'Search' or 'Price'. "
   [line]
-  (if (or (tt/str-contains? line "Search") (tt/str-contains? line "Price"))
+  (if (or (s/includes? line "Search") (s/includes? line "Price"))
     true
     false) )
 

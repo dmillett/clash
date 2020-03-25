@@ -23,14 +23,6 @@
       text
       (s/replace text "\n" delim) )) )
 
-(defn str-contains?
-  "@deprecated (see clojure 1.8 includes?)
-  Does a String contain a specific piece of text?"
-  [^String text, ^String search]
-  (if (or (empty? text) (empty? search))
-    false
-    (.contains text search) ) )
-
 (defn count-tokens
   "Count the number of tokens in a string (text) for
   a given string delimiter (token)."
@@ -44,7 +36,6 @@
   "Build a shell 'cut' command with a specific delimiter and specified fields. This
   is more performant than using log-line-to-map to return a 'sub-map' of values"
   [^String structure, keys, ^String delim]
-  ; See clojure 1.8 (index-of)
   (let [indices (map #(inc (.indexOf structure %)) keys)
         cut (str "cut -d" \" delim \" " -f")]
     (if (empty? indices)

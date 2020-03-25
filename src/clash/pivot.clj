@@ -413,5 +413,3 @@
         ]
     (pivot-matrix* map_data msg2 :pivots pivots :c pvpredfx :plevel plevel)
     ) )
-
-

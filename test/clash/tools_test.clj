@@ -357,12 +357,6 @@
   (is (< 2 (data-per-thread 50 30)))
   )
 
-(deftest test-fold-conj
-  (are [x y] (= x y)
-    [] (fold-conj)
-    [1 2] (fold-conj [1] 2)
-    ))
-
 (deftest test-format-millitime-to
   (is (= "10-24-2015" (format-millitime-to 1445715563306 "MM-dd-yyyy")))
   )

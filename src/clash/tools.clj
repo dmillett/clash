@@ -64,7 +64,6 @@
   [milli_time date_fmt]
   (.. (SimpleDateFormat. date_fmt) (format milli_time)) )
 
-
 (defmacro latency
   "A macro to determine the latency for function execution. Returns a map
   with ':latency {[:ts :ns]}', ':text', and ':result'"
@@ -201,12 +200,6 @@
       (fn [k1 k2] (compare [(get-in pivot_data [k2 :result]) (str k2)]
                            [(get-in pivot_data [k1 :result]) (str k1)])) )
     pivot_data) )
-
-(defn fold-conj
-  ;^{:deprecated "1.2.1+, conj 1.7.0+ supports multiple arity conj"}
-  "Acts like (conj) but intended for reducers/fold and zero arity."
-  ([] '())
-  ([a b] (conj a b)) )
 
 (defn fns-with
   "Composes higher order functions from a specific function and a collection of

@@ -10,8 +10,9 @@
     ^{:author "David Millett"
       :doc "Use performant shell commands like 'grep', 'cut', etc piped together on larger files."}
     clash.command
+  (:require [clojure.string :as s])
   (:use [clojure.java.io :only (reader writer)]
-        [clojure.string :only (split)]
+        ;[clojure.string :only (split)]
         [clash.text_tools :refer :all]))
 
 ;; Linux/Unix "/bin/sh", "-c"
@@ -23,7 +24,7 @@
   system commands: \"/bin/sh\", \"-c\", 'command'. This will
   enable multiple commands to execute via 'pipe'. "
   [command]
-  (if (str-contains? command "|")
+  (if (s/includes? command "|")
     ; linux, solaris, pretty much non microsoft
     (into-array (list "/bin/sh" "-c" command))
      command) )
