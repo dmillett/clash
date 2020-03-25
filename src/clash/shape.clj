@@ -10,8 +10,7 @@
   (:require [clojure.spec.alpha :as spec]
             [clojure.java.io :as io]
             [clojure.xml :as x]
-            [clojure.data.json :as json]
-            [clojure.string :as str])
+            [cheshire.core :as cc])
   (:use [clojure.java.io :only (reader writer)]))
 
 (defn sstream
@@ -94,7 +93,7 @@
 
    {\"a\" [1], \"b.c\" [3], \"b.d\" [4]}
    "
-  ([json] (if (string? json) (flatten-json (json/read-str json) "" {}) (flatten-json json "" {})))
+  ([json] (if (string? json) (flatten-json (cc/parse-string json) "" {}) (flatten-json json "" {})))
   ([json keypath data]
    {:pre (spec/explain map? json)}
    (let [kfx (fn [kpath k] (cond (empty? kpath) k (empty? k) kpath :default (str kpath "." k)))]

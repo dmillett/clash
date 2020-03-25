@@ -9,7 +9,7 @@
   :scm {:name "git" :url "https://github.com/dmillett/clash" }
   :dependencies [[org.clojure/clojure "1.10.1"]
                  [org.clojure/math.combinatorics "0.1.6"]
-                 ;[cheshire "5.10.0"]
+                 [cheshire "5.10.0"]
                  [org.clojure/data.json "1.0.0"]]
   :plugins [[lein-kibit "0.1.3"]
             [jonase/eastwood "0.2.3"]

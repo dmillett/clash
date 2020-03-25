@@ -299,6 +299,7 @@ When encountering a lot of JSON and/or XML data of unknown structure, it is help
 structure into a single depth map the captures which structures and values occur the most. Some nested
 fields might occur a few times per thousand records and be prioritized lower.
 
+### JSON
 These four JSON data are similar, but not identical in structure:
 ```json
 {"a":1, "b":[{"c":2, "d":3},{"c":4, "d":5},{"c":6, "d":7}]},
@@ -318,10 +319,18 @@ will work for parsing JSON text.
 {"a" 4, "b" 1, "c" 3, "b.c" 7, "b.d" 4, "b.d.e" 4, "b.d.f" 1}
 ```
 
-**Load a file**
+**Load a file or text stream**
 ```clojure
-;; Define a transform parser
-(defn json-flat-parser [line] (flatten-json (clojure.data.json/read-str line)))
+;; Define a transform parser, handle an empty line here, can also pass in JSON parser
+;; It can be helpful to filter out empty lines or detail unparseable lines
+(defn json-flat-parser
+  "Filters empty lines and notes text parsing errors. Relies on parser" 
+  [line] 
+  (try 
+    (when (not-empty line) 
+      (flatten-json line)) 
+    (catch Exception e (println (.getMessage e) ", Line: " line))
+  ))
 
 ;; Import and transform. Large heap may be required for many objects
 ;; Can use :max 100000 if data set is too large. However, the following should work for large files.

@@ -63,7 +63,10 @@
 
 (deftest test-transform-lines-for-keypaths
   (let [testfile (tresource "data-sample.json")
-        parser (fn [line] (flatten-json (json/read-str line)))
-        keypath_freqs (transform-lines testfile parser :joinfx keypath-frequencies :initv {})]
-    (is (= {"a" 4, "b" 1, "c" 1, "b.c" 3, "b.d" 2, "b.d.e" 1, "b.d.f" 1} keypath_freqs))
+        parser1 (fn [line] (try (when (not-empty line) (flatten-json line)) (catch Exception _ (println "Error:" line))))
+        parser2 (fn [line] (try (when (not-empty line) (flatten-json (json/read-str line))) (catch Exception _ (println "Error:" line))))
+        freqs1 (transform-lines testfile parser1 :joinfx keypath-frequencies :initv {})
+        freqs2 (transform-lines testfile parser2 :joinfx keypath-frequencies :initv {})]
+    (is (= {"a" 4, "b" 1, "c" 1, "b.c" 3, "b.d" 2, "b.d.e" 1, "b.d.f" 1} freqs1))
+    (is (= freqs1 freqs2))
     ) )
