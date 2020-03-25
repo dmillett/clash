@@ -327,22 +327,6 @@
     (sort-pivot-map-by-value (compare-pivot-map-with pivota pivotb compfx) :result)
     ) )
 
-(defn get-rs-from-matrix
-  "Deprecated, use (pivot-rs)
-
-  Get a result set by applying the underlying predicate group (partial function)
-  against a data collection. For example, for a pivot matrix with even? divisibly-by? (3 4 5),
-
-  (def hundred (range 1 100))
-  (def mtrx (pivot-matrix hundred \"foo\" :b [even?] :p [divisible-by?] :v [(range 2 6]))
-  (get-rs-from-matrix hundred mtrx \"foo-pivots_[5]\")
-  => (90 80 70 60 50 40 30 20 10)
-  "
-  [col matrix mkey]
-  (if-let [fx (:function (meta (get matrix mkey)))]
-    (t/collect-with col fx)
-    (t/collect-with col (get-in matrix [mkey :function])) ) )
-
 (defn pivot-rs
   "Duplicates (get-rs-from-matrix), but with a better function name.
 
@@ -352,7 +336,10 @@
   => (90 80 70 60 50 40 30 20 10)
   "
   [col pivot_matrix pivot_key]
-  (get-rs-from-matrix col pivot_matrix pivot_key))
+  (if-let [fx (:function (meta (get pivot_matrix pivot_key)))]
+    (t/collect-with col fx)
+    (t/collect-with col (get-in pivot_matrix [pivot_key :function]))
+    ) )
 
 (defn filter-pivots
   "Find pivot results that match specific terms. To find a range of
