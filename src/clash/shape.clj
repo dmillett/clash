@@ -11,8 +11,8 @@
             [clojure.java.io :as io]
             [clojure.xml :as x]
             [clojure.data.json :as json]
-            [cheshire.core :as cc]
-            [clojure.string :as str]))
+            [clojure.string :as str])
+  (:use [clojure.java.io :only (reader writer)]))
 
 (defn sstream
   "Convert a String or text to an input stream for parsing"
@@ -41,13 +41,14 @@
     ) )
 
 (defn merge-data
-  "Merge keypaths and data"
+  "Merge keypaths and data. If the keypath already exists,
+  then the data is appended to a vector."
   [& ms]
   (apply merge-with
-    (fn [r n]
-      (if (vector? r)
-        (into [] (concat r n))
-        [r n]))
+    (fn [values v]
+      (if (vector? values)
+        (into [] (concat values v))
+        [values v]))
     ms) )
 
 (defn flatten-xml
@@ -93,7 +94,7 @@
 
    {\"a\" [1], \"b.c\" [3], \"b.d\" [4]}
    "
-  ([json] (if (string? json) (flatten-json (cc/parse-string json) "" {}) (flatten-json json "" {})))
+  ([json] (if (string? json) (flatten-json (json/read-str json) "" {}) (flatten-json json "" {})))
   ([json keypath data]
    {:pre (spec/explain map? json)}
    (let [kfx (fn [kpath k] (cond (empty? kpath) k (empty? k) kpath :default (str kpath "." k)))]
@@ -109,9 +110,12 @@
        json)
       )))
 
-(defn flat-data-frequencies
-  "Get the frequency count for each key path in a flattened data structure. That makes it
-  possible to sort by frequency and prioritize analysis or code optimization.
+(defn flat-data-value-counts
+  "Get the value counts for each key path in a flattened data structure. That makes it
+  possible to sort by frequency and prioritize analysis or code optimization. Key paths
+  that represent arrays will have larger 'counts'. A key path might have low frequency,
+  but a lot of data.
+
   For example:
   {A.@ax [ax1], A.@a [a1], A.B.C.@c [c1 c2]}
 
@@ -124,3 +128,17 @@
     (fn [result [k v]] (assoc result k (count v)))
     {}
     flattened_data))
+
+(defn keypath-frequencies
+  "The frequency of keypaths for a large collection of flattened data."
+  ([] {})
+  ([freqs] freqs)
+  ([freqs flat]
+    (reduce
+      (fn [result [k _]]
+        (if-let [i (get result k)]
+          (assoc result k (inc i))
+          (assoc result k 1)
+          ) )
+      freqs
+      flat)))

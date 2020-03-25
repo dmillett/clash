@@ -145,8 +145,10 @@
   consumes:
   'input' - An input stream handled with clojure.io.reader
   'parser' - Transforms & maps to a defined structure (or just transforms things like JSON, XML, etc)
-  'tdfx' - A transducing function that transforms/maps data (default: (-> identity parser)
+  'tdfx' - A transducing function that transforms/maps data (default: (-> identity parser), ignores parser
   'max' - The maximum number of rows to transform
+  'joinfx' - How to combine data in transduce, default (conj)
+  'initv' - Initial value for transducer, default []
 
   produces:
 
@@ -155,13 +157,13 @@
 
   If errors are encountered, try (transform-lines-verbose) or (atomic-list-from-file)
   "
-  [input parser & {:keys [max tdfx] :or {max nil tdfx nil}}]
+  [input parser & {:keys [max tdfx joinfx initv] :or {max nil tdfx nil joinfx conj initv []}}]
   (let [transducefx (or tdfx (comp (map parser) (filter identity)))]
     (try
       (with-open [ireader (reader input)]
         (if max
-          (transduce transducefx conj [] (take max (line-seq ireader)))
-          (transduce transducefx conj [] (line-seq ireader))
+          (transduce transducefx joinfx initv (take max (line-seq ireader)))
+          (transduce transducefx joinfx initv (line-seq ireader))
           ) )
       (catch Exception e (println "Exception:" (.getMessage e))))
     ) )
