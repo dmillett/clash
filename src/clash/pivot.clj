@@ -290,19 +290,6 @@
       (= 3 plevel) (pp-pivot-matrix col message c b p v)
       ) ) )
 
-(defn pivot-matrix-e
-  "DEPRECATED use (pivot-matrix*)
-  Identical to, but more explicit than (pivot-matrix). This expects the following form:
-
-  (pivot-matrix-e col msg :base [number? even?] :pivot [{:f divide-by? :v (range 2 5)}
-                                                        {:f divide-by? :v (range 5 8)}]
-                                                :plevel 2)"
-  [col msg & {:keys [base pivot plevel] :or {base [] pivot [] plevel 1}}]
-  (let [p (map :f pivot)
-        v (map :v pivot)]
-    (pivot-matrix col msg :b base :p p :v v :plevel plevel)
-    ) )
-
 (defn pivot-matrix*
   "The preferred version of (pivot-matrix) manifestations. Identical function, but more explicit than (pivot-matrix).
   This introduces 'combfx?' which is a function to apply across each generated predicate group. Previous incarnations

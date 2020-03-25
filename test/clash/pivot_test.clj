@@ -69,17 +69,7 @@
         r6pp (pivot-matrix hundred "r2" :b even-numbers :p divyX2 :v [(range 2 5) (range 6 8)] :plevel 3)
         r7 (pivot-matrix hundred "r7" :b even-numbers :p [divisible-by? foo-divide?] :v [(range 2 5) '([2 4] [4 5])])
         r8 (pivot-matrix hundred "r8" :b even-numbers :p [divisible-by? foo-divide?] :v [(range 2 4) cp])
-        ;
-        r1e (pivot-matrix-e hundred "r1"  :base [number? even?] :pivot [{:f divisible-by? :v (range 2 5)}])
-        r2e (pivot-matrix-e hundred "r2" :base even-numbers :pivot [{:f divisible-by? :v (range 2 5)} {:f divisible-by? :v (range 6 8)}])
-        r3pe (pivot-matrix-e hundred "r1" :base even-numbers :pivot [{:f divisible-by? :v (range 2 5)}] :plevel 2)
-        r4pe (pivot-matrix-e hundred "r2" :base even-numbers :pivot [{:f divisible-by? :v (range 2 5)} {:f divisible-by? :v (range 6 8)}] :plevel 2)
-        r5ppe (pivot-matrix-e hundred "r1" :base even-numbers :pivot [{:f divisible-by? :v (range 2 5)}] :plevel 3)
-        r6ppe (pivot-matrix-e hundred "r2" :base even-numbers :pivot [{:f divisible-by? :v (range 2 5)} {:f divisible-by? :v (range 6 8)}] :plevel 3)
-        r7e (pivot-matrix-e hundred "r7" :base even-numbers :pivot [{:f divisible-by? :v (range 2 5)} {:f foo-divide? :v '([2 4] [4 5])}])
-        r8e (pivot-matrix-e hundred "r8" :base even-numbers :pivot [{:f divisible-by? :v (range 2 4)} {:f foo-divide? :v cp}])
-
-        ; performance testing
+        ;; performance testing
         ;lc (into [] (range 1 1000001))
         ;r10 (t/perf (pivot-matrix lc "r2lc" :b even-numbers :p divyX2 :v [(range 2 11) (range 7 18)] :plevel 3) "")
         ]
@@ -121,20 +111,6 @@
       ;
       18 (count r8)
       12 (get-in r8 ["r8_[2|[3 5]]" :count])
-      ;r1 r1e
-      (keys r1) (keys r1e)
-      '(49 24 16) (map #(:count %) (vals r1))
-      '(49 24 16) (map #(:count %) (vals r1e))
-      (keys r2) (keys r2e)
-      '(16 16 8 7 3 2) (map #(:count %) (vals r2))
-      '(16 16 8 7 3 2) (map #(:count %) (vals r2e))
-      ;r3p r3pe
-      (keys r3p) (keys r3pe)
-      '(49 24 16) (map #(:count %) (vals r3p))
-      '(49 24 16) (map #(:count %) (vals r3pe))
-      ;r7 r7e anonymous functions are equivalent
-      (keys r7e) (keys r7)
-      (map #(:count %) (vals r7e)) (map #(:count %) (vals r7))
       ) ) )
 
 (deftest test-pivot-matrix*

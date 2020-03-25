@@ -20,7 +20,9 @@
 
 
 (defn atomic-list-from-file
-  "Load ~structured text from a file into a list of data structures to interact with
+  "DEPRECATED use (transform-lines)
+
+  Load ~structured text from a file into a list of data structures to interact with
   at the command line (repl). Larger files and structures may require increasing the
    jvm heap. It helps to have specific regex to decrease the number of 'bad'
    structures included in the atomized data structure.
@@ -52,7 +54,6 @@
                           (or (nil? predicate) (predicate line)))
                   :let [transformed (transform-text transformer line)
                         data (parser transformed)]]
-            ;(if-not (nil? data)
             (when data
               (swap! result conj data)) ))
         (catch OutOfMemoryError _ (println "Insufficient Memory: " (count @result) " Solutions Loaded"))
@@ -60,7 +61,9 @@
       result) ) )
 
 (defn file-into-structure
-  "Load ~structured text from a file into a data structure to interact with
+  "DEPRECATED use (transform-lines)
+
+  Load ~structured text from a file into a data structure to interact with
   at the command line (repl). Larger files and structures may require increasing the
    jvm heap. It helps to have specific regex to decrease the number of 'bad'
    structures included in the atomized data structure.
