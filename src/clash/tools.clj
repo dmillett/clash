@@ -186,10 +186,13 @@
 
 (defn sort-map-by-value
   "Sort by values descending (works when there are non-unique values too)."
-  [m]
+  [m & {:keys [descending] :or {descending true}}]
   (into (sorted-map-by
-          (fn [k1 k2] (compare [(get m k2) (str k2)]
-                               [(get m k1) (str k1)]) ) )
+          (fn [k1 k2]
+            (if descending
+              (compare [(get m k2) (str k2)] [(get m k1) (str k1)])
+              (compare [(get m k1) (str k1)] [(get m k2) (str k2)])
+              )))
     m) )
 
 (defn sort-pivot-by-value
@@ -480,9 +483,14 @@
     vfreqs))
 
 (defn top-freqs
-  "The top 'n' value frequencies for applicable keys."
+  "The most frequent 'n' value for the applicable keys."
   [n]
   (partial reduce-vfreqs #(take n (sort-map-by-value %))))
+
+(defn bottom-freqs
+  "The less frequent 'n' values for the applicable keys."
+  [n]
+  (partial reduce-vfreqs #(take n (sort-map-by-value % :descending false))))
 
 (defn distinct-by
   "Collect distinct or unique items accoridng to a function 'eqfx'.

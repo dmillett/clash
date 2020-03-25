@@ -90,6 +90,9 @@ collection (see 'pivot-rs).
 ;; The top 'n' values for a schema path/set 
 (defn top-freqs [n] (partial reduce-vfreqs #(take n (sort-map-by-value %))))
 
+;; The bottom 'n' values for a schema path/set
+(defn bottom-freqs [n] (partial reduce-vfreqs #(take n (sort-map-by-value % :descending false))))
+
 ;; Grab the most frequent schema values for ':time' and ':price' schema paths
 ;; Use ':plevel 2' (all cores) for larger datasets
 (def hstack (haystack purchases :vffx (top-freqs 1) :vfkpsets [{:kp [:time] :ks [:hour :minute]} 

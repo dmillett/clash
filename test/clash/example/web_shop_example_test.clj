@@ -7,7 +7,8 @@
 ;   You must not remove this notice, or any other, from this software.
 (ns clash.example.web_shop_example_test
   (:require [clash.text_tools :as tt]
-            [clojure.string :as s])
+            [clojure.string :as s]
+            [clojure.pprint :as pp])
   (:use [clojure.test]
         [clash.example.web_shop_example]
         [clash.core]
@@ -60,12 +61,14 @@
 
 (deftest test-haystack
   (let [result (transform-lines web-log-file weblog-parser-dr)
-        hstack1 (haystack result :vfkpsets [{:ks [:action :name]}] :vffx (top-freqs 2))]
-    ;(println result)
-    ;(println hstack1)
+        hstack1 (haystack result :vfkpsets [{:ks [:action :name]}] :vffx (top-freqs 2))
+        hstack2 (haystack result :vfkpsets [{:ks [:action :name]}] :vffx (bottom-freqs 1))
+        ]
+    ;(pp/pprint result)
     (are [x y] (= x y)
       4 (count hstack1)
       2 (:count (get hstack1 "haystack([:action]|[:name])_[Search|FOO]"))
+      0 (:count (get hstack2 "haystack([:action]|[:name])_[Purchase|ZOO]"))
       ) ) )
 
 (deftest test-transform-lines
