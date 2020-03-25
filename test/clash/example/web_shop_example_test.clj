@@ -23,13 +23,12 @@
     true
     false) )
 
-(deftest test-atomic-map-from-file
-  (let [result1 (atomic-map-from-file web-log-file weblog-parser 4)
-        result2 (atomic-map-from-file web-log-file is-search-or-price? nil weblog-parser nil -1)]
-
-    (is (= 4 (count @result1)))
-    ; todo: check on this -- Purchase line fits the pattern, but because of predicate, it's 'nil'
-    (is (= 7 (count @result2)))
+(deftest test-transform-lines
+  (let [result1 (transform-lines web-log-file weblog-parser-dr)
+        result2 (transform-lines web-log-file weblog-parser-dr :tdfx (comp (map weblog-parser-dr) (filter is-search-or-price?) (filter identity)))
+        ]
+    (is (= 4 (count result1)))
+    (is (= 7 (count result2)))
     ) )
 
 (deftest test-atomic-list-from-file

@@ -18,56 +18,6 @@
   [transformer ^String text]
   (if-not (nil? transformer) (transformer text) text) )
 
-;;
-;; For a pure map/list structure with no defrecords (~10% slower)
-;; (let [decoded (tt/url-decode line)] (sd/parse-soldump-line decoded))
-;;   (sd/parse-soldump-line line)
-(defn atomic-map-from-file
-  "DEPRECATED: use (transform-lines) or (atomic-list-from-file)
-  Load ~structured text from a file into a map of data structures to interact with
-  at the command line (repl). Larger files and structures may require increasing the
-   jvm heap. It helps to have specific regex to decrease the number of 'bad'
-   structures included in the atomized data structure.
-
-  Usage:
-  (atomic-map-from-file \"/foo.log\" foo-parser)
-  (atomic-map-from-file \"/foo.log\" is-foo? url-decode foo-parser key-builder)
-
-  'input' - a text file with structure (typically a log file)
-  'parser' - function that parses a text line, with regex, into a data structure
-  'predicate' - function includes/excludes text line from parsing
-              - default allows every line
-              - define function using 'every-pred' for 1 - N predicates
-  'transformer' - function to alter text line (decode, decrypt, etc) prior to parsing
-                - defaults to no transformation
-  'key' - function to generate a unique key for the map
-        - can use structured object to generate key
-        - defaults to (System/nanoTime)
-
-  'max' - max number of solutions/entries to load.
-
-   Alternatively, just the 2 arg function and rely on the parser to perform much of
-   the functionality with more strict regex."
-  {:deprecated 1.2}
-  ([input parser] (atomic-map-from-file input nil nil parser nil nil))
-  ([input parser max] (atomic-map-from-file input nil nil parser nil max))
-  ([input predicate transformer parser kkey max]
-    (let [result (atom {})]
-      (with-open [input_reader (reader input)]
-        (try
-          (doseq [line (line-seq input_reader)
-                  :when (and (or (= -1 max) (> max (count @result)))
-                          (or (nil? predicate) (predicate line)))
-                  :let [transformed (transform-text transformer line)
-                        structure (parser transformed)
-                        k (if-not (nil? kkey) (kkey structure) (System/nanoTime))
-                        current (hash-map k structure)]]
-            (if-not (nil? current)
-              (swap! result merge current)) )
-          (catch OutOfMemoryError _ (println "Insufficient Memory: " (count @result) "Solutions Loaded"))
-          (catch Exception e (println "Exception:" e ", " (count @result) " Solutions Loaded"))) )
-      result) ) )
-
 
 (defn atomic-list-from-file
   "Load ~structured text from a file into a list of data structures to interact with
@@ -102,7 +52,8 @@
                           (or (nil? predicate) (predicate line)))
                   :let [transformed (transform-text transformer line)
                         data (parser transformed)]]
-            (if-not (nil? data)
+            ;(if-not (nil? data)
+            (when data
               (swap! result conj data)) ))
         (catch OutOfMemoryError _ (println "Insufficient Memory: " (count @result) " Solutions Loaded"))
         (catch Exception e (println "Exception:" e ", " (count @result) " Solutions Loaded")))
