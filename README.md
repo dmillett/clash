@@ -19,6 +19,7 @@ Try adding **[clash "1.4.1"]** to your project today
  * [performance & debugging](#performance-debugging)
  * [general performance](#performance)
  * [packaged examples](#packaged-examples)
+ * [deprecated](#deprecated)
  * [setup](#setup)
  * [license](#license)
 
@@ -616,6 +617,17 @@ elapsed time in nano seconds (ns), milliseconds (ms) or seconds(s).
     
 (def message2 "'cl + grep + cut'")
 (perf (jproc-write command2 output2 ":") message) --> 'cl + grep + cut' Time(ms):18.450
+```
+
+<a name="deprecated"/></a>
+## Deprecated
+
+### commits
+```bash
+6a19727 Removed deprecated (fold-conj) use (conj) and (str-contains?) use (clojure.string/includes?)
+2017e49 Removed deprecated (get-rs-from-matrix) use (pivot-rs)
+42525fe Removed deprecated (pivot-matrix-e) use (pivot-matrix*). Deprecated clash.core/atomic-*
+d4af497 removed deprecated (atomic-map-from-file), use (transform-lines)
 ```
 
 <a name="setup"/></a>
