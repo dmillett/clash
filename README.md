@@ -324,35 +324,22 @@ will work for parsing JSON text, but Cheshire seems to be faster so it's the def
 {"a" 4, "b" 1, "c" 3, "b.c" 7, "b.d" 4, "b.d.e" 4, "b.d.f" 1}
 ```
 
+#### Load a file or text stream & determine value shape**
+
 Define regular expression patterns that the values might represent. For example: int, decimal, text, boolean, etc by
 including an ordered list of `(->ValuePattern :type #"some-pattern" (fx [v] (pre-process v)))`
 
 ```clojure
-;; See 'simple-json-parser' and 'simple_patterns' in clash.shape.clj 
+;; See (simple-json-parser) and (keypath-frequencies) in clash.shape.clj
+(def flat (transform-lines "<input-file-name>" simple-json-parser :joinfx keypath-frequencies :initv {}))
+
+{"a" 4, "b" 1, "c" 1, "b.c" 3, "b.d" 2, "b.d.e" 1, "b.d.f" 1}
+
+;; See (simple_patterns) and (keypath-value-patterns) in clash.shape.clj 
 (def freqs (transform-lines input simple-json-parser :joinfx (partial keypath-value-patterns simple_patterns) :initv {}))
 (def shaped (shape-sort freqs))
 
 {"b.c" {:int 4, :financial 3}, "b.d.e" {:int 4}, "b.d" {:int 3, :decimal 1}, "a" {:int 4}, "c" {:int 3}, "b.d.f" {:boolean 1}, "b" {:decimal 1}}
-```
-
-**Load a file or text stream**
-```clojure
-;; Define a transform parser, handle an empty line here, can also pass in JSON parser
-;; It can be helpful to filter out empty lines or detail unparseable lines
-(defn json-flat-parser
-  "Filters empty lines and notes text parsing errors. Relies on parser" 
-  [line] 
-  (try 
-    (when (not-empty line) 
-      (flatten-json line)) 
-    (catch Exception e (println (.getMessage e) ", Line: " line))
-  ))
-
-;; Import and transform. Large heap may be required for many objects
-;; Can use :max 100000 if data set is too large. However, the following should work for large files.
-(def flat (transform-lines "<input-file-name>" json-flat-parser :joinfx keypath-frequencies :initv {}))
-
-{"a" 4, "b" 1, "c" 1, "b.c" 3, "b.d" 2, "b.d.e" 1, "b.d.f" 1}
 ```
 
 ### XML
