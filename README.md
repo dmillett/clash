@@ -324,7 +324,7 @@ will work for parsing JSON text, but Cheshire seems to be faster so it's the def
 {"a" 4, "b" 1, "c" 3, "b.c" 7, "b.d" 4, "b.d.e" 4, "b.d.f" 1}
 ```
 
-#### Load a file or text stream & determine value shape
+#### Regex value matching for large input
 
 Define regular expression patterns that the values might represent. For example: int, decimal, text, boolean, etc by
 including an ordered list of `(->ValuePattern :type #"some-pattern" (fx [v] (pre-process v)))`
