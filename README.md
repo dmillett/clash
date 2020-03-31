@@ -313,7 +313,8 @@ These four JSON data are similar, but not identical in structure:
 ```
 
 The new keys represent the path to the original structure ('.' delimited). Both Cheshire and clojure.data.json
-will work for parsing JSON text.
+will work for parsing JSON text, but Cheshire seems to be faster so it's the default. 
+
 ```clojure
 (def flattened (apply merge-data (map #(flatten-json %) [json1 json2 json3 json4])))
 (pprint flattened)
@@ -321,6 +322,17 @@ will work for parsing JSON text.
 
 (flat-data-value-counts flattened)
 {"a" 4, "b" 1, "c" 3, "b.c" 7, "b.d" 4, "b.d.e" 4, "b.d.f" 1}
+```
+
+Define regular expression patterns that the values might represent. For example: int, decimal, text, boolean, etc by
+including an ordered list of `(->ValuePattern :type #"some-pattern" (fx [v] (pre-process v)))`
+
+```clojure
+;; See 'simple-json-parser' and 'simple_patterns' in clash.shape.clj 
+(def freqs (transform-lines input simple-json-parser :joinfx (partial keypath-value-patterns simple_patterns) :initv {}))
+(def shaped (shape-sort freqs))
+
+{"b.c" {:int 4, :financial 3}, "b.d.e" {:int 4}, "b.d" {:int 3, :decimal 1}, "a" {:int 4}, "c" {:int 3}, "b.d.f" {:boolean 1}, "b" {:decimal 1}}
 ```
 
 **Load a file or text stream**

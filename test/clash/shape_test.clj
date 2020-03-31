@@ -6,7 +6,8 @@
 ;   the terms of this license.
 ;   You must not remove this notice, or any other, from this software.
 (ns clash.shape_test
-  (:require [clojure.data.json :as json])
+  (:require [clojure.data.json :as json]
+            [clash.tools :as ct])
   (:use [clojure.test]
         [clash.shape]
         [clash.core]))
@@ -67,6 +68,63 @@
         parser2 (fn [line] (try (when (not-empty line) (flatten-json (json/read-str line))) (catch Exception _ (println "Error:" line))))
         freqs1 (transform-lines testfile parser1 :joinfx keypath-frequencies :initv {})
         freqs2 (transform-lines testfile parser2 :joinfx keypath-frequencies :initv {})]
+
     (is (= {"a" 4, "b" 1, "c" 1, "b.c" 3, "b.d" 2, "b.d.e" 1, "b.d.f" 1} freqs1))
     (is (= freqs1 freqs2))
     ) )
+
+(deftest test-value-patterns
+  (are [x y] (= x y)
+    :int (value-pattern 1 simple_patterns)
+    :decimal (value-pattern 2.0 simple_patterns)
+    :financial (value-pattern "USD 0.50" simple_patterns)
+    :boolean (value-pattern false simple_patterns)
+    :email (value-pattern "foo@zanzibar.zoo" simple_patterns)
+    :text (value-pattern "this is a longer sentence" simple_patterns)
+    :empty (value-pattern "" simple_patterns)
+    ))
+
+(deftest test-transform-lines-for-value-patterns
+  (let [input (tresource "data-sample.json")
+        parser simple-json-parser
+        freqs (transform-lines input parser :joinfx (partial keypath-value-patterns simple_patterns) :initv {})
+        ]
+    (is (= freqs {"a" {:int 4}, "b" {:decimal 1}, "c" {:int 3}, "b.c" {:financial 3, :int 4}, "b.d" {:int 3, :decimal 1}, "b.d.e" {:int 4}, "b.d.f" {:boolean 1}}))
+    ))
+
+(def expected_inclinician
+  {"data.descriptions.stomach" {:empty 3}, "data.spectrometer.device" {:text 3}, "date_time" {:decimal 3},
+   "data.pulse.value" {:int 3}, "data.oxygen.device" {:text 3}, "data.prescription.dose" {:empty 3},
+   "blockchain.contract" {:empty 3}, "age" {:int 3}, "data.descriptions.arms" {:empty 3},
+   "data.descriptions.bowels" {:empty 2, :text 1}, "data.descriptions.hands" {:empty 3}, "blockchain.id" {:int 3},
+   "data.descriptions.lungs" {:empty 1, :text 2}, "data.urinalysis.device" {:text 3}, "data.pulse.device" {:text 3},
+   "data.descriptions.legs" {:empty 3}, "gender" {:empty 3}, "data.descriptions.general" {:empty 1, :text 2},
+   "data.oxygen.value" {:int 3}, "data.temperature.device" {:text 3}, "data.breathalyzer.device" {:text 3},
+   "data.descriptions.feet" {:empty 3}, "data.stool_analysis.device" {:text 3}, "identity" {:int 3},
+   "data.descriptions.skin" {:empty 3}, "data.prescription.time" {:empty 3},
+   "data.descriptions.back" {:empty 1, :text 2}, "data.descriptions.throat" {:empty 1, :text 2},
+   "data.prescription.form" {:text 3}, "data.ultrasound.location" {:empty 3},
+   "data.descriptions.heart" {:empty 2, :text 1}, "data.descriptions.urine" {:empty 3},
+   "data.descriptions.head" {:empty 1, :text 2}, "data.descriptions.eyes" {:empty 1, :text 2},
+   "location.postal-code" {:empty 3}, "data.saliva_analysis.device" {:text 3}, "data.ultrasound.device" {:text 3},
+   "data.immune_signals.device" {:text 3}, "data.immune_signals.location" {:empty 3},
+   "data.temperature.value" {:decimal 3}, "data.descriptions.intestines" {:empty 3},
+   "data.prescription.name" {:empty 3}, "data.descriptions.sinus" {:empty 1, :text 2},
+   "data.spectrometer.location" {:empty 3}, "data.descriptions.energy" {:empty 1, :text 2},
+   "data.descriptions.teeth" {:empty 3}, "location.type" {:text 3}, "data.descriptions.tongue" {:empty 3}})
+
+(deftest test-transform-corona-health
+  (let [input (tresource "inclinician-data.json")
+        parser simple-json-parser
+        freq_patterns (transform-lines input parser :joinfx (partial keypath-value-patterns simple_patterns) :initv {})
+        ]
+    (is (= freq_patterns expected_inclinician))
+    ) )
+
+(deftest test-shape-sort
+  (let [input (tresource "data-sample.json")
+        freqs (transform-lines input simple-json-parser :joinfx (partial keypath-value-patterns simple_patterns) :initv {})
+        shaped (shape-sort freqs)
+        ]
+    (is (= shaped {"b.c" {:int 4, :financial 3}, "b.d.e" {:int 4}, "b.d" {:int 3, :decimal 1}, "a" {:int 4}, "c" {:int 3}, "b.d.f" {:boolean 1}, "b" {:decimal 1}} ))
+    ))

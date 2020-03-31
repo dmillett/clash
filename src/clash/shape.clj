@@ -8,9 +8,11 @@
 
 (ns clash.shape
   (:require [clojure.spec.alpha :as spec]
+            [clojure.string :as s]
             [clojure.java.io :as io]
             [clojure.xml :as x]
-            [cheshire.core :as cc])
+            [cheshire.core :as cc]
+            [clash.tools :as ct])
   (:use [clojure.java.io :only (reader writer)]))
 
 (defn sstream
@@ -99,7 +101,7 @@
    (let [kfx (fn [kpath k] (cond (empty? kpath) k (empty? k) kpath :default (str kpath "." k)))]
      (reduce
        (fn [result current]
-         (let [[k v] (if (= clojure.lang.MapEntry (type current)) current ["" current])]
+         (let [[k v] (if (map-entry? current) current ["" current])]
          (cond
            (vector? v) (merge-data result (flatten-json v (kfx keypath k) {}))
            (map? v) (merge-data result (flatten-json v (kfx keypath k) {}))
@@ -141,3 +143,140 @@
           ) )
       freqs
       flat)))
+
+(defn- as-string
+  "Return the string value of an object. 1 --> \"1\""
+  [o]
+  (if (and o (string? o)) o (str o)))
+
+;; Use as an ordered list in (value-pattern)
+(defrecord ValuePattern [type pattern fx])
+
+;; 2020-03-28T17:07:31.000
+(def simple_patterns
+  "A simple example of regular expressions to use with flattened data to provide shape of data values."
+  [(->ValuePattern :financial #"[A-Z]{2,3}\s*[\d\.]+" nil)
+   (->ValuePattern :datetime #"\d{2,4}\-\d{2}\-\{2,4}[T\d:\.]+" nil)
+   (->ValuePattern :decimal #"\d*\.\d+" nil)
+   (->ValuePattern :boolean #"true|false" (fn [v] (s/lower-case v)))
+   (->ValuePattern :int #"\d+" nil)
+   (->ValuePattern :email #"\s*\w+@\w+\.\w+\s*" nil)
+   (->ValuePattern :text #"[\w\s.]+" nil)
+   (->ValuePattern :any #".+" nil)
+   (->ValuePattern :empty #"" nil)
+   ])
+
+(defn value-pattern
+  "Check the stringified value against a dictionary of regular expressions to find the match. For starters,
+  use (->ValuePattern x y z) or see (simple_patterns)
+
+  Each pattern for evaluation should have: ':name', ':pattern', and ':fx' (optional)
+  (value-pattern \"hello dave\" [{:name :int, :pattern #\"\\d+\"} {:name :text, :pattern #\"[\\w\\s]+\"}])
+
+   If 'value' is nil, then :no_match is returned
+
+   This is helpful for determining rough/fine data categorization over a larger group of data.
+   **NOTE** Specify regex from most to least specific for 'patterns'
+   "
+  [value patterns]
+  (if-let [v (as-string value)]
+    (reduce
+      (fn [_ tp]
+        (if (re-find (:pattern tp) (if-let [f (:fx tp)] (f v) v))
+          (reduced (:type tp))
+          :no_match))
+      nil
+      patterns)
+    :no_match))
+
+(defn- coll-patterns
+  "Find how many pattern matches there are for a collection of data."
+  [patterns coll]
+  (frequencies (for [v coll] (value-pattern v patterns))) )
+
+(defn- update-pattern-freqs
+  "Determine the pattern counts for all of the values for a specific key."
+  [patterns result data]
+  (reduce-kv
+    (fn [r k v]
+      (let [shapes (get result k) values (coll-patterns patterns v)]
+        (if shapes
+          (assoc r k (merge-with + shapes values))
+          (assoc r k values)
+          ) ) )
+    result
+    data))
+
+;;
+; "a.b" {:int 21 :decimal 10}
+;
+(defn keypath-value-patterns
+  "Use 'shape_patterns' to identify what values are associated with each keypath. For example:
+
+  [\"a\" 1 2.0 true \"b\" \"USD 2.50\"] --> {:small_text 2, :int 1, :decimal 1, :boolean 1, :financial 1}
+  "
+  [patterns & args]
+  (cond
+    (= 1 (count args)) (first args)
+    (= 2 (count args)) (update-pattern-freqs patterns (first args) (last args))
+    :default {}
+    ) )
+
+(def simple-json-parser
+  "A simple JSON parser that skips empty strings and dumps 'Error:' for any poorly formatted JSON.
+  The JSON text is curried from context."
+  (fn [line] (try (when (not-empty line) (flatten-json line)) (catch Exception _ (println "Error:" line)))))
+
+;(defn sort-map-by-value
+;  "Sort by values descending (works when there are non-unique values too)."
+;  [m & {:keys [descending] :or {descending true}}]
+;  (into (sorted-map-by
+;          (fn [k1 k2]
+;            (if descending
+;              (compare [(get m k2) (str k2)] [(get m k1) (str k1)])
+;              (compare [(get m k1) (str k1)] [(get m k2) (str k2)])
+;              )))
+;    m) )
+
+(defn- map-value-total
+  [m]
+  (reduce-kv
+    (fn [r _ v] (+ r v))
+    0
+    m))
+
+(defn shape-sort-value-pattern
+  "Sort by value pattern counts for 'shaped' data in descending order.
+
+  {:foo {:int 3 :text 6 :decimal 4}} --> {:foo {:text 6 :decimal 4 :int 3}}
+  "
+  [shaped]
+  (reduce-kv
+    (fn [r k v] (assoc r k (ct/sort-map-by-value v)))
+    {}
+    shaped))
+
+(defn shape-sort-keypath-count
+  "Sort by keypath occurrence frequency in descending order.
+
+  {:foo {:int 1 :decimal 1} :bar {:decimal 3 :text 4}}
+
+  --> {:bar {:decimal 3 :text 4} :foo {:int 1 :decimal 1}}
+  "
+  [shaped]
+  (into
+    (sorted-map-by
+      (fn [k1 k2]
+        (compare [(map-value-total (get shaped k2)) (str k2)]
+                 [(map-value-total (get shaped k1)) (str k1)])))
+    shaped))
+
+(defn shape-sort
+  "Sort by keypath frequency and value pattern frequency in descending order.
+
+  {:foo {:int 1 :decimal 2} :bar {:decimal 3 :text 4}}
+
+  --> {:bar {:text 4 :decimal 3} :foo {:decimal 2 :int 1}}
+  "
+  [shaped]
+  (shape-sort-keypath-count (shape-sort-value-pattern shaped)))
