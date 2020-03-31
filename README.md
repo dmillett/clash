@@ -354,6 +354,26 @@ including an ordered list of `(->ValuePattern :type #"some-pattern" (fx [v] (pre
 {"A.@ax" 1, "A.@a" 1, "A.B.C.@c" 2, "A.B.C" 2, "A.D" 1, "A.E.F.@f" 2, "A.E.F" 1}
 ```
 
+### XML & JSON
+
+If there is a huge dump of XML and JSON data, create a parser that can handle both. It is possible to create a
+parser hierarchy for any of the data structures that require flattening.
+
+```clojure
+(defn xml-and-json-parser
+  [line]
+  (try
+    (when (not-empty line)
+      (cond
+        (s/starts-with? line "<") (flatten-xml line)
+        (s/starts-with? line "{") (flatten-json line)
+        :default (println "Skipping line:" line)))
+    (catch Exception e (println "Error:" e))))
+
+(transform-lines input xml-and-json-parser :joinfx keypath-frequencies :initv {})
+(transform-lines input xml-and-json-parser :joinfx (partial keypath-value-patterns simple_patterns) :initv {})
+```
+
 <a name="utility-functions"/></a>
 ## Utility Functions
 Potentially useful functions to help filter and sort data. The resulting function will execute 

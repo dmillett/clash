@@ -26,9 +26,10 @@
   "Use clojure.xml to parse a string or an input-stream."
   [xmltext]
   (try
+    (when (and (not-empty xmltext) (s/starts-with? xmltext "<"))
     (if (string? xmltext)
       (x/parse (sstream xmltext))
-      (x/parse xmltext))
+      (x/parse xmltext)))
      (catch Exception e (println e)
      ) ) )
 
@@ -222,22 +223,6 @@
     :default {}
     ) )
 
-(def simple-json-parser
-  "A simple JSON parser that skips empty strings and dumps 'Error:' for any poorly formatted JSON.
-  The JSON text is curried from context."
-  (fn [line] (try (when (not-empty line) (flatten-json line)) (catch Exception _ (println "Error:" line)))))
-
-;(defn sort-map-by-value
-;  "Sort by values descending (works when there are non-unique values too)."
-;  [m & {:keys [descending] :or {descending true}}]
-;  (into (sorted-map-by
-;          (fn [k1 k2]
-;            (if descending
-;              (compare [(get m k2) (str k2)] [(get m k1) (str k1)])
-;              (compare [(get m k1) (str k1)] [(get m k2) (str k2)])
-;              )))
-;    m) )
-
 (defn- map-value-total
   [m]
   (reduce-kv
@@ -280,3 +265,19 @@
   "
   [shaped]
   (shape-sort-keypath-count (shape-sort-value-pattern shaped)))
+
+(def simple-json-parser
+  "A simple JSON parser that skips empty strings and dumps 'Error:' for any poorly formatted JSON.
+  The JSON text is curried from context."
+  (fn [line] (try (when (not-empty line) (flatten-json line)) (catch Exception _ (println "Error:" line)))))
+
+(defn xml-and-json-parser
+  "When the input data (line) is JSON OR XML, this parser will handle both."
+  [line]
+  (try
+    (when (not-empty line)
+      (cond
+        (s/starts-with? line "<") (flatten-xml line)
+        (s/starts-with? line "{") (flatten-json line)
+        :default (println "Skipping line:" line)))
+    (catch Exception e (println "Error:" e))))

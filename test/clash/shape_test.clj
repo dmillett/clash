@@ -7,7 +7,7 @@
 ;   You must not remove this notice, or any other, from this software.
 (ns clash.shape_test
   (:require [clojure.data.json :as json]
-            [clash.tools :as ct])
+            [clojure.string :as s])
   (:use [clojure.test]
         [clash.shape]
         [clash.core]))
@@ -127,4 +127,13 @@
         shaped (shape-sort freqs)
         ]
     (is (= shaped {"b.c" {:int 4, :financial 3}, "b.d.e" {:int 4}, "b.d" {:int 3, :decimal 1}, "a" {:int 4}, "c" {:int 3}, "b.d.f" {:boolean 1}, "b" {:decimal 1}} ))
+    ))
+
+(deftest test-xml-json-flattener
+  (let [input (tresource "json-xml-sample.txt")
+        freqs (transform-lines input xml-and-json-parser :joinfx keypath-frequencies :initv {})
+        shaped (shape-sort (transform-lines input xml-and-json-parser :joinfx (partial keypath-value-patterns simple_patterns) :initv {}))]
+
+    (is (= freqs {"A.E.F.@f" 1, "b.d.e" 1, "A.@a" 1, "A.E.F" 1, "b.d" 2, "b.c" 3, "a" 4, "b.d.f" 1, "A.@ax" 1, "A.B.C" 1, "A.D" 1, "b" 1, "A.B.C.@c" 1, "c" 1}))
+    (is (= shaped {"b.c" {:int 4, :financial 3}, "b.d.e" {:int 4}, "b.d" {:int 3, :decimal 1}, "a" {:int 4}, "c" {:int 3}, "A.E.F.@f" {:int 2}, "A.B.C.@c" {:int 2}, "A.B.C" {:text 2}, "b.d.f" {:boolean 1}, "b" {:decimal 1}, "A.E.F" {:text 1}, "A.D" {:text 1}, "A.@ax" {:int 1}, "A.@a" {:int 1}}))
     ))
