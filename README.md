@@ -50,6 +50,10 @@ into
 #user.Structure{:time "05042013-13:24:13.005", :action "Search", :name "ZOO", :quantity "25", :unit_price "13.99"}
 ```
 
+### Covid19 Example
+
+ * [Covid 19](COVID19.md)
+
 <a name="core-transformations"/></a>
 ## Core Transformation Functions
 Load data structures into memory and analyze or build result sets with predicates.
@@ -379,6 +383,25 @@ parser hierarchy for any of the data structures that require flattening.
 Potentially useful functions to help filter and sort data. The resulting function will execute 
 predicates from left to right. These are helpful for counting or collecting data that satisfy 
 predicates.
+
+### Sorting Maps by value
+
+**simple**
+```clojure
+(def simple {:a 1 :b 2 :c 3})
+(sort-map-by-value simple)
+
+{:c 3 :b 2 :a 1}
+```
+
+**complex**
+```clojure
+(def complex {"il" {:a {:c 45.2 :d 23.2 :g "x"} :b "foo"} "ny" {:a {:c 32.5 :d 33 :g "y"} :b "bar"} "mi" {:a {:c 12.5 :d 50.3 :g "z"} :b "zoo"}})
+(sort-map-by-value complex :ksubpath [:a] :ksubset [:c :d] :datafx #(apply + %) :descending false)
+
+;; The totals of (+ :c :d) for the nested-map from lowest to highest (62.8 65.5 68.4)
+{mi {:a {:c 12.5, :d 50.3, :g x}, :b zoo}, ny {:a {:c 32.5, :d 33, :g y}, :b bar}, il {:a {:c 45.2, :d 23.2, :g x}, :b foo}}
+```
 
 ### Dictionary value frequencies
 ```clojure

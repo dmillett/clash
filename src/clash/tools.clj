@@ -11,6 +11,7 @@
       :doc "Some potentially useful tools with command.clj or other."}
   clash.tools
   (:require [clojure.core.reducers :as r]
+            [clojure.spec.alpha :as cs]
             [clojure.string :as s])
   (:use [clojure.java.io :only (reader)])
   (:import java.text.SimpleDateFormat))
@@ -185,15 +186,41 @@
     (count (line-seq rdr))) )
 
 (defn sort-map-by-value
-  "Sort by values descending (works when there are non-unique values too)."
-  [m & {:keys [descending] :or {descending true}}]
-  (into (sorted-map-by
-          (fn [k1 k2]
-            (if descending
-              (compare [(get m k2) (str k2)] [(get m k1) (str k1)])
-              (compare [(get m k1) (str k1)] [(get m k2) (str k2)])
-              )))
-    m) )
+  "Sort a map by value(s) for a given subset and/or path. If sorting by values within
+  a nested map, then ':kset' is required.
+
+  (sort-map-by-value {:a 5 :b 3 :c 7})
+  {:c 7 :a 5 :b 3}
+
+  (sort-map-by-value {:a 5 :b 3 :c 7} :descending false)
+  {:b 3 :a 5 :c 7}
+
+  (sort-map-by-value {:a {:b 3 :c 5} :d {:b 5 :c 1}} :ksubset [:b])
+  {:d {:b 5 :c 1} :a {:b 3 :c 5}}
+
+  ;; Add the values from :b :c to drive the sort
+  (sort-map-by-value {:a {:b 3 :c 5} :d {:b 5 :c 1}} :ksubset [:b] :datafx #(apply + %))
+  {:a {:b 3 :c 5} :d {:b 5 :c 1}}
+
+  ;; Sort by specific keys for nested sub-map
+  (sort-map-by-value {:a {:b {:c 34.5 :d 21.3}} :e {:b {:c 21.8 :d 56}}} :ksubpath [:b] :subset [:c :d] :datafx #(apply + %))
+  {:e {:b {:c 21.8 :d 56}} :a {:b {:c 34.5 :d 21.3}})
+
+  "
+  ; datafx #(if (coll %) (apply str %) (str %)))
+  [m & {:keys [descending ksubpath ksubset datafx] :or {descending true ksubpath nil ksubset nil datafx #(identity %)}}]
+  (let [ksetfx (fn [k] (if ksubset (into [k] ksubset) [k]))
+        valsfx (fn [data k] (let [values (if (map? data) (into [] (vals (select-keys data (ksetfx k)))) data)] (datafx values)))
+        kpathfx (fn [k] (valsfx (if ksubpath (get-in m (into [k] ksubpath)) (get m k)) k))
+        kfx (fn [k] (apply str (ksetfx k)))]
+    (into
+      (sorted-map-by
+        (fn [k1 k2]
+          (if descending
+            (compare [(kpathfx k2) (kfx k2)] [(kpathfx k1) (kfx k1)])
+            (compare [(kpathfx k1) (kfx k1)] [(kpathfx k2) (kfx k2)])
+            ) ) )
+    m)))
 
 (defn sort-pivot-by-value
   "Sort a pivot result"
@@ -251,6 +278,8 @@
   ([] [])
   ([c1] (vec c1))
   ([c1 c2] (into c1 c2)))
+
+
 
 (defn collect-with
   "Build a collection/result set of data that satisfy the conditions defined in

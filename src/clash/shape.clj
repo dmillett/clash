@@ -208,9 +208,6 @@
     result
     data))
 
-;;
-; "a.b" {:int 21 :decimal 10}
-;
 (defn keypath-value-patterns
   "Use 'shape_patterns' to identify what values are associated with each keypath. For example:
 

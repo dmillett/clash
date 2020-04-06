@@ -9,7 +9,8 @@
 (ns clash.tools_test
   (:use [clash.tools]
         [clojure.test])
-  (:require [clojure.string :as s]))
+  (:require [clojure.string :as s]
+            [clojure.pprint :as pp]))
 
 (deftest test-formatf
   (is (= "2.00" (formatf 2 2)))
@@ -47,6 +48,7 @@
     ;(println "'" r3 "'")
     (is (= 2 r1))
     (is (= 3 r2))
+    (is (= 4 r3))
     ) )
 
 (deftest test-perfd
@@ -57,27 +59,64 @@
       3 r2
       ) ) )
 
+(def mdata1 {
+   "Georgia" {:total 25401, :percent_positive 23.49120113381363},
+   "Mississippi" {:total 6111, :percent_positive 22.22222222222222},
+   "North Dakota" {:total 5798, :percent_positive 2.983787512935495},
+   "Alaska" {:total 6016, :percent_positive 2.609707446808511},
+   "Hawaii" {:total 12278, :percent_positive 2.598143020035836},
+   "Indiana" {:total 17835, :percent_positive 19.271096159237448},
+   "Louisiana" {:total 53645, :percent_positive 19.19470593717961},
+   })
+
 (deftest test-sort-map-by-value
   (let [m1 {:a 1 :b 2 :c 3}
         m2 {:a 1 :b 2 :c 1 :d 3 :e 2}
         m3 {"a" 1 "b" 3 "c" 1}
+        m4 {"w" 10.32 "wyo" 1.25 "mich" 34.43223}
+        m5 {"il" {:a 21.5 :b 78.566} "ny" {:a 83.21 :b 19} "mi" {:a 43.123 :b 34.1}}
+        m6 {"il" {:a {:c 45.2 :d 23.2 :g "x"} :b "foo"} "ny" {:a {:c 32.5 :d 33 :g "y"} :b "bar"} "mi" {:a {:c 12.5 :d 50.3 :g "x"} :b "zoo"}}
         r1 (sort-map-by-value m1)
         r2 (sort-map-by-value m2)
-        r3 (sort-map-by-value m3)]
+        r3 (sort-map-by-value m3)
+        r4a (sort-map-by-value m4)
+        r4b (sort-map-by-value m4 :descending false)
+        r5a (sort-map-by-value m4)
+        r5b (sort-map-by-value m4 :descending false)
+        r6a (sort-map-by-value m4 :ksubset ["w" "wyo"])
+        r6b (sort-map-by-value m4 :ksubset ["wyo" "w"] :descending false)
+        r7a (sort-map-by-value m5 :ksubset [:a])
+        r7b (sort-map-by-value m5 :ksubset [:a :b] :datafx #(apply + %))
+        r8a (sort-map-by-value m6 :ksubpath [:a] :ksubset [:d])
+        r8b (sort-map-by-value m6 :ksubpath [:a] :ksubset [:c :d] :datafx #(apply + %) :descending false)
+        r9 (sort-map-by-value mdata1 :ksubset [:total])
+        r10 (sort-map-by-value mdata1 :ksubset [:percent_positive] :descending false)
+        ]
 
     (are [x y] (= x y)
-      3 (count r1)
       [:c 3] (first r1)
       [:a 1] (last r1)
-
-      5 (count r2)
       [:d 3] (first r2)
       [:a 1] (last r2)
-
-      3 (count r3)
       ["b" 3] (first r3)
       ["a" 1] (last r3)
-      ) ) )
+      ["mich" 34.43223] (first r4a)
+      ["wyo" 1.25] (last r4a)
+      ["mich" 34.43223] (last r4b)
+      ["wyo" 1.25] (first r4b)
+      ["mich" 34.43223] (first r5a)
+      ["mich" 34.43223] (last r5b)
+      ["mich" 34.43223] (first r6a)
+      ["mich" 34.43223] (last r6b)
+      ["ny" {:a 83.21, :b 19}] (first r7a)
+      ["mi" {:a 43.123, :b 34.1}] (last r7b)
+      ["mi" {:a {:c 12.5, :d 50.3 :g "x"}, :b "zoo"}] (first r8a)
+      ["il" {:a {:c 45.2, :d 23.2 :g "x"}, :b "foo"}] (last r8b)
+      ["Louisiana" {:total 53645, :percent_positive 19.19470593717961}] (first r9)
+      ["North Dakota" {:total 5798, :percent_positive 2.983787512935495}] (last r9)
+      ["Hawaii" {:total 12278, :percent_positive 2.598143020035836}] (first r10)
+      )
+    ) )
 
 (deftest test-compare-map-with
   (let [m1 {:a 1 :b 2 :c 3 "d" 4}
@@ -212,13 +251,14 @@
         result3 ((any? number? even?) 11)
         result4 ((all? number? even? (divisible-by? 5)) 10)
         result5 ((any? number? odd? even?) 16)
-        result5 ((all? number? (any? (divisible-by? 6) (divisible-by? 4))) 16)]
+        result6 ((all? number? (any? (divisible-by? 6) (divisible-by? 4))) 16)]
 
     (is result1)
     (is (not result2))
     (is result3)
     (is result4)
     (is result5)
+    (is result6)
     ) )
 
 (deftest test-none
