@@ -16,30 +16,16 @@
     (catch Exception e (println e))
     ) )
 
-(defn test-percent-positive
-  "A percentage for how many tests are positive?"
+(defn tests-issued
+  "Grab the total number of tests issued per state."
   [data]
   (try
     (when data
-      (let [total (read-string (:total data))]
-      {(:state data) (* 100.0 (/ (read-string (:positive data)) total))}
-      ) )
-    (catch Exception _)
-    ))
-
-(defn test-percent-uncertainty
-  "What patients have symptoms but test negative? What is causing their symptoms?
-  Are there test limitations (too early, too late) or quality issues?"
-  [data]
-  (try
-    (when data
-      (let [total (read-string (:total data))]
-        {(str (:state data) " (" total ")") (* 100.0 (/ (- total (read-string (:positive data))) total))}
-        ) )
+      {(:state data) (Integer/parseInt (:total data))})
      (catch Exception _)
-     ))
+     ) )
 
-(defn test-percent-positive*
+(defn test-percent-positive
   "A percentage for how many tests are positive?"
   [data]
   (try
@@ -50,7 +36,7 @@
     (catch Exception _)
     ))
 
-(defn test-percent-uncertainty*
+(defn test-percent-uncertainty
   "What patients have symptoms but test negative? What is causing their symptoms?
   Are there test limitations (too early, too late) or quality issues?"
   [data]
