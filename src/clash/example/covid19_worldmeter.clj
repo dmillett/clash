@@ -65,9 +65,11 @@
 
 (defn wm-percentage
   "The percentage of the population for a specific event."
-  [population event_count]
+  [population event_count & {:keys [percent] :or {percent true}}]
   (when (and population event_count)
-    (* 100.0 (/ event_count population))))
+    (if percent
+      (* 100.0 (/ event_count population))
+      (float (/ event_count population)))))
 
 (def maxkeys [:total_pos :deaths :cases_million :deaths_million :test_count :tests_million])
 
@@ -104,29 +106,41 @@
   [data maximums]
   (reduce-kv
     (fn [r _ v]
-      (let [tpop (wm-population (:test_count v) (:tests_million v))
-            testp (wm-percentage tpop (:test_count v))
-            testpp (wm-percentage tpop (:total_pos v))
-            testunk (wm-percentage tpop (- (:test_count v) (:total_pos v)))
-            deathp (wm-percentage tpop (:deaths v))
-            deathtestp (wm-percentage (:test_count v) (:deaths v))
-            deathtestpp (wm-percentage (:total_pos v) (:deaths v))
-            test_rmax (wm-percentage (:test_count maximums) (:test_count v))
-            testp_rmax (wm-percentage (:total_pos maximums) (:total_pos v))
-            testmillion_rmax (wm-percentage (:tests_million maximums) (:tests_million v))
-            testpmillion_rmax (wm-percentage (:cases_million maximums) (:cases_million v))
-            death_rmax (wm-percentage (:deaths maximums) (:deaths v))
-            deathmillion_rmax (wm-percentage (:deaths_million maximums) (:deaths_million v))
+      (let [population (wm-population (:test_count v) (:tests_million v))
+            testcount (wm-percentage population (:test_count v))
+            testpopulationpositive (wm-percentage population (:total_pos v))
+            testpositive (wm-percentage (:test_count v) (:total_pos v))
+            testunknown (wm-percentage (:test_count v) (- (:test_count v) (:total_pos v)))
+            testpopulationunknown (wm-percentage population (- (:test_count v) (:total_pos v)))
+            deathpopulation (wm-percentage population (:deaths v))
+            deathtestpopulation (wm-percentage (:test_count v) (:deaths v))
+            deathpositivepopulation (wm-percentage (:total_pos v) (:deaths v))
+            test_rmax (wm-percentage (:test_count maximums) (:test_count v) :percent false)
+            testp_rmax (wm-percentage (:total_pos maximums) (:total_pos v) :percent false)
+            testmillion_rmax (wm-percentage (:tests_million maximums) (:tests_million v) :percent false)
+            testpmillion_rmax (wm-percentage (:cases_million maximums) (:cases_million v) :percent false)
+            death_rmax (wm-percentage (:deaths maximums) (:deaths v) :percent false)
+            deathmillion_rmax (wm-percentage (:deaths_million maximums) (:deaths_million v) :percent false)
             ]
 
-        (assoc r (:state v) {:population tpop :tests (:test_count v) :positives (:total_pos v)
-                             :deaths (:deaths v) :test_percent testp :test_positive_percent testpp
-                             :test_unknown testunk :death_percent deathp :death_test_percent deathtestp
-                             :death_test_positive_percent deathtestpp
-                             :tests_relative_max test_rmax :tests_positive_relative_max testp_rmax
-                             :tests_million_relative_max testmillion_rmax
-                             :tests_positive_million_relative_max testpmillion_rmax :deaths_relative_max death_rmax
-                             :deaths_million_relative_max deathmillion_rmax})
+        (assoc r (:state v) {:population population
+                             :test_count (:test_count v)
+                             :positive (:total_pos v)
+                             :test_positive_percent testpositive
+                             :test_unknowns_percent testunknown
+                             :death_count (:deaths v)
+                             :death_test_percent deathtestpopulation
+                             :death_test_positive_percent deathpositivepopulation
+                             :test_unknown_population_percent testpopulationunknown
+                             :death_population_percent deathpopulation
+                             :test_population_percent testcount
+                             :test_positive_population_percent testpopulationpositive
+                             :test_ratio_relative_max test_rmax
+                             :test_positive_ratio_relative_max testp_rmax
+                             :test_million_ratio_relative_max testmillion_rmax
+                             :test_positive_million_ratio_relative_max testpmillion_rmax
+                             :death_ratio_relative_max death_rmax
+                             :death_million_ratio_relative_max deathmillion_rmax})
         ))
     {}
     data))
