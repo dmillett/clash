@@ -21,8 +21,10 @@ include directly, but posted sample output.
 ### Worldmeter
 
 Copy and paste table view into CSV
-https://www.worldometers.info/coronavirus/country/us/
+ [Worldmeter Coronavirus Data](https://www.worldometers.info/coronavirus/country/us/)
 
+See **clash.example.covid19_worldmeter.clj**
+ 
 ```clojure
 ;; Original data as copy and pasted from worldmeter UI table
 (def input "/media/dave/storage/dev/clash/test/resources/corona19-worldmeter-20200406.original")
