@@ -117,10 +117,10 @@
             deathpositivepopulation (wm-percentage (:total_pos v) (:deaths v))
             test_rmax (wm-percentage (:test_count maximums) (:test_count v) :percent false)
             testp_rmax (wm-percentage (:total_pos maximums) (:total_pos v) :percent false)
-            testmillion_rmax (wm-percentage (:tests_million maximums) (:tests_million v) :percent false)
-            testpmillion_rmax (wm-percentage (:cases_million maximums) (:cases_million v) :percent false)
             death_rmax (wm-percentage (:deaths maximums) (:deaths v) :percent false)
-            deathmillion_rmax (wm-percentage (:deaths_million maximums) (:deaths_million v) :percent false)
+            ;testmillion_rmax (wm-percentage (:tests_million maximums) (:tests_million v) :percent false)
+            ;testpmillion_rmax (wm-percentage (:cases_million maximums) (:cases_million v) :percent false)
+            ;deathmillion_rmax (wm-percentage (:deaths_million maximums) (:deaths_million v) :percent false)
             ]
 
         (assoc r (:state v) {:population population
@@ -137,10 +137,15 @@
                              :test_positive_population_percent testpopulationpositive
                              :test_ratio_relative_max test_rmax
                              :test_positive_ratio_relative_max testp_rmax
-                             :test_million_ratio_relative_max testmillion_rmax
-                             :test_positive_million_ratio_relative_max testpmillion_rmax
                              :death_ratio_relative_max death_rmax
-                             :death_million_ratio_relative_max deathmillion_rmax})
+                             ;:test_million_ratio_relative_max testmillion_rmax
+                             ;:test_positive_million_ratio_relative_max testpmillion_rmax
+                             ;:death_million_ratio_relative_max deathmillion_rmax}
+                             )
         ))
     {}
     data))
+
+;; Sort by relative maximums
+(def relative_to_max [:test_ratio_relative_max :test_positive_ratio_relative_max :death_ratio_relative_max])
+
