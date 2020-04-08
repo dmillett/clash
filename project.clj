@@ -25,7 +25,8 @@
                          (use 'clash.command)
                          (use 'clash.example.web_shop_example)
                          (use 'clash.example.web_shop_example_test)
-                         (use 'clash.example.covid19)
+                         (use 'clash.example.covid19_miamiherald)
+                         (use 'clash.example.covid19_worldmeter)
                          (defn load-local-resource
                            [logfile]
                            (str (System/getProperty "user.dir") logfile))

@@ -11,7 +11,287 @@ the number of tests and positive results is helpful. Most sites just include the
 However, in new viral pandemics, this still leaves a lot of uncertainty about viral spread, test limitations and health
 for the population.
 
+There are more data resources from **Johns Hopkins** and **Tableau**, but finding CSVs that include more test data
+than "active", "recovered", "fatal", location is required. I grabbed a sample data from the Miami Herald that I did not
+include directly, but posted sample output.
+
+ [Illinois](https://dph.illinois.gov/covid19)
+ [Virginia](http://www.vdh.virginia.gov/coronavirus/)
+
+### Worldmeter
+
+Copy and paste table view into CSV
+https://www.worldometers.info/coronavirus/country/us/
+
+```clojure
+;; Original data as copy and pasted from worldmeter UI table
+(def input "/media/dave/storage/dev/clash/test/resources/corona19-worldmeter-20200406.original")
+
+;; Clean and import the data into a structure
+(defrecord CovidData [state total_pos new_cases deaths new_deaths active cases_million deaths_million
+                      test_count tests_million sources])
+
+(def covid (transform-lines input wm-parser))
+
+(first covid)
+#clash.example.covid19_worldmeter.CovidData{:state "New York", :total_pos 131916, :new_cases 8898, :deaths 4758, 
+:new_deaths 599, :active 113792, :cases_million 6724, :deaths_million 243, :test_count 320811, :tests_million 16353, 
+:sources "[1] [2] [3] [4] [5] [6] [7] [8]"}
+```
+**Calculate some percentages**
+```clojure
+;; Find maximum values for these keys
+(def maxkeys [:total_pos :deaths :cases_million :deaths_million :test_count :tests_million])
+(def maximums (wm-maximums covid maxkeys))
+(def population-percentages (wm-calculate-percentages covid maximums))
+
+;; Percentages across the entire population
+(pprint (get population-percentages "New York"))
+{:positives 131916,
+ :tests_positive_million_relative_max 100.0,
+ :tests_positive_relative_max 100.0,
+ :test_positive_percent 0.6724278091788567,
+ :tests 320811,
+ :death_relative_max 100.0,
+ :deaths 4758,
+ :test_percent 1.635300023427622,
+ :test_unknown 0.9628722142487655,
+ :death_test_positive_percent 3.606840716819794,
+ :population 19617868,
+ :tests_relative_max 100.0,
+ :deaths_million_relative_max 100.0,
+ :tests_million_relative_max 100.0,
+ :death_test_percent 1.483116227311408,
+ :death_percent 0.02425340001268232}
+
+(pprint (get population-percentages "Michigan"))
+{:positives 17221,
+ :tests_positive_million_relative_max 25.713860797144562,
+ :tests_positive_relative_max 13.054519542739321,
+ :test_positive_percent 0.1729327551569028,
+ :tests 45748,
+ :death_relative_max 15.27952921395544,
+ :deaths 727,
+ :test_percent 0.4594000164286619,
+ :test_unknown 0.2864672612717592,
+ :death_test_positive_percent 4.221589919284594,
+ :population 9958206,
+ :tests_relative_max 14.260109534897488,
+ :deaths_million_relative_max 30.04115226337449,
+ :tests_million_relative_max 28.09270470250107,
+ :death_test_percent 1.5891405088747048,
+ :death_percent 0.007300511758844916}
+
+(pprint (get population-percentages "Florida"))
+{:positives 13629,
+ :tests_positive_million_relative_max 9.845330160618678,
+ :tests_positive_relative_max 10.33157463840626,
+ :test_positive_percent 0.06616197990586542,
+ :tests 126048,
+ :death_relative_max 5.338377469525011,
+ :deaths 254,
+ :test_percent 0.611900010505138,
+ :test_unknown 0.5457380305992725,
+ :death_test_positive_percent 1.8636730501137282,
+ :population 20599444,
+ :tests_relative_max 39.2904233333645,
+ :deaths_million_relative_max 4.938271604938272,
+ :tests_million_relative_max 37.4182107258607,
+ :death_test_percent 0.2015105356689515,
+ :death_percent 0.001233042988927274}
+```
+
+```clojure
+(defn +values [values] (apply + (filter identity values)))
+(defn *values [values] (apply * (filter identity values)))
+
+;; Sort by relative maximums
+(def relative_to_max [:tests_relative_max :tests_positive_relative_max :tests_million_relative_max 
+                      :tests_positive_million_relative_max :deaths_relative_max :deaths_million_relative_max])
+(def sorted_relative1 (sort-map-by-value population-percentages :ksubset relative_to_max :datafx +values))
+
+;; Sort by test/death percentages
+(def severity1 [:test_percent :test_positive_percent :death_test_percent :death_percent])
+(def sorted1 (sort-map-by-value population-percentages :ksubset sort1 :datafx +values))
+
+(["New York"
+  {:positives 131916,
+   :tests_positive_million_relative_max 100.0,
+   :tests_positive_relative_max 100.0,
+   :test_positive_percent 0.6724278091788567,
+   :tests 320811,
+   :deaths 4758,
+   :test_percent 1.635300023427622,
+   :test_unknown 0.9628722142487655,
+   :deaths_relative_max 100.0,
+   :death_test_positive_percent 3.606840716819794,
+   :population 19617868,
+   :tests_relative_max 100.0,
+   :deaths_million_relative_max 100.0,
+   :tests_million_relative_max 100.0,
+   :death_test_percent 1.483116227311408,
+   :death_percent 0.02425340001268232}]
+ ["New Jersey"
+  {:positives 41090,
+   :tests_positive_million_relative_max 68.79833432480666,
+   :tests_positive_relative_max 31.148609721337824,
+   :test_positive_percent 0.46262712535168504,
+   :tests 89032,
+   :deaths 1003,
+   :test_percent 1.002400054132665,
+   :test_unknown 0.5397729287809804,
+   :deaths_relative_max 21.0802858343842,
+   :death_test_positive_percent 2.4409832075930877,
+   :population 8881883,
+   :tests_relative_max 27.75216560529408,
+   :deaths_million_relative_max 46.502057613168716,
+   :tests_million_relative_max 61.297621231578304,
+   :death_test_percent 1.126561236409381,
+   :death_percent 0.01129265044360526}]
+ ["Louisiana"
+  {:positives 14867,
+   :tests_positive_million_relative_max 47.41225461035098,
+   :tests_positive_relative_max 11.270050638284971,
+   :test_positive_percent 0.3187873771606116,
+   :tests 69166,
+   :deaths 512,
+   :test_percent 1.483100001929835,
+   :test_unknown 1.164312624769224,
+   :deaths_relative_max 10.76082387557797,
+   :death_test_positive_percent 3.443868971547723,
+   :population 4663610,
+   :tests_relative_max 21.55973454775553,
+   :deaths_million_relative_max 45.26748971193416,
+   :tests_million_relative_max 90.69283923439124,
+   :death_test_percent 0.7402480987768557,
+   :death_percent 0.010978619567245121}]
+ ["Washington"
+  {:positives 8326,
+   :tests_positive_million_relative_max 16.969066032123738,
+   :tests_positive_relative_max 6.311592225355529,
+   :test_positive_percent 0.1141447969110987,
+   :tests 91375,
+   :deaths 381,
+   :test_percent 1.252700074195489,
+   :test_unknown 1.13855527728439,
+   :deaths_relative_max 8.007566204287516,
+   :death_test_positive_percent 4.576026903675234,
+   :population 7294244,
+   :tests_relative_max 28.48250215859182,
+   :deaths_million_relative_max 21.39917695473251,
+   :tests_million_relative_max 76.60368128172202,
+   :death_test_percent 0.4169630642954856,
+   :death_percent 0.005223296615797333}]
+ ["Massachusetts"
+  {:positives 13837,
+   :tests_positive_million_relative_max 30.1308744794765,
+   :tests_positive_relative_max 10.48925073531641,
+   :test_positive_percent 0.2025880673183296,
+   :tests 76429,
+   :deaths 260,
+   :test_percent 1.1190000286964379,
+   :test_unknown 0.9164119613781083,
+   :deaths_relative_max 5.46448087431694,
+   :death_test_positive_percent 1.8790200187902,
+   :population 6830116,
+   :tests_relative_max 23.82368434997553,
+   :deaths_million_relative_max 15.637860082304531,
+   :tests_million_relative_max 68.42781141075032,
+   :death_test_percent 0.3401850083083646,
+   :death_percent 0.00380667034059158}]
+ ["Michigan"
+  {:positives 17221,
+   :tests_positive_million_relative_max 25.713860797144562,
+   :tests_positive_relative_max 13.054519542739321,
+   :test_positive_percent 0.1729327551569028,
+   :tests 45748,
+   :deaths 727,
+   :test_percent 0.4594000164286619,
+   :test_unknown 0.2864672612717592,
+   :deaths_relative_max 15.27952921395544,
+   :death_test_positive_percent 4.221589919284594,
+   :population 9958206,
+   :tests_relative_max 14.260109534897488,
+   :deaths_million_relative_max 30.04115226337449,
+   :tests_million_relative_max 28.09270470250107,
+   :death_test_percent 1.5891405088747048,
+   :death_percent 0.007300511758844916}]
+ ["Connecticut"
+  {:positives 6906,
+   :tests_positive_million_relative_max 28.673408685306367,
+   :tests_positive_relative_max 5.235149640680433,
+   :test_positive_percent 0.1928225128241211,
+   :tests 26686,
+   :deaths 206,
+   :test_percent 0.7451001415036916,
+   :test_unknown 0.5522776286795706,
+   :deaths_relative_max 4.329550231189575,
+   :death_test_positive_percent 2.982913408630177,
+   :population 3581532,
+   :tests_relative_max 8.318293325353556,
+   :deaths_million_relative_max 23.86831275720165,
+   :tests_million_relative_max 45.5635051672476,
+   :death_test_percent 0.7719403432511429,
+   :death_percent 0.005751728589888349}]
+ ["District Of Columbia"
+  {:positives 1097,
+   :tests_positive_million_relative_max 23.839976204640102,
+   :tests_positive_relative_max 0.8315897995694229,
+   :test_positive_percent 0.1602594537738399,
+   :tests 7453,
+   :deaths 24,
+   :test_percent 1.088800099340409,
+   :test_unknown 0.928540645566569,
+   :deaths_relative_max 0.5044136191677175,
+   :death_test_positive_percent 2.187784867821331,
+   :population 684515,
+   :tests_relative_max 2.323174704109273,
+   :deaths_million_relative_max 14.40329218106996,
+   :tests_million_relative_max 66.58105546382927,
+   :death_test_percent 0.32201797933717974,
+   :death_percent 0.00350613207891719}]
+ ["Florida"
+  {:positives 13629,
+   :tests_positive_million_relative_max 9.845330160618678,
+   :tests_positive_relative_max 10.33157463840626,
+   :test_positive_percent 0.06616197990586542,
+   :tests 126048,
+   :deaths 254,
+   :test_percent 0.611900010505138,
+   :test_unknown 0.5457380305992725,
+   :deaths_relative_max 5.338377469525011,
+   :death_test_positive_percent 1.8636730501137282,
+   :population 20599444,
+   :tests_relative_max 39.2904233333645,
+   :deaths_million_relative_max 4.938271604938272,
+   :tests_million_relative_max 37.4182107258607,
+   :death_test_percent 0.2015105356689515,
+   :death_percent 0.001233042988927274}]
+ ["Pennsylvania"
+  {:positives 13127,
+   :tests_positive_million_relative_max 15.2587745389649,
+   :tests_positive_relative_max 9.951029442978864,
+   :test_positive_percent 0.1026315007638529,
+   :tests 83854,
+   :deaths 179,
+   :test_percent 0.6556000506629179,
+   :test_unknown 0.5529685498990651,
+   :deaths_relative_max 3.762084909625893,
+   :death_test_positive_percent 1.3636017368781899,
+   :population 12790420,
+   :tests_relative_max 26.13813117380638,
+   :deaths_million_relative_max 5.761316872427984,
+   :tests_million_relative_max 40.090503271570974,
+   :death_test_percent 0.21346626279008749,
+   :death_percent 0.001399484927000052}])
+```
+
+
 ### Miami Herald (courtesy of a download link on their site last week)
+
+I cannot find the original link, but this file is from Florida Department of Health:
+https://www.miamiherald.com/news/coronavirus/article241410296.html?intcid=pushly_498044
+
 
 ```clojure
 ;; From Miami Herald CSV data (thanks to them)
