@@ -12,19 +12,328 @@ However, in new viral pandemics, this still leaves a lot of uncertainty about vi
 for the population.
 
 There are more data resources from **Johns Hopkins** and **Tableau**, but finding CSVs that include more test data
-than "active", "recovered", "fatal", location is required. I grabbed a sample data from the Miami Herald that I did not
-include directly, but posted sample output.
+than "active", "recovered", "fatal", location takes more effort. Lately, the compiled data from **Worldmeter** is
+copy and pasted locally, before getting cleaned and parsed for use.
+
+Initially, I grabbed a sample data from the Miami Herald that I did not include directly, but posted sample output.
 
  [Illinois](https://dph.illinois.gov/covid19)
  [Virginia](http://www.vdh.virginia.gov/coronavirus/)
-
+ [Worldmeter Coronavirus Data](https://www.worldometers.info/coronavirus/country/us/)
+ [Worldmeter Daily Reports](#wm-daily-reports)
+ * [Parsing CSV Data](#wm-parsing-data)
+ * [Percentages & Ratios]("#wm-percentages-and-ratios")
+ * [Sort Criteria](#wm-sort-criteria)
+ * [Test Imbalances](#wm-test-imbalance")
+ 
 ### Worldmeter
 
-Copy and paste table view into CSV
- [Worldmeter Coronavirus Data](https://www.worldometers.info/coronavirus/country/us/)
-
-See **clash.example.covid19_worldmeter.clj**
+Copy and paste table view into CSV. See **clash.example.covid19_worldmeter.clj**
  
+#### Daily Reports
+
+To help establish trends for some of these metrics, use **(wm-daily-workflow)** and **(wm-daily-sorts**. 
+
+* *Since I had to calculate the percentage based on the death count per million and death counts are increasing, the population
+shows an increase as well. Population is used consistently within a given day.*
+
+<a name="wm-daily-reports"/></a>
+```clojure
+;; Get the percentage data for all files in a directory (days)
+(def daily-data (wm-daily-workflow "/media/dave/storage/dev/clash/test/resources/worldmeter" maxkeys))
+(keys daily-data)
+("us_20200408" "us_20200407" "us_20200406")
+
+(def daily_reports (wm-daily-sorts daily_data))
+(keys daily_reports)
+(:daily_tests_deaths :daily_relatives :combined :combined_tests_deaths :combined_relatives)
+
+(pr-percentages (take 5 (:combined_relatives daily_reports)) :focus relative_pr_focus)
+(
+New York:
+ :population:[19617868 19617976 19618170],
+**:death_count:[4758 5489 6268],
+ :death_population_percent:[0.02425340001268232 0.0279794408964513 0.031949972907768666],
+ :death_test_percent:[1.483116227311408 1.614136412023831 1.716540737718162],
+ :death_test_positive_percent:[3.606840716819794 3.8550679851668734 4.146297901052451],
+**:death_ratio_relative_max:[1.0 1.0 1.0],
+**:test_count:[320811 340058 365153],
+ :test_positive_count:[131916 142384 151171],
+ :test_positive_percent:[41.11953767171325 41.87050444335966 41.39935862501472],
+ :test_unknowns_percent:[58.880462328286754 58.12949555664034 58.60064137498529],
+ :test_population_percent:[1.635300023427622 1.733400020471021 1.861300009124195],
+ :test_positive_population_percent:[0.6724278091788567 0.7257833325925162 0.770566265864757],
+ :test_unknown_population_percent:[0.9628722142487655 1.007616687878505 1.090733743259438],
+**:test_ratio_relative_max:[1.0 1.0 1.0],
+**:test_positive_ratio_relative_max:[1.0 1.0 1.0],
+ 
+New Jersey:
+ :population:[8881883 8881885 8881550],
+**:death_count:[1003 1232 1504],
+ :death_population_percent:[0.01129265044360526 0.01387092942545417 0.01693398111816068],
+ :death_test_percent:[1.126561236409381 1.2971971276349321 1.499112891972171],
+ :death_test_positive_percent:[2.4409832075930877 2.773775216138329 3.170520901406075],
+**:death_ratio_relative_max:[0.21080285 0.2244489 0.23994894],
+**:test_count:[89032 94974 100326],
+ :test_positive_count:[41090 44416 47437],
+ :test_positive_percent:[46.151945367957595 46.76648345863078 47.28285788330044],
+ :test_unknowns_percent:[53.848054632042405 53.23351654136922 52.717142116699556],
+ :test_population_percent:[1.002400054132665 1.069300041601529 1.129600126104115],
+ :test_positive_population_percent:[0.46262712535168504 0.5000740270787113 0.5341072222753911],
+ :test_unknown_population_percent:[0.5397729287809804 0.5692260145228181 0.5954929038287236],
+**:test_ratio_relative_max:[0.27752167 0.27928764 0.2747506],
+**:test_positive_ratio_relative_max:[0.3114861 0.31194517 0.31379697],
+ 
+California:
+ :population:[39144440 39150558 39150558],
+**:death_count:[380 447 498],
+ :death_population_percent:[9.707636640094992E-4 0.0011417461789433498 0.001272012521507356],
+ :death_test_percent:[0.32608788926741783 0.3108484005563282 0.3463143254520167],
+ :death_test_positive_percent:[2.3721830326487297 2.548896618577864 2.644715878916622],
+**:death_ratio_relative_max:[0.07986549 0.0814356 0.07945118],
+**:test_count:[116533 143800 143800],
+ :test_positive_count:[16019 17537 18830],
+ :test_positive_percent:[13.746320784670441 12.19541029207232 13.094575799721838],
+ :test_unknowns_percent:[86.25367921532956 87.80458970792768 86.90542420027816],
+ :test_population_percent:[0.2977000054158394 0.3673000011902768 0.3673000011902768],
+ :test_positive_population_percent:[0.04092279772044255 0.044793742147940775 0.04809637706824],
+ :test_unknown_population_percent:[0.2567772076953968 0.322506259042336 0.3192036241220368],
+**:test_ratio_relative_max:[0.36324504 0.42286903 0.39380753],
+**:test_positive_ratio_relative_max:[0.12143334 0.123166926 0.12456093],
+ 
+Michigan:
+ :population:[9958206 9956874 9956874],
+**:death_count:[727 845 959],
+ :death_population_percent:[0.007300511758844916 0.008486599308176442 0.009631536966320957],
+ :death_test_percent:[1.5891405088747048 1.6788524199316541 1.905348486052611],
+ :death_test_positive_percent:[4.221589919284594 4.454401686874012 4.713457190602575],
+**:death_ratio_relative_max:[0.15279528 0.15394425 0.15299936],
+**:test_count:[45748 50332 50332],
+ :test_positive_count:[17221 18970 20346],
+ :test_positive_percent:[37.64317565795226 37.68974012556624 40.42358737979814],
+ :test_unknowns_percent:[62.356824342047744 62.31025987443376 59.57641262020186],
+ :test_population_percent:[0.4594000164286619 0.5055000193835937 0.5055000193835937],
+ :test_positive_population_percent:[0.1729327551569028 0.19052164364036342 0.2043412420404235],
+ :test_unknown_population_percent:[0.2864672612717592 0.3149783757432303 0.3011587773431702],
+**:test_ratio_relative_max:[0.1426011 0.14801005 0.13783811],
+**:test_positive_ratio_relative_max:[0.1305452 0.13323127 0.1345893],
+ 
+Louisiana:
+ :population:[4663610 4663605 4663496],
+**:death_count:[512 582 652],
+ :death_population_percent:[0.010978619567245121 0.012479616090985409 0.01398092761310399],
+ :death_test_percent:[0.7402480987768557 0.7795860960417922 0.8009237648330589],
+ :death_test_positive_percent:[3.443868971547723 3.574060427413412 3.8285378743394007],
+**:death_ratio_relative_max:[0.10760824 0.10603024 0.104020424],
+**:test_count:[69166 74655 81406],
+ :test_positive_count:[14867 16284 17030],
+ :test_positive_percent:[21.49466500881936 21.81233674904561 20.91983391887576],
+ :test_unknowns_percent:[78.50533499118065 78.18766325095439 79.08016608112423],
+ :test_population_percent:[1.483100001929835 1.600800239299855 1.745600296429974],
+ :test_positive_population_percent:[0.3187873771606116 0.3491719388756123 0.3651766829005536],
+ :test_unknown_population_percent:[1.164312624769224 1.251628300424243 1.380423613529421],
+**:test_ratio_relative_max:[0.21559735 0.21953608 0.22293669],
+**:test_positive_ratio_relative_max:[0.11270051 0.114366785 0.11265388],
+)
+``` 
+
+Looking at a sort by death and test percentages yields a similar story.
+
+```clojure
+(pr-percentages (take 5 (:combined_tests_deaths daily_reports)) :focus death_test_percents)
+
+(
+New York:
+ :population:[19617868 19617976 19618170],
+ :death_count:[4758 5489 6268],
+ :death_population_percent:[0.02425340001268232 0.0279794408964513 0.031949972907768666],
+**:death_test_percent:[1.483116227311408 1.614136412023831 1.716540737718162],
+ :death_test_positive_percent:[3.606840716819794 3.8550679851668734 4.146297901052451],
+ :death_ratio_relative_max:[1.0 1.0 1.0],
+ :test_count:[320811 340058 365153],
+ :test_positive_count:[131916 142384 151171],
+**:test_positive_percent:[41.11953767171325 41.87050444335966 41.39935862501472],
+**:test_unknowns_percent:[58.880462328286754 58.12949555664034 58.60064137498529],
+**:test_population_percent:[1.635300023427622 1.733400020471021 1.861300009124195],
+ :test_positive_population_percent:[0.6724278091788567 0.7257833325925162 0.770566265864757],
+ :test_unknown_population_percent:[0.9628722142487655 1.007616687878505 1.090733743259438],
+ :test_ratio_relative_max:[1.0 1.0 1.0],
+ :test_positive_ratio_relative_max:[1.0 1.0 1.0],
+ 
+Northern Mariana Islands:
+ :population:[nil nil nil],
+ :death_count:[1 2 2],
+ :death_population_percent:[nil nil nil],
+**:death_test_percent:[3.03030303030303 6.0606060606060606 4.444444444444444],
+ :death_test_positive_percent:[12.5 25.0 18.18181818181818],
+ :death_ratio_relative_max:[2.1017234E-4 3.6436509E-4 3.1908104E-4],
+ :test_count:[33 33 45],
+ :test_positive_count:[8 8 11],
+**:test_positive_percent:[24.24242424242424 24.24242424242424 24.44444444444444],
+**:test_unknowns_percent:[75.75757575757575 75.75757575757575 75.55555555555557],
+**:test_population_percent:[nil nil nil],
+ :test_positive_population_percent:[nil nil nil],
+ :test_unknown_population_percent:[nil nil nil],
+ :test_ratio_relative_max:[1.028643E-4 9.704227E-5 1.2323601E-4],
+ :test_positive_ratio_relative_max:[6.0644652E-5 5.6186087E-5 7.276528E-5],
+ 
+Louisiana:
+ :population:[4663610 4663605 4663496],
+ :death_count:[512 582 652],
+ :death_population_percent:[0.010978619567245121 0.012479616090985409 0.01398092761310399],
+**:death_test_percent:[0.7402480987768557 0.7795860960417922 0.8009237648330589],
+ :death_test_positive_percent:[3.443868971547723 3.574060427413412 3.8285378743394007],
+ :death_ratio_relative_max:[0.10760824 0.10603024 0.104020424],
+ :test_count:[69166 74655 81406],
+ :test_positive_count:[14867 16284 17030],
+**:test_positive_percent:[21.49466500881936 21.81233674904561 20.91983391887576],
+**:test_unknowns_percent:[78.50533499118065 78.18766325095439 79.08016608112423],
+**:test_population_percent:[1.483100001929835 1.600800239299855 1.745600296429974],
+ :test_positive_population_percent:[0.3187873771606116 0.3491719388756123 0.3651766829005536],
+ :test_unknown_population_percent:[1.164312624769224 1.251628300424243 1.380423613529421],
+ :test_ratio_relative_max:[0.21559735 0.21953608 0.22293669],
+ :test_positive_ratio_relative_max:[0.11270051 0.114366785 0.11265388],
+ 
+New Jersey:
+ :population:[8881883 8881885 8881550],
+ :death_count:[1003 1232 1504],
+ :death_population_percent:[0.01129265044360526 0.01387092942545417 0.01693398111816068],
+**:death_test_percent:[1.126561236409381 1.2971971276349321 1.499112891972171],
+ :death_test_positive_percent:[2.4409832075930877 2.773775216138329 3.170520901406075],
+ :death_ratio_relative_max:[0.21080285 0.2244489 0.23994894],
+ :test_count:[89032 94974 100326],
+ :test_positive_count:[41090 44416 47437],
+**:test_positive_percent:[46.151945367957595 46.76648345863078 47.28285788330044],
+**:test_unknowns_percent:[53.848054632042405 53.23351654136922 52.717142116699556],
+**:test_population_percent:[1.002400054132665 1.069300041601529 1.129600126104115],
+ :test_positive_population_percent:[0.46262712535168504 0.5000740270787113 0.5341072222753911],
+ :test_unknown_population_percent:[0.5397729287809804 0.5692260145228181 0.5954929038287236],
+ :test_ratio_relative_max:[0.27752167 0.27928764 0.2747506],
+ :test_positive_ratio_relative_max:[0.3114861 0.31194517 0.31379697],
+ 
+Michigan:
+ :population:[9958206 9956874 9956874],
+ :death_count:[727 845 959],
+ :death_population_percent:[0.007300511758844916 0.008486599308176442 0.009631536966320957],
+**:death_test_percent:[1.5891405088747048 1.6788524199316541 1.905348486052611],
+ :death_test_positive_percent:[4.221589919284594 4.454401686874012 4.713457190602575],
+ :death_ratio_relative_max:[0.15279528 0.15394425 0.15299936],
+ :test_count:[45748 50332 50332],
+ :test_positive_count:[17221 18970 20346],
+**:test_positive_percent:[37.64317565795226 37.68974012556624 40.42358737979814],
+**:test_unknowns_percent:[62.356824342047744 62.31025987443376 59.57641262020186],
+**:test_population_percent:[0.4594000164286619 0.5055000193835937 0.5055000193835937],
+ :test_positive_population_percent:[0.1729327551569028 0.19052164364036342 0.2043412420404235],
+ :test_unknown_population_percent:[0.2864672612717592 0.3149783757432303 0.3011587773431702],
+ :test_ratio_relative_max:[0.1426011 0.14801005 0.13783811],
+ :test_positive_ratio_relative_max:[0.1305452 0.13323127 0.1345893],
+)
+```
+
+<a name="wm-test-imbalance"/></a>
+##### Test Imbalances
+
+Looking at just test and death metrics only bumps Florida close to the top even though they have far fewer deaths
+than the five states that look at more factors.
+
+Why don't all of the other states have the test capability of Florida? Many states in the Midwest are only able
+to test around half the rate as Florida, yet have a lot more deaths.
+
+```clojure
+;; Sort on these keys
+(def tests [:test_count :death_count :test_positive_percent])
+
+(pr-percentages (take 5 (sort-map-by-value (:combined daily_reports) :ksubset tests :datafx ++values )) :focus tests)
+(
+New York:
+ :population:[19617868 19617976 19618170],
+**:death_count:[4758 5489 6268],
+ :death_population_percent:[0.02425340001268232 0.0279794408964513 0.031949972907768666],
+ :death_test_percent:[1.483116227311408 1.614136412023831 1.716540737718162],
+ :death_test_positive_percent:[3.606840716819794 3.8550679851668734 4.146297901052451],
+ :death_ratio_relative_max:[1.0 1.0 1.0],
+**:test_count:[320811 340058 365153],
+ :test_positive_count:[131916 142384 151171],
+**:test_positive_percent:[41.11953767171325 41.87050444335966 41.39935862501472],
+ :test_unknowns_percent:[58.880462328286754 58.12949555664034 58.60064137498529],
+ :test_population_percent:[1.635300023427622 1.733400020471021 1.861300009124195],
+ :test_positive_population_percent:[0.6724278091788567 0.7257833325925162 0.770566265864757],
+ :test_unknown_population_percent:[0.9628722142487655 1.007616687878505 1.090733743259438],
+ :test_ratio_relative_max:[1.0 1.0 1.0],
+ :test_positive_ratio_relative_max:[1.0 1.0 1.0],
+ 
+Florida:
+ :population:[20599444 20597109 20596951],
+**:death_count:[254 296 323],
+ :death_population_percent:[0.001233042988927274 0.001437094885500679 0.001568193272878107],
+ :death_test_percent:[0.2015105356689515 0.2119296336338056 0.22342118005118627],
+ :death_test_positive_percent:[1.8636730501137282 2.007187902624263 2.0575869537520703],
+ :death_ratio_relative_max:[0.053383775 0.053926032 0.05153159],
+**:test_count:[126048 139669 144570],
+ :test_positive_count:[13629 14747 15698],
+**:test_positive_percent:[10.81254760091394 10.55853482161396 10.858407691775609],
+ :test_unknowns_percent:[89.18745239908607 89.44146517838604 89.14159230822439],
+ :test_population_percent:[0.611900010505138 0.6781000187938997 0.7019000045200865],
+ :test_positive_population_percent:[0.06616197990586542 0.07159742660972468 0.07621516407938243],
+ :test_unknown_population_percent:[0.5457380305992725 0.606502592184175 0.625684840440704],
+ :test_ratio_relative_max:[0.39290422 0.41072112 0.39591622],
+ :test_positive_ratio_relative_max:[0.10331575 0.10357203 0.10384267],
+ 
+California:
+ :population:[39144440 39150558 39150558],
+**:death_count:[380 447 498],
+ :death_population_percent:[9.707636640094992E-4 0.0011417461789433498 0.001272012521507356],
+ :death_test_percent:[0.32608788926741783 0.3108484005563282 0.3463143254520167],
+ :death_test_positive_percent:[2.3721830326487297 2.548896618577864 2.644715878916622],
+ :death_ratio_relative_max:[0.07986549 0.0814356 0.07945118],
+**:test_count:[116533 143800 143800],
+ :test_positive_count:[16019 17537 18830],
+**:test_positive_percent:[13.746320784670441 12.19541029207232 13.094575799721838],
+ :test_unknowns_percent:[86.25367921532956 87.80458970792768 86.90542420027816],
+ :test_population_percent:[0.2977000054158394 0.3673000011902768 0.3673000011902768],
+ :test_positive_population_percent:[0.04092279772044255 0.044793742147940775 0.04809637706824],
+ :test_unknown_population_percent:[0.2567772076953968 0.322506259042336 0.3192036241220368],
+ :test_ratio_relative_max:[0.36324504 0.42286903 0.39380753],
+ :test_positive_ratio_relative_max:[0.12143334 0.123166926 0.12456093],
+ 
+Washington:
+ :population:[7294244 7294244 7294066],
+**:death_count:[381 403 431],
+ :death_population_percent:[0.005223296615797333 0.005524904294399803 0.005908912806656808],
+ :death_test_percent:[0.4169630642954856 0.4410396716826265 0.4681068282775624],
+ :death_test_positive_percent:[4.576026903675234 4.641787606542271 4.613573110682937],
+ :death_ratio_relative_max:[0.08007566 0.07341956 0.06876197],
+**:test_count:[91375 91375 92073],
+ :test_positive_count:[8326 8682 9342],
+**:test_positive_percent:[9.111901504787962 9.501504787961695 10.14629696002085],
+ :test_unknowns_percent:[90.88809849521205 90.49849521203829 89.85370303997915],
+ :test_population_percent:[1.252700074195489 1.252700074195489 1.262300066931119],
+ :test_positive_population_percent:[0.1141447969110987 0.11902535752848412 0.1280767133173733],
+ :test_unknown_population_percent:[1.13855527728439 1.1336747166670051 1.1342233536137458],
+ :test_ratio_relative_max:[0.28482503 0.26870418 0.2521491],
+ :test_positive_ratio_relative_max:[0.063115925 0.060975954 0.061797567],
+ 
+New Jersey:
+ :population:[8881883 8881885 8881550],
+**:death_count:[1003 1232 1504],
+ :death_population_percent:[0.01129265044360526 0.01387092942545417 0.01693398111816068],
+ :death_test_percent:[1.126561236409381 1.2971971276349321 1.499112891972171],
+ :death_test_positive_percent:[2.4409832075930877 2.773775216138329 3.170520901406075],
+ :death_ratio_relative_max:[0.21080285 0.2244489 0.23994894],
+**:test_count:[89032 94974 100326],
+ :test_positive_count:[41090 44416 47437],
+**:test_positive_percent:[46.151945367957595 46.76648345863078 47.28285788330044],
+ :test_unknowns_percent:[53.848054632042405 53.23351654136922 52.717142116699556],
+ :test_population_percent:[1.002400054132665 1.069300041601529 1.129600126104115],
+ :test_positive_population_percent:[0.46262712535168504 0.5000740270787113 0.5341072222753911],
+ :test_unknown_population_percent:[0.5397729287809804 0.5692260145228181 0.5954929038287236],
+ :test_ratio_relative_max:[0.27752167 0.27928764 0.2747506],
+ :test_positive_ratio_relative_max:[0.3114861 0.31194517 0.31379697],
+)
+```
+
+<a name="wm-parsing-data"/></a>
+#### Parsing data 
 ```clojure
 ;; Original data as copy and pasted from worldmeter UI table
 (def input "/media/dave/storage/dev/clash/test/resources/corona19-worldmeter-20200406.original")
@@ -41,13 +350,14 @@ See **clash.example.covid19_worldmeter.clj**
 :sources "[1] [2] [3] [4] [5] [6] [7] [8]"}
 ```
 
+<a name="wm-percentages-and-ratios"/></a>
 #### Calculate some percentages, relative ratios**
 
 ```clojure
 ;; Find maximum values for these keys
 (def maxkeys [:total_pos :deaths :cases_million :deaths_million :test_count :tests_million])
 (def maximums (wm-maximums covid maxkeys))
-(def population-percentages (wm-calculate-percentages covid maximums))
+(def population-percentages (wm-percentages covid maximums))
 
 ;; Percentages across the entire population
 (pprint (get population-percentages "New York"))
@@ -66,25 +376,9 @@ See **clash.example.covid19_worldmeter.clj**
  :test_population_percent 1.635300023427622,
  :test_positive_ratio_relative_max 1.0,
  :death_test_percent 1.483116227311408}
-
-(pprint (get population-percentages "Florida"))
-{:death_ratio_relative_max 0.053383775,
- :test_unknown_population_percent 0.5457380305992725,
- :test_positive_percent 10.81254760091394,
- :test_unknowns_percent 89.18745239908607,
- :positive 13629,
- :death_population_percent 0.001233042988927274,
- :test_positive_population_percent 0.06616197990586542,
- :death_test_positive_percent 1.8636730501137282,
- :death_count 254,
- :population 20599444,
- :test_count 126048,
- :test_ratio_relative_max 0.39290422,
- :test_population_percent 0.611900010505138,
- :test_positive_ratio_relative_max 0.10331575,
- :death_test_percent 0.2015105356689515}
 ```
 
+<a name="wm-sort-criteria"/></a>
 #### Sort by relative Max
 
 This starts to identify the 5 states with the highest positive test and death rates. One goal is a more even distribution of
@@ -96,184 +390,94 @@ test data across the US.
 
 ;; Sort by relative maximums
 (def relative_to_max [:test_ratio_relative_max :test_positive_ratio_relative_max :death_ratio_relative_max])
-(def sorted_relative1 (sort-map-by-value population-percentages :ksubset relative_to_max :datafx +values))
+(def sorted_relative1 (sort-map-by-value population-percentages :ksubset relative_to_max :datafx *values))
 
-(pprint (take 5 sorted_relative1))
-(["New York"
-  {:death_ratio_relative_max 1.0,
-   :test_unknown_population_percent 0.9628722142487655,
-   :test_positive_percent 41.11953767171325,
-   :test_unknowns_percent 58.880462328286754,
-   :positive 131916,
-   :death_population_percent 0.02425340001268232,
-   :test_positive_population_percent 0.6724278091788567,
-   :death_test_positive_percent 3.606840716819794,
-   :death_count 4758,
-   :population 19617868,
-   :test_count 320811,
-   :test_ratio_relative_max 1.0,
-   :test_population_percent 1.635300023427622,
-   :test_positive_ratio_relative_max 1.0,
-   :death_test_percent 1.483116227311408}]
- ["New Jersey"
-  {:death_ratio_relative_max 0.21080285,
-   :test_unknown_population_percent 0.5397729287809804,
-   :test_positive_percent 46.151945367957595,
-   :test_unknowns_percent 53.848054632042405,
-   :positive 41090,
-   :death_population_percent 0.01129265044360526,
-   :test_positive_population_percent 0.46262712535168504,
-   :death_test_positive_percent 2.4409832075930877,
-   :death_count 1003,
-   :population 8881883,
-   :test_count 89032,
-   :test_ratio_relative_max 0.27752167,
-   :test_population_percent 1.002400054132665,
-   :test_positive_ratio_relative_max 0.3114861,
-   :death_test_percent 1.126561236409381}]
- ["Louisiana"
-  {:death_ratio_relative_max 0.10760824,
-   :test_unknown_population_percent 1.164312624769224,
-   :test_positive_percent 21.49466500881936,
-   :test_unknowns_percent 78.50533499118065,
-   :positive 14867,
-   :death_population_percent 0.010978619567245121,
-   :test_positive_population_percent 0.3187873771606116,
-   :death_test_positive_percent 3.443868971547723,
-   :death_count 512,
-   :population 4663610,
-   :test_count 69166,
-   :test_ratio_relative_max 0.21559735,
-   :test_population_percent 1.483100001929835,
-   :test_positive_ratio_relative_max 0.11270051,
-   :death_test_percent 0.7402480987768557}]
- ["Washington"
-  {:death_ratio_relative_max 0.08007566,
-   :test_unknown_population_percent 1.13855527728439,
-   :test_positive_percent 9.111901504787962,
-   :test_unknowns_percent 90.88809849521205,
-   :positive 8326,
-   :death_population_percent 0.005223296615797333,
-   :test_positive_population_percent 0.1141447969110987,
-   :death_test_positive_percent 4.576026903675234,
-   :death_count 381,
-   :population 7294244,
-   :test_count 91375,
-   :test_ratio_relative_max 0.28482503,
-   :test_population_percent 1.252700074195489,
-   :test_positive_ratio_relative_max 0.063115925,
-   :death_test_percent 0.4169630642954856}]
- ["Massachusetts"
-  {:death_ratio_relative_max 0.05464481,
-   :test_unknown_population_percent 0.9164119613781083,
-   :test_positive_percent 18.10438446139554,
-   :test_unknowns_percent 81.89561553860446,
-   :positive 13837,
-   :death_population_percent 0.00380667034059158,
-   :test_positive_population_percent 0.2025880673183296,
-   :death_test_positive_percent 1.8790200187902,
-   :death_count 260,
-   :population 6830116,
-   :test_count 76429,
-   :test_ratio_relative_max 0.23823684,
-   :test_population_percent 1.1190000286964379,
-   :test_positive_ratio_relative_max 0.10489251,
-   :death_test_percent 0.3401850083083646}])
+;; Specialized printer to highlight specific fields
+(pr-percentages (take 5 sort_relative_20200406wm) :focus (conj relative_to_max :death_count :test_count))
+(New York:
+ :population:19617868,
+**:death_count:4758**,
+ :death_population_percent:0.02425340001268232,
+ :death_test_percent:1.483116227311408,
+ :death_test_positive_percent:3.606840716819794,
+**:death_ratio_relative_max:1.0,
+**:test_count:320811,
+ :test_positive_count:131916,
+ :test_positive_percent:41.11953767171325,
+ :test_unknowns_percent:58.880462328286754,
+ :test_population_percent:1.635300023427622,
+ :test_positive_population_percent:0.6724278091788567,
+ :test_unknown_population_percent:0.9628722142487655,
+**:test_ratio_relative_max:1.0,
+**:test_positive_ratio_relative_max:1.0,
+ New Jersey:
+ :population:8881883,
+**:death_count:1003,
+ :death_population_percent:0.01129265044360526,
+ :death_test_percent:1.126561236409381,
+ :death_test_positive_percent:2.4409832075930877,
+**:death_ratio_relative_max:0.21080285,
+**:test_count:89032,
+ :test_positive_count:41090,
+ :test_positive_percent:46.151945367957595,
+ :test_unknowns_percent:53.848054632042405,
+ :test_population_percent:1.002400054132665,
+ :test_positive_population_percent:0.46262712535168504,
+ :test_unknown_population_percent:0.5397729287809804,
+**:test_ratio_relative_max:0.27752167,
+**:test_positive_ratio_relative_max:0.3114861,
+ California:
+ :population:39144440,
+**:death_count:380,
+ :death_population_percent:9.707636640094992E-4,
+ :death_test_percent:0.32608788926741783,
+ :death_test_positive_percent:2.3721830326487297,
+**:death_ratio_relative_max:0.07986549,
+**:test_count:116533,
+ :test_positive_count:16019,
+ :test_positive_percent:13.746320784670441,
+ :test_unknowns_percent:86.25367921532956,
+ :test_population_percent:0.2977000054158394,
+ :test_positive_population_percent:0.04092279772044255,
+ :test_unknown_population_percent:0.2567772076953968,
+**:test_ratio_relative_max:0.36324504,
+**:test_positive_ratio_relative_max:0.12143334,
+ Florida:
+ :population:20599444,
+**:death_count:254,
+ :death_population_percent:0.001233042988927274,
+ :death_test_percent:0.2015105356689515,
+ :death_test_positive_percent:1.8636730501137282,
+**:death_ratio_relative_max:0.053383775,
+**:test_count:126048,
+ :test_positive_count:13629,
+ :test_positive_percent:10.81254760091394,
+ :test_unknowns_percent:89.18745239908607,
+ :test_population_percent:0.611900010505138,
+ :test_positive_population_percent:0.06616197990586542,
+ :test_unknown_population_percent:0.5457380305992725,
+**:test_ratio_relative_max:0.39290422,
+**:test_positive_ratio_relative_max:0.10331575,
+ Louisiana:
+ :population:4663610,
+**:death_count:512,
+ :death_population_percent:0.010978619567245121,
+ :death_test_percent:0.7402480987768557,
+ :death_test_positive_percent:3.443868971547723,
+**:death_ratio_relative_max:0.10760824,
+**:test_count:69166,
+ :test_positive_count:14867,
+ :test_positive_percent:21.49466500881936,
+ :test_unknowns_percent:78.50533499118065,
+ :test_population_percent:1.483100001929835,
+ :test_positive_population_percent:0.3187873771606116,
+ :test_unknown_population_percent:1.164312624769224,
+**:test_ratio_relative_max:0.21559735,
+**:test_positive_ratio_relative_max:0.11270051,
+)
 ```
 
-#### Sort by Positive/Unknown tests and Death percents
-
-A rough idea of testing effectiveness and how it relates to deaths.
-
-```clojure
-;; Sort by test/death percentages
-(def severity1 [:test_population_percent :test_unknowns_percent :test_positive_percent :death_percent :death_test_percent])
-(def sorted1 (sort-map-by-value population-percentages :ksubset sort1 :datafx +values))
-
-(pprint (take 5 test_death_percents))
-(["Oklahoma"
-  {:death_ratio_relative_max 0.010718789,
-   :test_unknown_population_percent 0.03633762656607132,
-   :test_positive_percent 48.237004725554335,
-   :test_unknowns_percent 51.76299527444566,
-   :positive 1327,
-   :death_population_percent 0.001301417805385981,
-   :test_positive_population_percent 0.03386238093621955,
-   :death_test_positive_percent 3.8432554634513942,
-   :death_count 51,
-   :population 3918803,
-   :test_count 2751,
-   :test_ratio_relative_max 0.008575142,
-   :test_population_percent 0.07020000750229088,
-   :test_positive_ratio_relative_max 0.010059432,
-   :death_test_percent 1.853871319520174}]
- ["New Jersey"
-  {:death_ratio_relative_max 0.21080285,
-   :test_unknown_population_percent 0.5397729287809804,
-   :test_positive_percent 46.151945367957595,
-   :test_unknowns_percent 53.848054632042405,
-   :positive 41090,
-   :death_population_percent 0.01129265044360526,
-   :test_positive_population_percent 0.46262712535168504,
-   :death_test_positive_percent 2.4409832075930877,
-   :death_count 1003,
-   :population 8881883,
-   :test_count 89032,
-   :test_ratio_relative_max 0.27752167,
-   :test_population_percent 1.002400054132665,
-   :test_positive_ratio_relative_max 0.3114861,
-   :death_test_percent 1.126561236409381}]
- ["New York"
-  {:death_ratio_relative_max 1.0,
-   :test_unknown_population_percent 0.9628722142487655,
-   :test_positive_percent 41.11953767171325,
-   :test_unknowns_percent 58.880462328286754,
-   :positive 131916,
-   :death_population_percent 0.02425340001268232,
-   :test_positive_population_percent 0.6724278091788567,
-   :death_test_positive_percent 3.606840716819794,
-   :death_count 4758,
-   :population 19617868,
-   :test_count 320811,
-   :test_ratio_relative_max 1.0,
-   :test_population_percent 1.635300023427622,
-   :test_positive_ratio_relative_max 1.0,
-   :death_test_percent 1.483116227311408}]
- ["Michigan"
-  {:death_ratio_relative_max 0.15279528,
-   :test_unknown_population_percent 0.2864672612717592,
-   :test_positive_percent 37.64317565795226,
-   :test_unknowns_percent 62.356824342047744,
-   :positive 17221,
-   :death_population_percent 0.007300511758844916,
-   :test_positive_population_percent 0.1729327551569028,
-   :death_test_positive_percent 4.221589919284594,
-   :death_count 727,
-   :population 9958206,
-   :test_count 45748,
-   :test_ratio_relative_max 0.1426011,
-   :test_population_percent 0.4594000164286619,
-   :test_positive_ratio_relative_max 0.1305452,
-   :death_test_percent 1.5891405088747048}]
- ["Northern Mariana Islands"
-  {:death_ratio_relative_max 2.1017234E-4,
-   :test_unknown_population_percent nil,
-   :test_positive_percent 24.24242424242424,
-   :test_unknowns_percent 75.75757575757575,
-   :positive 8,
-   :death_population_percent nil,
-   :test_positive_population_percent nil,
-   :death_test_positive_percent 12.5,
-   :death_count 1,
-   :population nil,
-   :test_count 33,
-   :test_ratio_relative_max 1.028643E-4,
-   :test_population_percent nil,
-   :test_positive_ratio_relative_max 6.0644652E-5,
-   :death_test_percent 3.03030303030303}])
-```
-
-
+<a name="miami-herald"/></a>
 ### Miami Herald (courtesy of a download link on their site last week)
 
 I cannot find the original link, but this file is from Florida Department of Health:

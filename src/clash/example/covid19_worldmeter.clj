@@ -1,9 +1,67 @@
 (ns clash.example.covid19_worldmeter
-  (:require [clash.core :as cc]
-            [clojure.string :as s]))
+  (:require
+    [clojure.string :as s]
+    [clash.core :as cc]
+    [clash.tools :as ct]
+    [incanter.core :as ic]
+    [incanter.stats :as is]))
 
-(defn +values [values] (apply + (filter identity values)))
-(defn *values [values] (apply * (filter identity values)))
+(defn todo
+  [msg & args]
+  (println "todo:" msg ", args:" args))
+
+(defn sort-values
+  "Apply a function for similar data for a list of values or list of arrays. For example:
+  (sort-values [2 3] +)
+  5
+
+  (sort-values [[2 3] [4 5]] *)
+  [8 15]
+  "
+  [values fx & {:keys [dvfx] :or {dvfx nil}}]
+  (let [arrays (if dvfx (dvfx values) values)
+        fvalue (first arrays)]
+    (cond
+      ((ct/none? #(coll? %) #(map? %)) fvalue) (apply fx arrays)
+      (coll? fvalue) (reduce
+                       (fn [r index] (conj r (apply fx (map #(nth % index) arrays))))
+                        []
+                        (range 0 (count fvalue)))
+      :default nil)
+    ) )
+
+(defn +values
+  "Add all the values specified in a collection. Designed for use
+  with (sort-map-by-value :datafx)"
+  [values]
+  (apply + (filter identity values)))
+
+(defn ++values
+  [values]
+  (let [arrays (map #(replace {nil 0} %) values)]
+    (reduce
+      (fn [r index] (conj r (apply + (map #(nth % index) arrays))))
+      []
+      (range 0 (count (first arrays))))
+    ) )
+
+(defn *values
+  "Multiply all the values specified in a collection. Designed for use
+  with (sort-map-by-value :datafx)"
+  [values]
+  (apply * (replace {nil 1} values)))
+
+(defn **values
+  "Multiply the index value in a collection of collections (array). Designed
+  for use with (sort-map-by-value :datafx)  Where :ksubset [k1 k2 k3] results
+  in [[k1x k1y] [k2x k2y] [k3x k3y]]"
+  [values]
+  (let [arrays (map #(replace {nil 1} %) values)]
+    (reduce
+      (fn [r index] (conj r (apply * (map #(nth % index) arrays))))
+      []
+      (range 0 (count (first arrays))))
+    ) )
 
 (defn wm-cleanup
   "Copy and pasting data from a web form table seems to have a mix of whitespace
@@ -34,27 +92,6 @@
     (try
       (apply ->CovidData (concat [state] data [sources]))
       (catch Exception _ (println "Failed:" text ",cleaned:" cleaned)))
-    ))
-
-(defn wm-percent-positive
-  "A percentage for how many tests are positive?"
-  [data]
-  (try
-    (when data
-      {(:state data) {:total (:test_count data) :percent_positive (* 100.0 (/ (:total_pos data) (:test_count data)))}})
-    (catch Exception _)
-    ))
-
-(defn wm-percent-uncertainty
-  "What patients have symptoms but test negative? What is causing their symptoms?
-  Are there test limitations (too early, too late) or quality issues?"
-  [data]
-  (try
-    (when data
-      (let [total (:test_count data)]
-        {(:state data) {:total total :percent_unknown (* 100.0 (/ (- total (:total_pos data)) total))}}
-        ) )
-    (catch Exception _)
     ))
 
 (defn wm-population
@@ -100,7 +137,7 @@
     {}
     data))
 
-(defn wm-calculate-percentages
+(defn wm-percentages
   "More (and random) tests are better for mapping the spread, testing capacity and severity
    of new pathogens."
   [data maximums]
@@ -121,25 +158,100 @@
             ]
 
         (assoc r (:state v) {:population                       population
-                             :test_count                       (:test_count v)
-                             :positive                         (:total_pos v)
-                             :test_positive_percent            testpositive
-                             :test_unknowns_percent            testunknown
                              :death_count                      (:deaths v)
+                             :death_population_percent         deathpopulation
                              :death_test_percent               deathtestpopulation
                              :death_test_positive_percent      deathpositivepopulation
-                             :test_unknown_population_percent  testpopulationunknown
-                             :death_population_percent         deathpopulation
+                             :death_ratio_relative_max         death_rmax
+                             :test_count                       (:test_count v)
+                             :test_positive_count              (:total_pos v)
+                             :test_positive_percent            testpositive
+                             :test_unknowns_percent            testunknown
                              :test_population_percent          testcount
                              :test_positive_population_percent testpopulationpositive
+                             :test_unknown_population_percent  testpopulationunknown
                              :test_ratio_relative_max          test_rmax
                              :test_positive_ratio_relative_max testp_rmax
-                             :death_ratio_relative_max         death_rmax
                              })
         ))
     {}
     data))
 
+(defn merge-percentages
+  "For merging daily percentages together and start to establish trends,
+  each of the test/mortality data is conj'd into a collection."
+  [& mps]
+  (apply merge-with
+    (fn [mleft mright]
+      (merge-with
+        #(if (coll? %1)
+           (conj %1 %2)
+           [%1 %2])
+        mleft mright)
+      )
+    mps))
+
+
+(def percentage-keys [:population :death_count :death_population_percent :death_test_percent :death_test_positive_percent
+                      :death_ratio_relative_max :test_count :test_positive_count :test_positive_percent
+                      :test_unknowns_percent :test_population_percent :test_positive_population_percent
+                      :test_unknown_population_percent :test_ratio_relative_max :test_positive_ratio_relative_max])
+
 ;; Sort by relative maximums
 (def relative_to_max [:test_ratio_relative_max :test_positive_ratio_relative_max :death_ratio_relative_max])
+(def relative_pr_focus (conj relative_to_max :test_count :death_count))
 
+;; Sort death and test percents
+(def death_test_percents [:test_population_percent :test_unknowns_percent :test_positive_percent :death_percent
+                          :death_test_percent])
+
+(def tests [:test_count :death_count :test_positive_percent])
+
+(defn pr-percentages
+  "Print out sort, ratio percentages from (wm-percentages) output. This keeps the keys in a specific
+  order when printing key:value data."
+  [data & {:keys [focus] :or {focus nil}}]
+  ;(println "data:" data)
+  (let [prefx (fn [value] (if (and focus (some #{value} focus)) (str "**" value ":") (str " " value ":")))]
+    (println
+      (for [[k v] data]
+        (apply str (str "\n" k ":\n") (map #(str (prefx %) (% v) ",\n") percentage-keys)))))
+    )
+
+(defn input-files
+  "Find the daily Worldmeter files."
+  [^String dirpath]
+  (filter #(not= dirpath (str %)) (file-seq (clojure.java.io/file dirpath))))
+
+;; todo Probably a transducer would be better here...
+(defn wm-daily-workflow
+  "Provide this function with directory to pull Worldmeter data from and the collection
+  of keys to determine maximum values for. The result is a map of percentage date, by date,
+  for the underlying file.
+
+  (wm-daily-workflow \"/path/to/files\" maxkeys)
+
+  {\"us_20200407\" {\"New York\" {} \"New Jersey\" {}, ...}}
+  "
+  [dirpath maxkeys]
+  (let [namefn (fn [fname] (let [[_ _ c dt] (-> fname (s/replace #".original" "") (s/split #"-"))] (str c "_" dt)))
+        inputs (input-files dirpath)
+        covids (reduce (fn [r input] (assoc r (namefn input) (cc/transform-lines input wm-parser))) {} inputs)
+        maximums (reduce-kv (fn [r k v] (assoc r k (wm-maximums v maxkeys))) {} covids)
+        ]
+    (reduce-kv (fn [r k v] (assoc r k (wm-percentages v (get maximums k)))) {} covids)
+    ))
+
+(defn wm-daily-sorts
+  "Given a map of percentage data, this will provide different sorting outcomes. It also provides
+  a map of all days merged together, where their keys point to a collection of data (by day).
+    {\"us_20200407\" {\"New York\" {:death_count [4 5 6]} \"New Jersey\" {:death_count [1 2 3]}, ...}}
+  "
+  [percentages]
+  (let [combined (apply merge-percentages (reverse (vals percentages)))]
+    {:daily_tests_deaths (reduce-kv (fn [r k v] (assoc r k (ct/sort-map-by-value v :ksubset death_test_percents :datafx +values))) {} percentages)
+     :daily_relatives (reduce-kv (fn [r k v] (assoc r k (ct/sort-map-by-value v :ksubset relative_to_max :datafx *values))) {} percentages)
+     :combined combined
+     :combined_tests_deaths (ct/sort-map-by-value combined :ksubset death_test_percents :datafx ++values)
+     :combined_relatives (ct/sort-map-by-value combined :ksubset relative_to_max :datafx **values)
+     }))
