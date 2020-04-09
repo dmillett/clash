@@ -17,14 +17,15 @@ copy and pasted locally, before getting cleaned and parsed for use.
 
 Initially, I grabbed a sample data from the Miami Herald that I did not include directly, but posted sample output.
 
- [Illinois](https://dph.illinois.gov/covid19)
- [Virginia](http://www.vdh.virginia.gov/coronavirus/)
- [Worldmeter Coronavirus Data](https://www.worldometers.info/coronavirus/country/us/)
- [Worldmeter Daily Reports](#wm-daily-reports)
- * [Parsing CSV Data](#wm-parsing-data)
- * [Percentages & Ratios]("#wm-percentages-and-ratios")
- * [Sort Criteria](#wm-sort-criteria)
- * [Test Imbalances](#wm-test-imbalance")
+ * [Illinois](https://dph.illinois.gov/covid19)
+ * [Virginia](http://www.vdh.virginia.gov/coronavirus/)
+ * [Worldmeter Coronavirus Data](https://www.worldometers.info/coronavirus/country/us/)
+ 
+ * [Worldmeter Daily Reports](#wm-daily-reports)
+   - [Parsing CSV Data](#wm-parsing-data)
+   - [Percentages & Ratios]("#wm-percentages-and-ratios")
+   - [Sort Criteria](#wm-sort-criteria)
+   - [Test Imbalances](#wm-test-imbalance")
  
 ### Worldmeter
 
