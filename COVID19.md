@@ -3,6 +3,13 @@
  * [Completed Tests](#completed-tests)
  * [Percent Positive Tests](#percent-positives)
  * [Percent Unknown Tests](#percent-uknown)
+   - Why are people with symptoms testing negative for SARS-COV-2 (covid19)?
+     - Do they have an Influenza strain? 
+     - Air pollution sensitivities?
+     - Is the tissue swabbed location always going to have viral proteins?
+       - If not, what about sputum/phlegm?
+     - What are the test processing errors?
+       - PCR processing familiarity? Abbott's "ID NOW Platform"
  
 ## Gather data 
 
