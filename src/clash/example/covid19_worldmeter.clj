@@ -56,12 +56,14 @@
   for use with (sort-map-by-value :datafx)  Where :ksubset [k1 k2 k3] results
   in [[k1x k1y] [k2x k2y] [k3x k3y]]"
   [values]
-  (let [arrays (map #(replace {nil 1} %) values)]
-    (reduce
-      (fn [r index] (conj r (apply * (map #(nth % index) arrays))))
-      []
-      (range 0 (count (first arrays))))
-    ) )
+  (try
+    (let [arrays (map #(replace {nil 1} %) values)]
+      (reduce
+        (fn [r index] (conj r (apply * (map #(nth % index) arrays))))
+        []
+        (range 0 (count (first arrays))))
+      )
+    (catch Exception _ (println values))) )
 
 (defn wm-cleanup
   "Copy and pasting data from a web form table seems to have a mix of whitespace
@@ -103,10 +105,10 @@
 (defn wm-percentage
   "The percentage of the population for a specific event."
   [population event_count & {:keys [percent] :or {percent true}}]
-  (when (and population event_count)
+  (when (and event_count population (not (zero? population)))
     (if percent
       (* 100.0 (/ event_count population))
-      (float (/ event_count population)))))
+      (* 1.0 (/ event_count population)))))
 
 (def maxkeys [:total_pos :deaths :cases_million :deaths_million :test_count :tests_million])
 
@@ -242,13 +244,20 @@
     (reduce-kv (fn [r k v] (assoc r k (wm-percentages v (get maximums k)))) {} covids)
     ))
 
+;(defn deltas
+;  [coll]
+;  (reduce
+;    (fn [r v])
+;    []
+;    coll))
+
 (defn wm-daily-sorts
   "Given a map of percentage data, this will provide different sorting outcomes. It also provides
   a map of all days merged together, where their keys point to a collection of data (by day).
     {\"us_20200407\" {\"New York\" {:death_count [4 5 6]} \"New Jersey\" {:death_count [1 2 3]}, ...}}
   "
   [percentages]
-  (let [combined (apply merge-percentages (reverse (vals percentages)))]
+  (let [combined (apply merge-percentages (vals (sort percentages)))]
     {:daily_tests_deaths (reduce-kv (fn [r k v] (assoc r k (ct/sort-map-by-value v :ksubset death_test_percents :datafx +values))) {} percentages)
      :daily_relatives (reduce-kv (fn [r k v] (assoc r k (ct/sort-map-by-value v :ksubset relative_to_max :datafx *values))) {} percentages)
      :combined combined

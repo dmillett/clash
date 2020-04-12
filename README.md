@@ -53,7 +53,7 @@ into
 ### Covid19 Example
 
  * [Covid 19](COVID19.md)
- **Covid 19 data will move to 'covid19' branch** 
+ **Covid 19 data will move to 'covid19' branch (Br) 
 
 <a name="core-transformations"/></a>
 ## Core Transformation Functions
