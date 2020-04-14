@@ -1,10 +1,12 @@
 (ns clash.example.covid19_worldmeter
   (:require
-    [clojure.string :as s]
     [clash.core :as cc]
+    [clojure.string :as s]
+    [clojure.spec.alpha :as cs]
     [clash.tools :as ct]
-    [incanter.core :as ic]
-    [incanter.stats :as is]))
+    ;[incanter.core :as ic]
+    ;[incanter.stats :as is]
+    ))
 
 (defn todo
   [msg & args]
@@ -139,6 +141,16 @@
     {}
     data))
 
+(defn- default-value
+  [obj default]
+  (if obj obj default))
+
+(defn- tc-wrap
+  [fx data default & {:keys [debug] :or {debug false}}]
+  (if data
+    (try (apply fx data) (catch Exception e (when debug (println "Args:" data ", Error:" e))))
+    default))
+
 (defn wm-percentages
   "More (and random) tests are better for mapping the spread, testing capacity and severity
    of new pathogens."
@@ -149,8 +161,8 @@
             testcount (wm-percentage population (:test_count v))
             testpopulationpositive (wm-percentage population (:total_pos v))
             testpositive (wm-percentage (:test_count v) (:total_pos v))
-            testunknown (wm-percentage (:test_count v) (- (:test_count v) (:total_pos v)))
-            testpopulationunknown (wm-percentage population (- (:test_count v) (:total_pos v)))
+            testunknown (wm-percentage (:test_count v) (tc-wrap - [(:test_count v) (:total_pos v)] nil))
+            testpopulationunknown (wm-percentage population (tc-wrap - [(:test_count v) (:total_pos v)] nil))
             deathpopulation (wm-percentage population (:deaths v))
             deathtestpopulation (wm-percentage (:test_count v) (:deaths v))
             deathpositivepopulation (wm-percentage (:total_pos v) (:deaths v))
@@ -209,16 +221,19 @@
 
 (def tests [:test_count :death_count :test_positive_percent])
 
+;; todo: kind of ugly duplication here to cleanup
 (defn pr-percentages
   "Print out sort, ratio percentages from (wm-percentages) output. This keeps the keys in a specific
   order when printing key:value data."
   [data & {:keys [focus] :or {focus nil}}]
   ;(println "data:" data)
-  (let [prefx (fn [value] (if (and focus (some #{value} focus)) (str "**" value ":") (str " " value ":")))]
-    (println
-      (for [[k v] data]
-        (apply str (str "\n" k ":\n") (map #(str (prefx %) (% v) ",\n") percentage-keys)))))
-    )
+  (let [prefx (fn [value] (if (and focus (some #{value} focus)) (str "**" value ":") (str " " value ":")))
+        prmapfx (fn [v] (map #(str (prefx %) (% v) ",\n") percentage-keys))
+        prvalfx (fn [v] (map #(str (prefx %) v ",\n") percentage-keys))]
+    (if (map? (second (first data)))
+      (println (for [[k v] data] (apply str (str "\n" k ":\n") (prmapfx v))))
+      (println (for [[k v] data] (apply str (str "\n" k ":\n") (prvalfx v))))
+      ) ) )
 
 (defn input-files
   "Find the daily Worldmeter files."
@@ -244,12 +259,30 @@
     (reduce-kv (fn [r k v] (assoc r k (wm-percentages v (get maximums k)))) {} covids)
     ))
 
-;(defn deltas
-;  [coll]
-;  (reduce
-;    (fn [r v])
-;    []
-;    coll))
+;; todo: Make lazy
+(defn deltas
+  "Find the deltas and ~gradient of a list of numbers. Anything > 1.0 indicates
+  an increasing slope, while < 1.0 indicates a decreasing slope. "
+  [coll]
+  (let [c (if (coll? coll) coll [coll])]
+    (loop [x0 (first c)
+           data (rest c)
+           deltas []
+           gradients []]
+      (if (empty? data)
+        {:deltas deltas :gradients gradients}
+        (let [x1 (first data)
+              delta (when (and x0 x1) (- x1 (double x0)))
+              last_delta (if ((ct/none? nil? zero?) (last deltas)) (last deltas) 1.0)]
+          (recur x1 (rest data) (conj deltas delta) (conj gradients (if delta (/ delta last_delta) nil))))
+      ) ) ) )
+
+(defn- combined-deltas
+  [combined_percentages & {:keys [ks n] :or {ks nil n nil}}]
+  (reduce-kv
+    (fn [r k v] (assoc r k (reduce-kv (fn [r1 k1 v1] (assoc r1 k1 (deltas (if n (take n v1) v1)))) {} v)))
+    {}
+    combined_percentages))
 
 (defn wm-daily-sorts
   "Given a map of percentage data, this will provide different sorting outcomes. It also provides
@@ -260,7 +293,9 @@
   (let [combined (apply merge-percentages (vals (sort percentages)))]
     {:daily_tests_deaths (reduce-kv (fn [r k v] (assoc r k (ct/sort-map-by-value v :ksubset death_test_percents :datafx +values))) {} percentages)
      :daily_relatives (reduce-kv (fn [r k v] (assoc r k (ct/sort-map-by-value v :ksubset relative_to_max :datafx *values))) {} percentages)
+     :dates (keys (sort percentages))
      :combined combined
+     :combined_gradients (ct/sort-map-by-value (combined-deltas combined) :ksubpath [:death_test_percent :gradients] :datafx +values)
      :combined_tests_deaths (ct/sort-map-by-value combined :ksubset death_test_percents :datafx ++values)
      :combined_relatives (ct/sort-map-by-value combined :ksubset relative_to_max :datafx **values)
      }))

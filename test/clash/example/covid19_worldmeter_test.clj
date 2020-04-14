@@ -18,6 +18,10 @@
   (is (= #clash.example.covid19_worldmeter.CovidData{:state "New York", :total_pos 131916, :new_cases 8898, :deaths 4758, :new_deaths 599, :active 113792, :cases_million 6724, :deaths_million 243, :test_count 320811, :tests_million 16353, :sources "[1] [2] [3] [4] [5] [6] [7] [8]"} (wm-parser text2)))
   )
 
+(def nygradients
+  {:deltas [0.13102018471242305 0.102404325694331 0.08834192064643576 0.07218878473577717 0.07925310676583197 0.07681662617110718 0.06905446445712782],
+   :gradients [0.13102018471242305 0.78159198080127 0.8626776266280934 0.8171520859807081 1.0978589964620042 0.9692569705573332 0.8989520615408266]})
+
 (deftest test+values
   (is (= 5 (+values [2 nil 3]))))
 
@@ -66,3 +70,7 @@
         d2 {:a {:b 2 :c 3}}]
     (is (= {:a {:b [1 2], :c [2 3]}} (merge-percentages d1 d2)))
     ) )
+
+(deftest test-deltas
+  (is (= {:deltas [3.0 5.0], :gradients [3.0 1.6666666666666667]} (deltas (take 3 [1 4 9 20 32]))))
+  (is (= {:deltas [3.0 5.0 11.0 12.0], :gradients [3.0 1.6666666666666667 2.2 1.0909090909090908]} (deltas [1 4 9 20 32]))))
