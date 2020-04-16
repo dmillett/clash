@@ -12,6 +12,7 @@ optimize execution for a target method (sweetspot).
 Try adding **[clash "1.5.1"]** to your project today
 
  * [transformation functions](#core-transformations)
+ * [Example: Covid19 (updated on 'covid' branch)](#covid19)
  * [pivot functionality](#pivot)
  * [haystack functionality](#haystack)
  * [data shape](#data-shape)
@@ -50,10 +51,11 @@ into
 #user.Structure{:time "05042013-13:24:13.005", :action "Search", :name "ZOO", :quantity "25", :unit_price "13.99"}
 ```
 
+<a name="covid19"/></a>
 ### Covid19 Example
 
  * [Covid 19](COVID19.md)
- **Covid 19 data will move to 'covid19' branch (Br) 
+ **Covid 19 data updates moved to branch 'covid'** or select 'Branch: covid' from dropdown box under 'Commits' 
 
 <a name="core-transformations"/></a>
 ## Core Transformation Functions
