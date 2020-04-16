@@ -35,7 +35,12 @@ Initially, I grabbed a sample data from the Miami Herald that I did not include 
    - [Percentages & Ratios]("#wm-percentages-and-ratios")
    - [Sort Criteria](#wm-sort-criteria)
    - [Test Imbalances](#wm-test-imbalance")
+   - [Mortality](#mortality)
    - [Summaries & Gradients](#wm-summaries-and-gradients)
+ 
+## todo
+
+ * visualization (incanter, oz, etc) 
  
 ### Worldmeter
 
@@ -52,14 +57,50 @@ shows an increase as well. Population is used consistently within a given day.*
 ```clojure
 ;; Get the percentage data for all files in a directory (days)
 (def daily-data (wm-daily-workflow "/media/dave/storage/dev/clash/test/resources/worldmeter" maxkeys))
-(keys daily-data)
-("us_20200408" "us_20200407" "us_20200406")
+(sort (keys daily_data))
+("us_20200406" "us_20200407" "us_20200408" "us_20200409" "us_20200410" "us_20200411" "us_20200412" "us_20200413" "us_20200414" "us_20200415")
 
 (def daily_reports (wm-daily-sorts daily_data))
 (keys daily_sorts)
 (:daily_tests_deaths :daily_relatives :dates :combined :combined_gradients :combined_tests_deaths :combined_relatives)
+```
 
-(pr-percentages (take 5 (:combined_relatives daily_reports)) :focus relative_pr_focus)
+<a name="mortality"/></a>
+#### Mortality rate
+
+Given the testing issues & constraints (unknown false negatives, % of population tested), it is hard to get a realistic
+value for the mortality rate for covid19. It is likely between the death rate for the entire population and death
+rate for people tested as a percent of the population. 
+
+So for New York, it's at least 0.06% of the population or for Michigan 0.02% now. New Jersey is right in the middle. 
+These numbers will increase as the virus progresses, but it's probably not horribly unrealistic to expect the northern
+states to have a higher mortality rate. The northern states seem to be faring worse, so there is probably a significant 
+temperature factor as well. 
+
+```clojure
+;; New York
+(select-keys (get (:combined_death daily_sorts) "New York") death_percents)
+{:death_test_positive_percent [3.606840716819794 3.8550679851668734 4.146297901052451 4.375743015652863 4.550992701238121 4.762509384798834 4.954729034131405 5.139659093813089 5.333714055030696 5.397674331929485], 
+:death_test_percent [1.483116227311408 1.614136412023831 1.716540737718162 1.8048826583645978 1.877071443100375 1.956324549866207 2.033141176037314 2.102195640494442 2.1705202717457723 2.2026113472696442],
+:death_population_percent [0.02425340001268232 0.0279794408964513 0.031949972907768666 0.03602184839537116 0.03998349890583147 0.043974264223701834 0.04783778073475467 0.05125783808853935 0.05522454865247565 0.05905641549374063]}
+
+;; New Jersey
+(select-keys (get (:combined_death daily_sorts) "New Jersey") death_percents)
+{:death_test_positive_percent [2.4409832075930877 2.773775216138329 3.170520901406075 3.331569561212691 3.539239393273247 3.7540197073137183 3.799514955537591 3.782670630496717 4.075613158200627 4.443193017035056],
+:death_test_percent [1.126561236409381 1.2971971276349321 1.499112891972171 1.6944760082132249 1.701857773314659 1.8162455384256988 1.8542628318933212 1.861773066400445 2.1376477491826638 2.152209492635025], 
+:death_population_percent [0.01129265044360526 0.01387092942545417 0.01693398111816068 0.01914080312558056 0.021751446268523628 0.0245774353024066 0.02645847859694854 0.027505837531360648 0.03158161042794377 0.03553298177898868]}
+
+;; Louisiana
+(select-keys (get (:combined_death daily_sorts) "Louisiana") death_percents)
+{:death_test_positive_percent [3.443868971547723 3.574060427413412 3.8285378743394007 3.83963244544112 3.9214667843972375 4.027180973318677 4.0786598689002185 4.206318995051389 4.7076865879728595 5.024828026058039],
+:death_test_percent [0.7402480987768557 0.7795860960417922 0.8009237648330589 0.8076485003278915 0.8181621153012569 0.8316566063044937 0.807342976596665 0.8178294215059534 0.8554153788991911 0.9046322419788729], 
+:death_population_percent [0.010978619567245121 0.012479616090985409 0.01398092761310399 0.0150529555255926 0.01618897400072218 0.01728265612553298 0.01801182476295688 0.018955650853208002 0.021721565976951553 0.02365161154747584]}
+
+;; Michigan
+(select-keys (get (:combined_death daily_sorts) "Michigan") death_percents)
+{:death_test_positive_percent [4.221589919284594 4.454401686874012 4.713457190602575 5.003720238095237 5.622613352060747 5.801692160213396 6.0353924831561 6.249268578115856 6.547905633124699 6.846288178481058],
+:death_test_percent [1.5891405088747048 1.6788524199316541 1.905348486052611 2.0353346196042827 1.778080062184221 1.831241613387008 1.9562185913121268 2.1075065119583227 2.325887336543268 2.0771385011299373],
+:death_population_percent [0.007300511758844916 0.008486599308176442 0.009631536966320957 0.01080559203447104 0.012864410022188851 0.01397969890620908 0.01493377318500926 0.016088705206714748 0.01775582447282877 0.01929246370686864]}
 ```
 
 <a name="wm-summaries-and-gradients"/></a>
@@ -78,6 +119,11 @@ shows an increase as well. Population is used consistently within a given day.*
 ;; These states are increasing the fastest Sorted by highest gradient for 'deaths per test' (linear growth = 1.0)
 (def dtgradients (ct/sort-map-by-value (:combined_gradients daily_sorts) :ksubpath [:death_test_percent :gradients] :datafx +values))
 (keys (take 10 dtgradients))
+
+;; April 15th
+("Virginia" "Puerto Rico" "Tennessee" "New Jersey" "North Carolina" "District Of Columbia" "Rhode Island" "Pennsylvania" "Ohio" "Kentucky")
+
+;; April 13th
 ("North Carolina" "Rhode Island" "New Jersey" "Ohio" "Kentucky" "Iowa" "Oklahoma" "Tennessee" "Arizona" "Massachusetts")
 ```
 **Gradients**
@@ -86,27 +132,26 @@ test percentage is actually decreasing (gradient < 1.0). However, North Carolina
 increasing deaths. For how long will it increase?
 
 ```clojure
-;; North Carolina vs New York
-(get-in (:combined daily_sorts) ["North Carolina" :death_count])
-[48 54 63 75 84 87 90 107]
-(get-in (:combined daily_sorts) ["North Carolina" :death_test_percent])
-[0.1198651517043326 0.1314444282167373 0.1465559355153884 0.15687422870170892 0.1457194899817851 0.1440564303810044 0.14483657606334188 0.16880166593046]
-(get-in (:combined_gradients daily_sorts) ["North Carolina" :death_test_percent :gradients])
-[0.011579276512404701 1.3050476238703146 0.6828103234441454 -1.0810643309411105 0.14908996459148408 -0.4691026599234609 30.71873678171732]
+;; New York's slope is on a downward trend still
+;; Virginia jumped to the late gradient lead with a large number of deaths today
 
 (get-in (:combined daily_sorts) ["New York" :death_count])
-[4758 5489 6268 7067 7844 8627 9385 10056]
+[4758 5489 6268 7067 7844 8627 9385 10056 10834 11586]
+
 (get-in (:combined daily_sorts) ["New York" :death_test_percent])
-[1.483116227311408 1.614136412023831 1.716540737718162 1.8048826583645978 1.877071443100375 1.956324549866207 2.033141176037314 2.102195640494442]
+[1.483116227311408 1.614136412023831 1.716540737718162 1.8048826583645978 1.877071443100375 1.956324549866207 2.033141176037314 2.102195640494442 2.1705202717457723 2.2026113472696442]
+
 (get-in (:combined_gradients daily_sorts) ["New York" :death_test_percent :gradients])
-[0.13102018471242305 0.78159198080127 0.8626776266280934 0.8171520859807081 1.0978589964620042 0.9692569705573332 0.8989520615408266]
+[0.13102018471242305 0.78159198080127 0.8626776266280934 0.8171520859807081 1.0978589964620042 0.9692569705573332 0.8989520615408266 0.9894310496571795 0.4696853087406463]
 ```
 
-##### Data dump through April 13, 2020 (19:30 CST)
+##### Data dump through April 15, 2020
 
 This is highly dependent on the states with the most testing and deaths. So the order will not change much.
 
 ```clojure
+(pr-percentages (take 5 (:combined_relatives daily_reports)) :focus relative_pr_focus)
+
 (
 New York:
  :population:[19617868 19617976 19618170 19618649 19618093 19618293 19618385 19618463],

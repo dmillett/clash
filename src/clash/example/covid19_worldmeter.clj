@@ -219,6 +219,8 @@
 (def death_test_percents [:test_population_percent :test_unknowns_percent :test_positive_percent :death_percent
                           :death_test_percent])
 
+(def death_percents [:death_test_positive_percent :death_test_percent :death_population_percent])
+
 (def tests [:test_count :death_count :test_positive_percent])
 
 ;; todo: kind of ugly duplication here to cleanup
@@ -298,4 +300,5 @@
      :combined_gradients (ct/sort-map-by-value (combined-deltas combined) :ksubpath [:death_test_percent :gradients] :datafx +values)
      :combined_tests_deaths (ct/sort-map-by-value combined :ksubset death_test_percents :datafx ++values)
      :combined_relatives (ct/sort-map-by-value combined :ksubset relative_to_max :datafx **values)
+     :combined_death (ct/sort-map-by-value combined :ksubset death_percents :datafx **values)
      }))
