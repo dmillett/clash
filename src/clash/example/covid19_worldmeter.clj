@@ -286,6 +286,46 @@
     {}
     combined_percentages))
 
+(defn mean
+  "Calculate the average or mean from a sequence of numbers."
+  ([coll]
+   (/ (reduce + (filter identity coll)) (count coll))))
+
+(defn combine-percentages
+  "Combine all or the last 'ndays' of days from daily percentages until a single combined map."
+  ([percentages] (combine-percentages percentages -1))
+  ([percentages ndays]
+   (let [combined (apply merge-percentages (vals (sort percentages)))]
+     (if (= -1 ndays)
+       combined
+       (reduce-kv
+         (fn [r k v] (assoc r k (reduce-kv (fn [r1 k1 v1] (assoc r1 k1 (take ndays v1)) ) {} v)))
+         {}
+         combined))
+     ) ) )
+
+(def avg-3-5-10 [{:fx #(mean (take 3 %)) :name "3-day-avg"}
+                 {:fx #(mean (take 5 %)) :name "5-day-avg"}
+                 {:fx #(mean (take 10 %)) :name "10-day-avg"}])
+
+
+(defn combined-functions
+  "Run data for combined value data through a function or functions. For example,
+  determine the average/mean for data like ':death_test_percent'. Each 'fx' form
+  must be passed in as {:fx (mean) :name avg} in a sequence. [fx1 fx2 fx3 etc]
+  (combined-functions combined-data avg-3-5-10"
+  [combined fxs]
+  (reduce-kv
+    (fn [r k v] (assoc r k
+                         (reduce-kv
+                           (fn [r1 k1 v1]
+                             (let [calcs (reduce (fn [r fx] (assoc r (keyword (:name fx)) ((:fx fx) v1))) {} fxs)]
+                              (assoc r1 k1 (merge {:data v1} calcs))))
+                           {}
+                           v)))
+    {}
+    combined) )
+
 (defn wm-daily-sorts
   "Given a map of percentage data, this will provide different sorting outcomes. It also provides
   a map of all days merged together, where their keys point to a collection of data (by day).

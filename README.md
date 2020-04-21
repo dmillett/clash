@@ -2,20 +2,19 @@
 
  * [Mortality](#mortality)
    - guesses at this point, but I tried to ball-park it
-
+   - mortality driven by symptoms lasting 2+ weeks? (need data)
+ * [Symptoms](#symptoms)
+   - Symptoms seem to persist for 4 - 6 weeks based on myself and some people I've talked to (need more data)
+   - Average time unil severe symptoms?
+   - Depletion of nutrients (Vitamin C, D, Glutathione, etc) as a function of virus time (days/weeks)?
+   - Flu symptoms are typically 3 - 5 days and up to 2 weeks for most symptoms
  * [Completed Tests](#completed-tests)
+   - Some hospitals, clinics etc will test for influenza, but it seems only for a small percentage of people
+     this does nothing to reduce uncertainty
  * [Percent Positive Tests](#percent-positives)
  * [Percent Unknown Tests](#percent-uknown)
- 
-- Why are people with symptoms testing negative for SARS-COV-2 (covid19)?
- - Do they have an Influenza strain? 
- - Air pollution sensitivities?
- - Is the tissue (throat via nasal/mouth) swabbed location always going to have viral proteins?
-   - If not, what about sputum/phlegm?
-   - How long would the virus remain in the throat? 3 days? 4 days?
- - What are the test processing errors?
-   - PCR processing familiarity? Abbott's "ID NOW Platform"
- - What is the false negative rate? 30% 40%?   
+   - Many people with symptoms test negative, no data from CDC on false (-) estimates by test type
+ * [Questions](#questions)
 
 ## Gather data 
 
@@ -42,11 +41,24 @@ Initially, I grabbed a sample data from the Miami Herald that I did not include 
    - [Mortality](#mortality)
    - [Summaries & Gradients](#wm-summaries-and-gradients)
  
-## todo
+## Visualization (todo)
 
  * visualization (incanter, oz, etc) 
  
-### Worldmeter
+<a name="questions"/></a> 
+## Questions? 
+
+- Why are people with symptoms testing negative for SARS-COV-2 (covid19)?
+ - Do they have an Influenza strain? 
+ - Air pollution sensitivities?
+ - Is the tissue (throat via nasal/mouth) swabbed location always going to have viral proteins?
+   - If not, what about sputum/phlegm?
+   - How long would the virus remain in the throat? 3 days? 4 days?
+ - What are the test processing errors?
+   - PCR processing familiarity? Abbott's "ID NOW Platform"
+ - What is the false negative rate? 30% 40%?    
+ 
+### Worldometer
 
 Copy and paste table view into CSV. See **clash.example.covid19_worldmeter.clj**
  
@@ -67,6 +79,10 @@ shows an increase as well. Population is used consistently within a given day.*
 (def daily_reports (wm-daily-sorts daily_data))
 (keys daily_sorts)
 (:daily_tests_deaths :daily_relatives :dates :combined :combined_gradients :combined_tests_deaths :combined_relatives)
+
+;; 3, 5, 10 day averages for each field
+(def avg-3-5-10 [{:fx #(mean (take 3 %)) :name "3-day-avg"} {:fx #(mean (take 5 %)) :name "5-day-avg"} {:fx #(mean (take 10 %)) :name "10-day-avg"}])
+(def daily-avgs (combined-functions (:combined daily_sorts) avg-3-5-10))
 ```
 
 <a name="mortality"/></a>
