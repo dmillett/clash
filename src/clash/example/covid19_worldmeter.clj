@@ -288,8 +288,13 @@
 
 (defn mean
   "Calculate the average or mean from a sequence of numbers."
-  ([coll]
-   (/ (reduce + (filter identity coll)) (count coll))))
+  [coll]
+  (try
+    (if (and (coll? coll) (not (empty? coll)))
+      (float (/ (reduce + (filter identity coll)) (count coll)))
+      coll
+      )
+    (catch Exception _)))
 
 (defn combine-percentages
   "Combine all or the last 'ndays' of days from daily percentages until a single combined map."
@@ -304,10 +309,19 @@
          combined))
      ) ) )
 
-(def avg-3-5-10 [{:fx #(mean (take 3 %)) :name "3-day-avg"}
-                 {:fx #(mean (take 5 %)) :name "5-day-avg"}
-                 {:fx #(mean (take 10 %)) :name "10-day-avg"}])
+(defn avg-3-5-10-all
+  [& {:keys [to from] :or {to nil from nil}}]
+  [{:fx #(mean (take 3 %)) :name "3-day-avg-from" :date from}
+   {:fx #(mean (take 5 %)) :name "5-day-avg-from" :date from}
+   {:fx #(mean (take 10 %)) :name "10-day-avg-from" :date from}
+   {:fx #(mean (take 3 (reverse %))) :name "3-day-avg-until" :date to}
+   {:fx #(mean (take 5 (reverse %))) :name "5-day-avg-until" :date to}
+   {:fx #(mean (take 10 (reverse %))) :name "10-day-avg-until" :date to}
+   {:fx #(mean %) :name "avg"}
+    ])
 
+(def avg-fields
+  ["3-day-avg-from" "5-day-avg-from" "10-day-avg-from" "3-day-avg-until" "5-day-avg-until" "10-day-avg-until"])
 
 (defn combined-functions
   "Run data for combined value data through a function or functions. For example,
@@ -319,8 +333,13 @@
     (fn [r k v] (assoc r k
                          (reduce-kv
                            (fn [r1 k1 v1]
-                             (let [calcs (reduce (fn [r fx] (assoc r (keyword (:name fx)) ((:fx fx) v1))) {} fxs)]
-                              (assoc r1 k1 (merge {:data v1} calcs))))
+                             (let [done (if (coll? v1) v1 [v1])
+                                   calcs (reduce
+                                           (fn [r fx]
+                                             (assoc r (:name fx) ((:fx fx) done)))
+                                           {}
+                                           fxs)]
+                              (assoc r1 k1 (merge calcs {:data v1}))))
                            {}
                            v)))
     {}
@@ -332,11 +351,15 @@
     {\"us_20200407\" {\"New York\" {:death_count [4 5 6]} \"New Jersey\" {:death_count [1 2 3]}, ...}}
   "
   [percentages]
-  (let [combined (apply merge-percentages (vals (sort percentages)))]
+  (let [combined (apply merge-percentages (vals (sort percentages)))
+        date_sort (sort (keys percentages))
+        from (first date_sort)
+        to (last date_sort)]
     {:daily_tests_deaths (reduce-kv (fn [r k v] (assoc r k (ct/sort-map-by-value v :ksubset death_test_percents :datafx +values))) {} percentages)
      :daily_relatives (reduce-kv (fn [r k v] (assoc r k (ct/sort-map-by-value v :ksubset relative_to_max :datafx *values))) {} percentages)
      :dates (keys (sort percentages))
      :combined combined
+     :combined_averages (combined-functions combined (avg-3-5-10-all :to to :from from))
      :combined_gradients (ct/sort-map-by-value (combined-deltas combined) :ksubpath [:death_test_percent :gradients] :datafx +values)
      :combined_tests_deaths (ct/sort-map-by-value combined :ksubset death_test_percents :datafx ++values)
      :combined_relatives (ct/sort-map-by-value combined :ksubset relative_to_max :datafx **values)
