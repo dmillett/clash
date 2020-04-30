@@ -215,12 +215,8 @@
 (def relative_to_max [:test_ratio_relative_max :test_positive_ratio_relative_max :death_ratio_relative_max])
 (def relative_pr_focus (conj relative_to_max :test_count :death_count))
 
-;; Sort death and test percents
-(def death_test_percents [:test_population_percent :test_unknowns_percent :test_positive_percent :death_percent
-                          :death_test_percent])
-
+(def death_test_percents [:test_population_percent :test_unknowns_percent :test_positive_percent :death_percent :death_test_percent])
 (def death_percents [:death_test_positive_percent :death_test_percent :death_population_percent])
-
 (def tests [:test_count :death_count :test_positive_percent])
 
 ;; todo: kind of ugly duplication here to cleanup
@@ -228,7 +224,6 @@
   "Print out sort, ratio percentages from (wm-percentages) output. This keeps the keys in a specific
   order when printing key:value data."
   [data & {:keys [focus] :or {focus nil}}]
-  ;(println "data:" data)
   (let [prefx (fn [value] (if (and focus (some #{value} focus)) (str "**" value ":") (str " " value ":")))
         prmapfx (fn [v] (map #(str (prefx %) (% v) ",\n") percentage-keys))
         prvalfx (fn [v] (map #(str (prefx %) v ",\n") percentage-keys))]
@@ -269,15 +264,34 @@
   (let [c (if (coll? coll) coll [coll])]
     (loop [x0 (first c)
            data (rest c)
-           deltas []
-           gradients []]
+           deltas []]
       (if (empty? data)
-        {:deltas deltas :gradients gradients}
+        deltas
         (let [x1 (first data)
-              delta (when (and x0 x1) (- x1 (double x0)))
-              last_delta (if ((ct/none? nil? zero?) (last deltas)) (last deltas) 1.0)]
-          (recur x1 (rest data) (conj deltas delta) (conj gradients (if delta (/ delta last_delta) nil))))
-      ) ) ) )
+              delta (when (and x0 x1) (- x1 (double x0)))]
+          (recur x1 (rest data) (conj deltas delta)))))
+      ) )
+
+(defn gradient
+  "Calculate the gradients for a collection of numbers. In this case
+
+  deltaY(n-1) = Y(n-1) - Y(n-2)
+  deltaY(n) = Y(n) - Y(n-1)
+
+  (deltaY(n) - deltaY(n-1))/ deltaY(n-1)
+
+  Since the stats are calucated 1/day, X = 1.
+  "
+  [coll & {:keys [units] :or {units 1}}]
+  (for [n (range 1 (count coll))]
+    (double (cond
+      (zero? n) (nth coll n)
+      (= 1 n) (- (nth coll 1) (first coll))
+      :default (let [vpp (nth coll (- n 2))
+                     vp (nth coll (dec n))
+                     v (nth coll n)]
+                 (/ (- v vp) (if (= vpp vp) 1 (Math/abs (- vp vpp))))))
+      ) ) )
 
 (defn- combined-deltas
   [combined_percentages & {:keys [ks n] :or {ks nil n nil}}]
@@ -291,7 +305,7 @@
   [coll]
   (try
     (if (and (coll? coll) (not (empty? coll)))
-      (float (/ (reduce + (filter identity coll)) (count coll)))
+      (double (/ (reduce + (filter identity coll)) (count coll)))
       coll
       )
     (catch Exception _)))
@@ -309,19 +323,25 @@
          combined))
      ) ) )
 
-(defn avg-3-5-10-all
-  [& {:keys [to from] :or {to nil from nil}}]
-  [{:fx #(mean (take 3 %)) :name "3-day-avg-from" :date from}
-   {:fx #(mean (take 5 %)) :name "5-day-avg-from" :date from}
-   {:fx #(mean (take 10 %)) :name "10-day-avg-from" :date from}
-   {:fx #(mean (take 3 (reverse %))) :name "3-day-avg-until" :date to}
-   {:fx #(mean (take 5 (reverse %))) :name "5-day-avg-until" :date to}
-   {:fx #(mean (take 10 (reverse %))) :name "10-day-avg-until" :date to}
-   {:fx #(mean %) :name "avg"}
-    ])
+(def report_keys
+  {:avg "avg" :avg_5days_until "avg-5-days-until" :avg_10days_until "avg-10-days-until" :avg_20days_until "avg-20-days-until"
+   :grad "grad" :grad_5days_until "grad-5-days-until" :grad_10days_until "grad-10-days-until" :grad_20days_until "grad-20-days-until"})
 
-(def avg-fields
-  ["3-day-avg-from" "5-day-avg-from" "10-day-avg-from" "3-day-avg-until" "5-day-avg-until" "10-day-avg-until"])
+
+(defn avg-5-10-20-all
+  [& {:keys [to from] :or {to nil from nil}}]
+  [;{:fx #(mean (take 3 %)) :name "average-3-day-from" :date from}
+   ;{:fx #(mean (take 5 %)) :name "average-5-day-from" :date from}
+   ;{:fx #(mean (take 10 %)) :name "average-10-day-from" :date from}
+   {:fx #(mean (take 5 (reverse %))) :name (:avg_5days_until report_keys) :date to}
+   {:fx #(mean (take 10 (reverse %))) :name (:avg_10days_until report_keys) :date to}
+   {:fx #(mean (take 20 (reverse %))) :name (:avg_20days_until report_keys) :date to}
+   {:fx #(mean %) :name (:avg report_keys)}
+   {:fx #(mean (drop (- (count %) 5) (gradient %))) :name (:grad_5days_until report_keys) :date to}
+   {:fx #(mean (drop (- (count %) 10) (gradient %))) :name (:grad_10days_until report_keys) :date to}
+   {:fx #(mean (drop (- (count %) 20) (gradient %))) :name (:grad_20days_until report_keys) :date to}
+   {:fx #(mean (gradient %)) :name "grad"}
+   ])
 
 (defn combined-functions
   "Run data for combined value data through a function or functions. For example,
@@ -359,9 +379,40 @@
      :daily_relatives (reduce-kv (fn [r k v] (assoc r k (ct/sort-map-by-value v :ksubset relative_to_max :datafx *values))) {} percentages)
      :dates (keys (sort percentages))
      :combined combined
-     :combined_averages (combined-functions combined (avg-3-5-10-all :to to :from from))
-     :combined_gradients (ct/sort-map-by-value (combined-deltas combined) :ksubpath [:death_test_percent :gradients] :datafx +values)
+     :combined_averages (combined-functions combined (avg-5-10-20-all :to to :from from))
      :combined_tests_deaths (ct/sort-map-by-value combined :ksubset death_test_percents :datafx ++values)
      :combined_relatives (ct/sort-map-by-value combined :ksubset relative_to_max :datafx **values)
      :combined_death (ct/sort-map-by-value combined :ksubset death_percents :datafx **values)
      }))
+
+
+(def death_and_death_percents (conj [:deaths] death_percents))
+
+(defn report-averages-gradients
+  "Grab the top 10 (n) states, in descending order, averages and gradients for a specific metric.
+  (report-averages-gradients (:combined_averages daily_sorts) death_percents (vals report_keys) :n 10 :dt )
+  "
+  [combined data_keys report_keys & {:keys [n dt] :or {n 10 dt ""}}]
+  (reduce
+    (fn [r k]
+      (assoc r k
+        (reduce
+          (fn [r1 k1]
+            (assoc r1 (keyword (str k1 dt)) (take n (keys (ct/sort-map-by-value combined :ksubpath [k] :ksubset [k1])))))
+          {}
+          report_keys))
+      )
+    {}
+    data_keys)
+  )
+
+(defn print-report-avgs-grads
+  "A more human readable format for avergae and gradient data from (report-averages-gradients)"
+  [data]
+  (print
+    (for [[s k] data]
+      (apply str "\n"
+        (for [[m d] k]
+          (str s "_" m "=" (apply str (interpose "," d)) "\n")
+          )))
+    ) )

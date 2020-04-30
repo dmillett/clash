@@ -103,7 +103,7 @@
   `(loop [i# ~n, ttime# 0, results# []]
      (if (zero? i#)
        {:total_time ttime#
-        :average_time (/ ttime# (float ~n))
+        :average_time (/ ttime# (double ~n))
         :values results#}
        (let [start# (System/nanoTime)
              result# ~fx

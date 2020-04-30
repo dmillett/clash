@@ -1,10 +1,11 @@
 # Example Usage: COVID-19 (SARS-CoV-2)
-  - from April 06, 2020 --> April 21, 2020
+  - from April 06, 2020 --> April 26, 2020
 
  * [Mortality](#mortality)
    - guesses at this point, but I tried to ball-park it
    - mortality driven by symptoms lasting 2+ weeks? (need data)
    - Higher mortality in northern states, why? Sunlight? Air pollution? Temperature? all?
+   - Vitamin D in the 30-34 ng/mL seems very beneficial
  * [Symptoms](#symptoms)
    - Symptoms seem to persist for 4 - 6 weeks based on myself and some people I've talked to (need more data)
    - Average time unil severe symptoms?
@@ -81,43 +82,44 @@ shows an increase as well. Population is used consistently within a given day.*
 (def daily_reports (wm-daily-sorts daily_data))
 (keys daily_sorts)
 (:daily_tests_deaths :daily_relatives :dates :combined :combined_gradients :combined_tests_deaths :combined_relatives)
+```
 
-;; 3, 5, 10 day averages for each field
-(def avg-3-5-10 [{:fx #(mean (take 3 %)) :name "3-day-avg"} {:fx #(mean (take 5 %)) :name "5-day-avg"} {:fx #(mean (take 10 %)) :name "10-day-avg"}])
-(def daily-avgs (combined-functions (:combined daily_sorts) avg-3-5-10-all))
+```clojure
+;; 5, 10, 20 day averages for each field
+(def avg-5-10-20 [{:fx #(mean (take 5 %)) :name "5-day-avg"} {:fx #(mean (take 10 %)) :name "10-day-avg"} {:fx #(mean (take 20 %)) :name "20-day-avg"}])
+(def daily-avgs (combined-functions (:combined daily_sorts) avg-5-10-20-all))
 
-;; "first" means after April 6
-(pprint (select-keys (get daily-avgs "New York") death_percents))
+(println (select-keys (get (:combined_averages daily_sorts) "New York") death_percents))
 {:death_test_positive_percent 
- {3-day-avg-from (us_20200406) 3.8694022, 
-  5-day-avg-from (us_20200406) 4.1069884, 
-  10-day-avg-from (us_20200406) 4.612323, 
-  3-day-avg-until (us_20200420) 7.4138265, 
-  5-day-avg-until (us_20200420) 7.3368526, 
-  10-day-avg-until (us_20200420) 6.227255, 
-  avg 5.520499,
-  data [3.606840716819794 3.8550679851668734 4.146297901052451 4.375743015652863 4.550992701238121 4.762509384798834 4.954729034131405 5.139659093813089 5.333714055030696 5.397674331929485 7.12031052440782 7.322473509410091 7.33111794259068 7.401654430354145 7.508707069585155]}, 
-
-:death_test_percent {
-  :3-day-avg-from (us_20200406) 1.6045978, 
-  :5-day-avg-from (us_20200406) 1.6991495, 
-  :10-day-avg-from (us_20200406) 1.896054, 
-  :3-day-avg-until (us_20200420) 2.9705217, 
-  :5-day-avg-until (us_20200420) 2.9650779, 
-  :10-day-avg-until (us_20200420) 2.5290182, 
-  :avg 2.2523954, 
-  :data [1.483116227311408 1.614136412023831 1.716540737718162 1.8048826583645978 1.877071443100375 1.956324549866207 2.033141176037314 2.102195640494442 2.1705202717457723 2.2026113472696442 2.925284110000563 2.9885402365222613 2.9622886953256486 2.962974957696076 2.9863014130858336]}, 
-
-:death_population_percent { 
-  :3-day-avg-from (us_20200406) 0.028060937, 
-  :5-day-avg-from (us_20200406) 0.03203763, 
-  :10-day-avg-from (us_20200406) 0.0417539, 
-  :3-day-avg-until (us_20200420) 0.093275756, 
-  :5-day-avg-until (us_20200420) 0.08984892, 
-  :10-day-avg-until (us_20200420) 0.07065954, 
-  :avg 0.057785574, 
-  :data [0.02425340001268232 0.0279794408964513 0.031949972907768666 0.03602184839537116 0.03998349890583147 0.043974264223701834 0.04783778073475467 0.05125783808853935 0.05522454865247565 0.05905641549374063 0.08209517739510871 0.08732215902623687 0.09007431602571994 0.09326852823811987 0.09648441261157141]}
-}
+  {avg 6.325605261554333, 
+   avg-5-days-until 7.622359783300837, 
+   avg-10-days-until 7.651574165090767, 
+   avg-20-days-until 6.791528832930602, 
+   grad 1.7111434909985521, 
+   grad-5-days-until 1.5380328017285398, 
+   grad-10-days-until -0.538224143316904, 
+   grad-20-days-until 1.9149046023222618, 
+  :data [3.606840716819794 3.8550679851668734 4.146297901052451 4.375743015652863 4.550992701238121 4.762509384798834 4.954729034131405 5.139659093813089 5.333714055030696 5.397674331929485 7.12031052440782 7.322473509410091 7.33111794259068 7.401654430354145 7.508707069585155 7.675936933600982 7.760763798862233 7.767116810198785 7.691418122156329 7.598686150121569 7.576762553955733 7.591508838807533 7.677558467407531 7.667282906211826]}, 
+:death_test_percent 
+  {avg 2.4799421253928626, 
+   avg-5-days-until 2.7502741470415666, 
+   avg-10-days-until 2.871898254595241, 
+   avg-20-days-until 2.644996748700536, 
+   grad -2.859537951617892, 
+   grad-5-days-until -30.00937339344578, 
+   grad-10-days-until -14.332853108608614, 
+   grad-20-days-until -3.5979902508070545, 
+   :data [1.483116227311408 1.614136412023831 1.716540737718162 1.8048826583645978 1.877071443100375 1.956324549866207 2.033141176037314 2.102195640494442 2.1705202717457723 2.2026113472696442 2.925284110000563 2.9885402365222613 2.9622886953256486 2.962974957696076 2.9863014130858336 3.032841797250991 3.0379920654584747 2.9976146683526843 2.912861866596593 2.817502777892094 2.7658781896070033 2.7385470194106 2.738954359439239 2.690488388858898]}, 
+:death_population_percent 
+  {avg 0.07766177609341873, 
+   avg-5-days-until 0.11562988888608702, 
+   avg-10-days-until 0.10935834372455475, 
+   avg-20-days-until 0.08718389820148884, 
+   grad 1.1222380256519207,     
+   grad-5-days-until 0.9164020385391499, 
+   grad-10-days-until 0.9804363487998484,
+   grad-20-days-until 1.1970356636268467, 
+   :data [0.02425340001268232 0.0279794408964513 0.031949972907768666 0.03602184839537116 0.03998349890583147 0.043974264223701834 0.04783778073475467 0.05125783808853935 0.05522454865247565 0.05905641549374063 0.08209517739510871 0.08732215902623687 0.09007431602571994 0.09326852823811987 0.09648441261157141 0.10038100230530199 0.1037504720101065 0.1063343864486532 0.10848371943947921 0.11167172387132451 0.11354206961782941 0.11531473817978061 0.1179695074513107 0.1196514053101899]}}
 ```
 
 <a name="mortality"/></a>
@@ -133,33 +135,36 @@ states to have a higher mortality rate. The northern states seem to be faring wo
 temperature factor as well. 
 
 ```clojure
-;; Last 3 days
-(def last_3_days (sort-map-by-value (:combined_averages daily_sorts) :ksubpath [:death_population_percent] :ksubset ["3-day-avg-until"]))
-(take 5 (keys last_3_days))
-("New York" "New Jersey" "Connecticut" "Louisiana" "Massachusetts")
-(take 10 (keys last_3_days))
-("New York" "New Jersey" "Connecticut" "Louisiana" "Massachusetts" "Michigan" "District Of Columbia" "Rhode Island" "Illinois" "Pennsylvania")
+(def top10_avg_grads (report-averages-gradients (:combined_averages daily_sorts) death_percents (vals report_keys) :dt "-20200429"))
+(print-report-avgs-grads top10_avg_grads)
 
-(def last_3_days_dt (sort-map-by-value (:combined_averages daily_sorts) :ksubpath [:death_test_percent] :ksubset ["3-day-avg-until"]))
-("Northern Mariana Islands" "New York" "New Jersey" "Michigan" "Connecticut" "Massachusetts" "Colorado" "Louisiana" "Indiana" "Illinois")
-
-;; Last 5, 10 days (Note Washington state is moving down the list, while Pennsylvania is moving up
-(def last_5_days (sort-map-by-value (:combined_averages daily_sorts) :ksubpath [:death_population_percent] :ksubset ["5-day-avg-until"]))
-(take 5 (keys last_5_days))
-("New York" "New Jersey" "Connecticut" "Louisiana" "Michigan")
-
-(take 10 (keys last_10_days))
-("New York" "New Jersey" "Connecticut" "Louisiana" "Michigan" "Massachusetts" "District Of Columbia" "Rhode Island" "Illinois" "Washington")
-
-(def last_10_days_dt (sort-map-by-value (:combined_averages daily_sorts) :ksubpath [:death_test_percent] :ksubset ["10-day-avg-until"]))
-("Northern Mariana Islands" "New York" "New Jersey" "Michigan" "Connecticut" "Louisiana" "Indiana" "Georgia" "Colorado" "Massachusetts")
-
-;; From April 6, 2020
-(def avg (sort-map-by-value (:combined_averages daily_sorts) :ksubpath [:death_population_percent] :ksubset ["avg"]))
-(take 5 (keys avg))
-("New York" "New Jersey" "Louisiana" "Connecticut" "Michigan")
-(take 10 (keys avg))
-("New York" "New Jersey" "Louisiana" "Connecticut" "Michigan" "Massachusetts" "District Of Columbia" "Rhode Island" "Washington" "Illinois")
+(:death_test_positive_percent_:avg-20200429=Northern Mariana Islands,Michigan,New York,Veteran Affairs,Connecticut,Minnesota,Oklahoma,Kentucky,Puerto Rico,Washington
+:death_test_positive_percent_:avg-5-days-until-20200429=Northern Mariana Islands,Michigan,Connecticut,New York,Minnesota,Louisiana,United States Virgin Islands,Puerto Rico,Veteran Affairs,Oklahoma
+:death_test_positive_percent_:avg-10-days-until-20200429=Northern Mariana Islands,Michigan,New York,Connecticut,Minnesota,Louisiana,Veteran Affairs,United States Virgin Islands,Oklahoma,Washington
+:death_test_positive_percent_:avg-20-days-until-20200429=Northern Mariana Islands,Michigan,New York,Connecticut,Veteran Affairs,Minnesota,Oklahoma,Louisiana,Puerto Rico,Washington
+:death_test_positive_percent_:grad-20200429=Delaware,Louisiana,Texas,District Of Columbia,California,Maine,New Jersey,Washington,Rhode Island,Georgia
+:death_test_positive_percent_:grad-5-days-until-20200429=California,District Of Columbia,Ohio,Rhode Island,Hawaii,Arkansas,Georgia,Washington,Texas,Montana
+:death_test_positive_percent_:grad-10-days-until-20200429=Delaware,Louisiana,California,New Jersey,Hawaii,District Of Columbia,Ohio,Texas,Washington,Rhode Island
+:death_test_positive_percent_:grad-20-days-until-20200429=Delaware,Louisiana,District Of Columbia,California,Maine,New Jersey,Washington,Rhode Island,Georgia,Hawaii
+ 
+:death_test_percent_:avg-20200429=Northern Mariana Islands,New York,New Jersey,Michigan,Connecticut,Louisiana,Massachusetts,Colorado,Indiana,Georgia
+:death_test_percent_:avg-5-days-until-20200429=Northern Mariana Islands,New York,New Jersey,Connecticut,Michigan,Massachusetts,Louisiana,Colorado,Indiana,District Of Columbia
+:death_test_percent_:avg-10-days-until-20200429=Northern Mariana Islands,New York,New Jersey,Connecticut,Michigan,Massachusetts,Louisiana,Colorado,Indiana,Pennsylvania
+:death_test_percent_:avg-20-days-until-20200429=Northern Mariana Islands,New York,New Jersey,Michigan,Connecticut,Massachusetts,Louisiana,Colorado,Indiana,Illinois
+:death_test_percent_:grad-20200429=Virginia,Louisiana,New Jersey,District Of Columbia,North Carolina,Delaware,New Mexico,Missouri,Ohio,Nevada
+:death_test_percent_:grad-5-days-until-20200429=District Of Columbia,Missouri,North Carolina,New Jersey,Wisconsin,Pennsylvania,Indiana,Ohio,Massachusetts,Texas
+:death_test_percent_:grad-10-days-until-20200429=Louisiana,New Jersey,District Of Columbia,Missouri,North Carolina,Indiana,Nevada,Pennsylvania,Colorado,Delaware
+:death_test_percent_:grad-20-days-until-20200429=Louisiana,Virginia,New Jersey,District Of Columbia,North Carolina,Delaware,New Mexico,Missouri,Nebraska,Ohio
+ 
+:death_population_percent_:avg-20200429=New York,New Jersey,Connecticut,Louisiana,Massachusetts,Michigan,District Of Columbia,Rhode Island,Illinois,Pennsylvania
+:death_population_percent_:avg-5-days-until-20200429=New York,New Jersey,Connecticut,Massachusetts,Louisiana,Michigan,District Of Columbia,Rhode Island,Maryland,Illinois
+:death_population_percent_:avg-10-days-until-20200429=New York,New Jersey,Connecticut,Massachusetts,Louisiana,Michigan,District Of Columbia,Rhode Island,Pennsylvania,Illinois
+:death_population_percent_:avg-20-days-until-20200429=New York,New Jersey,Connecticut,Louisiana,Massachusetts,Michigan,District Of Columbia,Rhode Island,Illinois,Pennsylvania
+:death_population_percent_:grad-20200429=New Mexico,Alaska,North Dakota,Montana,Utah,South Dakota,Hawaii,New Hampshire,Idaho,Nebraska
+:death_population_percent_:grad-5-days-until-20200429=South Dakota,Utah,Hawaii,Montana,New Hampshire,Arizona,Puerto Rico,Georgia,Oregon,Colorado
+:death_population_percent_:grad-10-days-until-20200429=North Dakota,South Dakota,Montana,Idaho,New Hampshire,Utah,Hawaii,Nebraska,Vermont,Arkansas
+:death_population_percent_:grad-20-days-until-20200429=New Mexico,Alaska,Montana,North Dakota,South Dakota,Utah,Hawaii,New Hampshire,Idaho,Nebraska
+)
 ```
 
 ```clojure
@@ -179,29 +184,6 @@ temperature factor as well.
 <a name="wm-summaries-and-gradients"/></a>
 ##### Summaries
 
-**Relative Sorting**
-```clojure
-;; Top 10 states in terms of testing and death
-(keys (take 10 (:combined_relatives daily_sorts)))
-("New York" "New Jersey" "California" "Michigan" "Louisiana" "Florida" "Washington" "Massachusetts" "Illinois" "Pennsylvania")
-
-;; As a combination of tests and deaths with higher percentages
-(keys (take 10 (:combined_tests_deaths daily_sorts)))
-("New York" "Northern Mariana Islands" "Louisiana" "New Jersey" "Michigan" "Oklahoma" "Washington" "Connecticut" "Massachusetts" "District Of Columbia")
-
-;; These states are increasing the fastest Sorted by highest gradient for 'deaths per test' (linear growth = 1.0)
-(def dtgradients (ct/sort-map-by-value (:combined_gradients daily_sorts) :ksubpath [:death_test_percent :gradients] :datafx +values))
-(keys (take 10 dtgradients))
-
-;; April 21st
-("Virginia" "Puerto Rico" "New Jersey" "Tennessee" "New York" "North Carolina" "Rhode Island" "Nebraska" "District Of Columbia" "Arkansas")
-
-;; April 15th
-("Virginia" "Puerto Rico" "Tennessee" "New Jersey" "North Carolina" "District Of Columbia" "Rhode Island" "Pennsylvania" "Ohio" "Kentucky")
-
-;; April 13th
-("North Carolina" "Rhode Island" "New Jersey" "Ohio" "Kentucky" "Iowa" "Oklahoma" "Tennessee" "Arizona" "Massachusetts")
-```
 **Gradients**
 Even though New York vs North Carolina has two orders of magnitude more deaths associated with covid19, its deaths relative to
 test percentage is actually decreasing (gradient < 1.0). However, North Carolina has a low test rate relative to its
