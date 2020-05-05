@@ -1,6 +1,10 @@
 # Example Usage: COVID-19 (SARS-CoV-2)
-  - from April 06, 2020 --> April 26, 2020
+  - from April 06, 2020 --> May 4, 2020
 
+ * Ciruculation
+   - ? November, China
+   - December (27?), France+
+   - ? CES, Las Vegas
  * [Mortality](#mortality)
    - guesses at this point, but I tried to ball-park it
    - mortality driven by symptoms lasting 2+ weeks? (need data)
@@ -77,9 +81,9 @@ shows an increase as well. Population is used consistently within a given day.*
 ;; Get the percentage data for all files in a directory (days)
 (def daily-data (wm-daily-workflow "/media/dave/storage/dev/clash/test/resources/worldmeter" maxkeys))
 (sort (keys daily_data))
-("us_20200406" "us_20200407"... "us_20200421")
+("us_20200406" "us_20200407"... "us_20200504")
 
-(def daily_reports (wm-daily-sorts daily_data))
+(def daily_sorts (wm-daily-sorts daily_data))
 (keys daily_sorts)
 (:daily_tests_deaths :daily_relatives :dates :combined :combined_gradients :combined_tests_deaths :combined_relatives)
 ```
@@ -89,37 +93,41 @@ shows an increase as well. Population is used consistently within a given day.*
 (def avg-5-10-20 [{:fx #(mean (take 5 %)) :name "5-day-avg"} {:fx #(mean (take 10 %)) :name "10-day-avg"} {:fx #(mean (take 20 %)) :name "20-day-avg"}])
 (def daily-avgs (combined-functions (:combined daily_sorts) avg-5-10-20-all))
 
-(println (select-keys (get (:combined_averages daily_sorts) "New York") death_percents))
-{:death_test_positive_percent 
-  {avg 6.325605261554333, 
-   avg-5-days-until 7.622359783300837, 
-   avg-10-days-until 7.651574165090767, 
-   avg-20-days-until 6.791528832930602, 
-   grad 1.7111434909985521, 
-   grad-5-days-until 1.5380328017285398, 
-   grad-10-days-until -0.538224143316904, 
-   grad-20-days-until 1.9149046023222618, 
-  :data [3.606840716819794 3.8550679851668734 4.146297901052451 4.375743015652863 4.550992701238121 4.762509384798834 4.954729034131405 5.139659093813089 5.333714055030696 5.397674331929485 7.12031052440782 7.322473509410091 7.33111794259068 7.401654430354145 7.508707069585155 7.675936933600982 7.760763798862233 7.767116810198785 7.691418122156329 7.598686150121569 7.576762553955733 7.591508838807533 7.677558467407531 7.667282906211826]}, 
-:death_test_percent 
-  {avg 2.4799421253928626, 
-   avg-5-days-until 2.7502741470415666, 
-   avg-10-days-until 2.871898254595241, 
-   avg-20-days-until 2.644996748700536, 
-   grad -2.859537951617892, 
-   grad-5-days-until -30.00937339344578, 
-   grad-10-days-until -14.332853108608614, 
-   grad-20-days-until -3.5979902508070545, 
-   :data [1.483116227311408 1.614136412023831 1.716540737718162 1.8048826583645978 1.877071443100375 1.956324549866207 2.033141176037314 2.102195640494442 2.1705202717457723 2.2026113472696442 2.925284110000563 2.9885402365222613 2.9622886953256486 2.962974957696076 2.9863014130858336 3.032841797250991 3.0379920654584747 2.9976146683526843 2.912861866596593 2.817502777892094 2.7658781896070033 2.7385470194106 2.738954359439239 2.690488388858898]}, 
-:death_population_percent 
-  {avg 0.07766177609341873, 
-   avg-5-days-until 0.11562988888608702, 
-   avg-10-days-until 0.10935834372455475, 
-   avg-20-days-until 0.08718389820148884, 
-   grad 1.1222380256519207,     
-   grad-5-days-until 0.9164020385391499, 
-   grad-10-days-until 0.9804363487998484,
-   grad-20-days-until 1.1970356636268467, 
-   :data [0.02425340001268232 0.0279794408964513 0.031949972907768666 0.03602184839537116 0.03998349890583147 0.043974264223701834 0.04783778073475467 0.05125783808853935 0.05522454865247565 0.05905641549374063 0.08209517739510871 0.08732215902623687 0.09007431602571994 0.09326852823811987 0.09648441261157141 0.10038100230530199 0.1037504720101065 0.1063343864486532 0.10848371943947921 0.11167172387132451 0.11354206961782941 0.11531473817978061 0.1179695074513107 0.1196514053101899]}}
+(pprint (select-keys (get (:combined_averages daily_sorts) "New York") death_percents))
+
+[:death_test_positive_percent
+ {"avg" 6.550472755110436,
+  "avg-5-days-until" 7.629836724179721,
+  "avg-10-days-until" 7.626098253740279,
+  "avg-20-days-until" 7.461907800524925,
+  "grad" 0.8557793208025996,
+  "grad-5-days-until" -3.43452492537798,
+  "grad-10-days-until" -1.0269275670644176,
+  "grad-20-days-until" 0.8701040607803178,  
+  :data
+  [3.606840716819794,   3.8550679851668734,   4.146297901052451,   4.375743015652863,   4.550992701238121,   4.762509384798834,   4.954729034131405,   5.139659093813089,   5.333714055030696,   5.397674331929485,   7.12031052440782,   7.322473509410091,   7.33111794259068,   7.401654430354145,   7.508707069585155,   7.675936933600982,   7.760763798862233,   7.767116810198785,   7.691418122156329,   7.598686150121569,   7.576762553955733,   7.591508838807533,   7.677558467407531,   7.667282906211826,   7.650262676176413,   7.635571121304984,   7.633774313702762,   7.610155519122647,   7.619419990591799]}]
+[:death_test_percent
+ {"avg" 2.4921185351031987,
+  "avg-5-days-until" 2.5505653017128154,
+  "avg-10-days-until" 2.6504197243771914,
+  "avg-20-days-until" 2.7756754200665337,
+  "grad" -2.508580032325629,
+  "grad-20-days-until" -4.066203535273584,
+  "grad-5-days-until" -0.859123098941059,
+  "grad-10-days-until" -13.83426239907658,
+  :data
+  [1.483116227311408,   1.614136412023831,   1.716540737718162,   1.8048826583645978,   1.877071443100375,   1.956324549866207,   2.033141176037314,   2.102195640494442,   2.1705202717457723,   2.2026113472696442,   2.925284110000563,   2.9885402365222613,   2.9622886953256486,   2.962974957696076,   2.9863014130858336,   3.032841797250991,   3.0379920654584747,   2.9976146683526843,   2.912861866596593,   2.817502777892094,   2.7658781896070033,   2.7385470194106,   2.738954359439239,   2.690488388858898,   2.640356370387149,   2.595213911873354,   2.540935145049566,   2.5000228215325717,   2.4762982597214362]}]
+[:death_population_percent
+ {"avg" 0.08568180963913034,
+  "avg-5-days-until" 0.12417797065854594,
+  "avg-10-days-until" 0.11990392977231648,
+  "avg-20-days-until" 0.10631449433586018,  
+  "grad" 1.0968493832713535,
+  "grad-5-days-until" 0.9928876711406451,
+  "grad-10-days-until" 0.9517684773067029,
+  "grad-20-days-until" 1.1924978963189221,
+  :data
+  [0.02425340001268232,   0.0279794408964513,   0.031949972907768666,   0.03602184839537116,   0.03998349890583147,   0.043974264223701834,   0.04783778073475467,   0.05125783808853935,   0.05522454865247565,   0.05905641549374063,   0.08209517739510871,   0.08732215902623687,   0.09007431602571994,   0.09326852823811987,   0.09648441261157141,   0.10038100230530199,   0.1037504720101065,   0.1063343864486532,   0.10848371943947921,   0.11167172387132451,   0.11354206961782941,   0.11531473817978061,   0.1179695074513107,   0.1196514053101899,   0.1212134804886055,   0.1226861461146176,   0.12420853883751959,   0.1256361515273524,   0.1271455363246346]}]
 ```
 
 <a name="mortality"/></a>
@@ -138,32 +146,33 @@ temperature factor as well.
 (def top10_avg_grads (report-averages-gradients (:combined_averages daily_sorts) death_percents (vals report_keys) :dt "-20200429"))
 (print-report-avgs-grads top10_avg_grads)
 
-(:death_test_positive_percent_:avg-20200429=Northern Mariana Islands,Michigan,New York,Veteran Affairs,Connecticut,Minnesota,Oklahoma,Kentucky,Puerto Rico,Washington
-:death_test_positive_percent_:avg-5-days-until-20200429=Northern Mariana Islands,Michigan,Connecticut,New York,Minnesota,Louisiana,United States Virgin Islands,Puerto Rico,Veteran Affairs,Oklahoma
-:death_test_positive_percent_:avg-10-days-until-20200429=Northern Mariana Islands,Michigan,New York,Connecticut,Minnesota,Louisiana,Veteran Affairs,United States Virgin Islands,Oklahoma,Washington
-:death_test_positive_percent_:avg-20-days-until-20200429=Northern Mariana Islands,Michigan,New York,Connecticut,Veteran Affairs,Minnesota,Oklahoma,Louisiana,Puerto Rico,Washington
-:death_test_positive_percent_:grad-20200429=Delaware,Louisiana,Texas,District Of Columbia,California,Maine,New Jersey,Washington,Rhode Island,Georgia
-:death_test_positive_percent_:grad-5-days-until-20200429=California,District Of Columbia,Ohio,Rhode Island,Hawaii,Arkansas,Georgia,Washington,Texas,Montana
-:death_test_positive_percent_:grad-10-days-until-20200429=Delaware,Louisiana,California,New Jersey,Hawaii,District Of Columbia,Ohio,Texas,Washington,Rhode Island
-:death_test_positive_percent_:grad-20-days-until-20200429=Delaware,Louisiana,District Of Columbia,California,Maine,New Jersey,Washington,Rhode Island,Georgia,Hawaii
+(
+:death_test_positive_percent_:avg-20200504=Northern Mariana Islands,Michigan,New York,Connecticut,Veteran Affairs,Minnesota,Oklahoma,Louisiana,Puerto Rico,Kentucky
+:death_test_positive_percent_:avg-5-days-until-20200504=Northern Mariana Islands,Michigan,Connecticut,New York,Louisiana,Minnesota,Indiana,New Jersey,Veteran Affairs,Oklahoma
+:death_test_positive_percent_:avg-10-days-until-20200504=Northern Mariana Islands,Michigan,Connecticut,New York,Minnesota,Louisiana,United States Virgin Islands,Veteran Affairs,Oklahoma,Indiana
+:death_test_positive_percent_:avg-20-days-until-20200504=Northern Mariana Islands,Michigan,New York,Connecticut,Minnesota,Veteran Affairs,Louisiana,Oklahoma,Indiana,United States Virgin Islands
+:death_test_positive_percent_:grad-20200504=Delaware,Louisiana,Texas,California,District Of Columbia,Michigan,Maine,New Jersey,Washington,Hawaii
+:death_test_positive_percent_:grad-5-days-until-20200504=Oklahoma,North Carolina,New Mexico,Hawaii,Veteran Affairs,Connecticut,Mississippi,Michigan,Arkansas,Rhode Island
+:death_test_positive_percent_:grad-10-days-until-20200504=California,Michigan,Hawaii,Oklahoma,Rhode Island,Ohio,North Carolina,District Of Columbia,Arkansas,Georgia
+:death_test_positive_percent_:grad-20-days-until-20200504=Delaware,Louisiana,California,Michigan,Hawaii,Rhode Island,New Jersey,Oklahoma,District Of Columbia,North Dakota
  
-:death_test_percent_:avg-20200429=Northern Mariana Islands,New York,New Jersey,Michigan,Connecticut,Louisiana,Massachusetts,Colorado,Indiana,Georgia
-:death_test_percent_:avg-5-days-until-20200429=Northern Mariana Islands,New York,New Jersey,Connecticut,Michigan,Massachusetts,Louisiana,Colorado,Indiana,District Of Columbia
-:death_test_percent_:avg-10-days-until-20200429=Northern Mariana Islands,New York,New Jersey,Connecticut,Michigan,Massachusetts,Louisiana,Colorado,Indiana,Pennsylvania
-:death_test_percent_:avg-20-days-until-20200429=Northern Mariana Islands,New York,New Jersey,Michigan,Connecticut,Massachusetts,Louisiana,Colorado,Indiana,Illinois
-:death_test_percent_:grad-20200429=Virginia,Louisiana,New Jersey,District Of Columbia,North Carolina,Delaware,New Mexico,Missouri,Ohio,Nevada
-:death_test_percent_:grad-5-days-until-20200429=District Of Columbia,Missouri,North Carolina,New Jersey,Wisconsin,Pennsylvania,Indiana,Ohio,Massachusetts,Texas
-:death_test_percent_:grad-10-days-until-20200429=Louisiana,New Jersey,District Of Columbia,Missouri,North Carolina,Indiana,Nevada,Pennsylvania,Colorado,Delaware
-:death_test_percent_:grad-20-days-until-20200429=Louisiana,Virginia,New Jersey,District Of Columbia,North Carolina,Delaware,New Mexico,Missouri,Nebraska,Ohio
+:death_test_percent_:avg-20200504=Northern Mariana Islands,New York,New Jersey,Michigan,Connecticut,Louisiana,Massachusetts,Indiana,Colorado,Georgia
+:death_test_percent_:avg-5-days-until-20200504=New Jersey,New York,Connecticut,Michigan,Northern Mariana Islands,Massachusetts,Louisiana,Pennsylvania,Indiana,District Of Columbia
+:death_test_percent_:avg-10-days-until-20200504=Northern Mariana Islands,New Jersey,New York,Connecticut,Michigan,Massachusetts,Louisiana,Indiana,Colorado,Pennsylvania
+:death_test_percent_:avg-20-days-until-20200504=Northern Mariana Islands,New York,New Jersey,Connecticut,Michigan,Massachusetts,Louisiana,Indiana,Colorado,Pennsylvania
+:death_test_percent_:grad-20200504=Virginia,Louisiana,New Jersey,District Of Columbia,Delaware,New Mexico,North Carolina,Nevada,Nebraska,Rhode Island
+:death_test_percent_:grad-5-days-until-20200504=Veteran Affairs,California,Rhode Island,New Mexico,West Virginia,Oklahoma,Connecticut,Delaware,Arkansas,Puerto Rico
+:death_test_percent_:grad-10-days-until-20200504=District Of Columbia,New Jersey,Missouri,Wisconsin,Veteran Affairs,North Carolina,West Virginia,Pennsylvania,Delaware,Arkansas
+:death_test_percent_:grad-20-days-until-20200504=Louisiana,New Jersey,District Of Columbia,Nebraska,North Carolina,New Mexico,Missouri,Veteran Affairs,Delaware,Connecticut
  
-:death_population_percent_:avg-20200429=New York,New Jersey,Connecticut,Louisiana,Massachusetts,Michigan,District Of Columbia,Rhode Island,Illinois,Pennsylvania
-:death_population_percent_:avg-5-days-until-20200429=New York,New Jersey,Connecticut,Massachusetts,Louisiana,Michigan,District Of Columbia,Rhode Island,Maryland,Illinois
-:death_population_percent_:avg-10-days-until-20200429=New York,New Jersey,Connecticut,Massachusetts,Louisiana,Michigan,District Of Columbia,Rhode Island,Pennsylvania,Illinois
-:death_population_percent_:avg-20-days-until-20200429=New York,New Jersey,Connecticut,Louisiana,Massachusetts,Michigan,District Of Columbia,Rhode Island,Illinois,Pennsylvania
-:death_population_percent_:grad-20200429=New Mexico,Alaska,North Dakota,Montana,Utah,South Dakota,Hawaii,New Hampshire,Idaho,Nebraska
-:death_population_percent_:grad-5-days-until-20200429=South Dakota,Utah,Hawaii,Montana,New Hampshire,Arizona,Puerto Rico,Georgia,Oregon,Colorado
-:death_population_percent_:grad-10-days-until-20200429=North Dakota,South Dakota,Montana,Idaho,New Hampshire,Utah,Hawaii,Nebraska,Vermont,Arkansas
-:death_population_percent_:grad-20-days-until-20200429=New Mexico,Alaska,Montana,North Dakota,South Dakota,Utah,Hawaii,New Hampshire,Idaho,Nebraska
+:death_population_percent_:avg-20200504=New York,New Jersey,Connecticut,Massachusetts,Louisiana,Michigan,District Of Columbia,Rhode Island,Illinois,Pennsylvania
+:death_population_percent_:avg-5-days-until-20200504=New York,New Jersey,Connecticut,Massachusetts,Louisiana,Michigan,District Of Columbia,Rhode Island,Pennsylvania,Maryland
+:death_population_percent_:avg-10-days-until-20200504=New York,New Jersey,Connecticut,Massachusetts,Louisiana,Michigan,District Of Columbia,Rhode Island,Pennsylvania,Maryland
+:death_population_percent_:avg-20-days-until-20200504=New York,New Jersey,Connecticut,Massachusetts,Louisiana,Michigan,District Of Columbia,Rhode Island,Pennsylvania,Illinois
+:death_population_percent_:grad-20200504=New Mexico,Alaska,North Dakota,Montana,Utah,South Dakota,Hawaii,New Hampshire,Idaho,Nebraska
+:death_population_percent_:grad-5-days-until-20200504=North Dakota,Arkansas,Utah,Nevada,Kansas,Alabama,Missouri,Georgia,California,Tennessee
+:death_population_percent_:grad-10-days-until-20200504=North Dakota,South Dakota,Utah,Hawaii,Montana,Arkansas,Vermont,New Hampshire,Nevada,Arizona
+:death_population_percent_:grad-20-days-until-20200504=New Mexico,North Dakota,Montana,South Dakota,Hawaii,Idaho,Nebraska,Utah,Vermont,New Hampshire
 )
 ```
 
