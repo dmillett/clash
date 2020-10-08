@@ -96,18 +96,31 @@
 
    {\"a\" [1], \"b.c\" [3], \"b.d\" [4]}
    "
+  ;; backward compatibility fun -- to include 'describe'?
+  ;([json & {:keys [keypath data describe] :or {keypath "" data {} describe false}}])
   ([json] (if (string? json) (flatten-json (cc/parse-string json) "" {}) (flatten-json json "" {})))
-  ([json keypath data]
+  ([json describe?] (flatten-json json "" {} describe?))
+  ([json keypath data] (flatten-json json keypath data false))
+  ([json keypath data describe?]
    {:pre (spec/explain map? json)}
-   (let [kfx (fn [kpath k] (cond (empty? kpath) k (empty? k) kpath :default (str kpath "." k)))]
+   (let [kfx (fn [kpath k]
+               (cond
+                 (empty? kpath) k
+                 (empty? k) kpath
+                 :default (str kpath "." k)))
+         kfx2 (fn [k sym]
+                (if (and describe? (not (s/blank? k)))
+                  (str k sym)
+                  k))
+         ]
      (reduce
-       (fn [result current]
+       (fn [result current] ; find a way to put '[]' or '{}' here
          (let [[k v] (if (map-entry? current) current ["" current])]
-         (cond
-           (vector? v) (merge-data result (flatten-json v (kfx keypath k) {}))
-           (map? v) (merge-data result (flatten-json v (kfx keypath k) {}))
-           :default (add-keypath-value result (kfx keypath k) v)
-           )))
+           (cond
+             (vector? v) (merge-data result (flatten-json v (kfx keypath (kfx2 k "[]") ) {} describe?))
+             (map? v) (merge-data result (flatten-json v (kfx keypath (kfx2 k "{}")) {} describe?))
+             :default (add-keypath-value result (kfx keypath k) v)
+             )))
        data
        json)
       )))
@@ -278,3 +291,21 @@
         (s/starts-with? line "{") (flatten-json line)
         :default (println "Skipping line:" line)))
     (catch Exception e (println "Error:" e))))
+
+;;
+; (s/valid? even? 1) --> false
+; (s/valid? even? 2) --> 2
+; (s/valid? fx? value) --> value or false
+; (s/conform even? 1) --> clojure.spec.alpha/invalid
+; (s/conform even? 2) --> 2
+; (s/valid? (s/nilable number?) nil) --> true
+; (s/explain (s/nilable number?) "a") --> "a" - failed: number? at
+;
+; (s/def ::first-name string?)
+; (s/def ::last-name string?)
+; (s/def ::person (s/keys :req [::first-name ::last-name] :opt [::age]))
+;
+;(defmacro spec-from
+;  "Generate specs for a given data set. "
+;  []
+;  )

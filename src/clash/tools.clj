@@ -113,13 +113,25 @@
 
 (defmacro sweetspot
   "Identify how many repeated executions does it take Hotspot to optimize the call. This macro
-  relieas on (repeatfx n fx) to repeatedly execute a function until the 'max_count' or minimum
+  relies on (repeatfx n fx) to repeatedly execute a function until the 'max_count' or minimum
   performance slope is reached. The following are optional values:
 
   stepfx - how many times should (repeatfx) run? Defaults #(* 10 %)
-  threshold - stop if performance increase is less than this? Defaults to 0.10
+  delta - stop if performance increase is less than this? Defaults to 0.10
   max_count - the maximum step iterations with (repeatfx) to run? Defaults to 10
-  verbose - (removed - see 'jvm_sysinfo') dump system information (heap, os, cpus, etc)? Default 'false'
+  verbose - Show function execution results? Default 'false'
+
+  For example:
+  (sweetspot (+ 3 3))
+  {\"+\" {:total 18112, :count 4, :results [{:n 10, :average_time 372.7}
+                                            {:n 20, :average_time 148.6}
+                                            {:n 30, :average_time 171.06666666666666}
+                                            {:n 40, :average_time 157.025}]}}
+
+  (sweetspot (+ 3 3) :delta 0.01 :max_count 3 :stepfx #(* 25 %))
+  {\"+\" {:total 20292, :count 3, :results [{:n 25, :average_time 182.36}
+                                            {:n 50, :average_time 123.78}
+                                            {:n 75, :average_time 127.25333333333333}]}}
   "
   [fx & {:keys [stepfx delta max_count verbose] :or {stepfx nil delta 0.10 max_count 10 verbose false}}]
   `(let [stepfn# (if ~stepfx ~stepfx #(* 10 %))
