@@ -119,7 +119,7 @@
           (transduce transducefx joinfx initv (take max (line-seq ireader)))
           (transduce transducefx joinfx initv (line-seq ireader))
           ) )
-      (catch Exception e (println "Exception:" (.getMessage e))))
+      (catch Exception e (println "Exception:" e))); (.getMessage e))))
     ) )
 
 (defn transform-lines-verbose

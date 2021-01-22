@@ -24,7 +24,13 @@
        ["zoo"] (get flattened "A.D")
        ["f1" "f1"] (get flattened "A.E.F.@f")
        ["cats"] (get flattened "A.E.F")
+       flattened {"A.@ax" ["ax1"], "A.@a" ["a1"], "A.B.C.@c" ["c1" "c2"], "A.B.C" ["foo" "bar"], "A.D" ["zoo"], "A.E.F.@f" ["f1" "f1"], "A.E.F" ["cats"]}
        ) ) )
+
+(deftest test-flatten-xml-describe
+  (let [flattened (flatten-xml xml1 true)]
+    (is (= flattened {"A.@ax" ["ax1"], "A.@a" ["a1"], "A{}.B{}.C.@c" ["c1" "c2"], "A{}.B{}.C" ["foo" "bar"], "A{}.D" ["zoo"], "A{}.E{}.F.@f" ["f1" "f1"], "A{}.E{}.F" ["cats"]}))
+    ) )
 
 (deftest test-flat-data-frequencies
   (let [freqs (flat-data-value-counts (flatten-xml xml1))]
@@ -42,7 +48,7 @@
 (def json2 "{\"a\":1, \"b\":{\"c\":3, \"d\":4}}")
 (def json3 "{\"a\":1, \"b\":[{\"c\":2, \"d\":3},{\"c\":4, \"d\":5},{\"c\":6, \"d\":7}]}")
 (def json4 "{\"a\":1, \"b\":[{\"c\":2, \"d\":{\"e\":[8,9]}},{\"c\":4, \"d\":{\"e\":[10,11]}},{\"c\":6, \"d\":{\"f\":true}}]}")
-(def json5 "{\"a\":{\"b\":{\"c\":[1,2,3], \"d\":true, \"e\": {\"f\":[4, 5, 6]}}}}")
+(def json5 "{\"a\":{\"b\":{\"c\":[1,2,3],\"d\":true,\"e\":{\"f\":[4, 5, 6]}}}}")
 
 (deftest test-flatten-json
   (let [[d1 d2 d3 d4 d5] (map #(flatten-json (json/read-str %)) [json1 json2 json3 json4 json5])]
@@ -64,7 +70,7 @@
       d4 {"a" [1], "b[].c" [2 4 6], "b[].d{}.e[]" [8 9 10 11], "b[].d{}.f" [true]}
       d5 {"a{}.b{}.c[]" [1 2 3] "a{}.b{}.d" [true] "a{}.b{}.e{}.f[]" [4 5 6]}
      (merge-data d1 d2 d3 d4 d5) {"a{}.b{}.e{}.f[]" [4 5 6], "a{}.b{}.d" [true], "b[].c" [2 4 6 2 4 6], "b[].d" [3 5 7], "a" [1 1 1 1], "b" [2], "b[].d{}.f" [true], "b{}.c" [3], "a{}.b{}.c[]" [1 2 3], "c[]" [3 4 5], "b{}.d" [4], "b[].d{}.e[]" [8 9 10 11]}
-               ) ) )
+     ) ) )
 
 (defn tresource
   "Define the current test directory."

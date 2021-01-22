@@ -77,6 +77,33 @@ Load data structures into memory and analyze or build result sets with predicate
 (disect istream ostream :fx (regex-magic))
 ```
 
+### Parsing CSV files into hashmap structure
+
+```clojure
+(require '[clash.csv :as ccsv])
+
+;; Parses first CSV row (header) as map keys
+(def chicago "chicago-severe-covid.csv")
+(def chicago_data 
+  (cc/transform-lines chicago ccsv/csv-parse2 :joinfx (ccsv/stateful-join true) :initv {}))
+
+{"Cases - Total" 282, "Hospitalizations - Age 30-39" 12, "Hospitalizations - Age 70-79 24", ...}
+```
+
+```clojure
+;; Parse CSV as a defrecord based on the header row
+;; Have to clean header row characters to meet Java syntax reqs for field names
+(def chicago "chicago-severe-covid.csv")
+(def chicago_defrecs 
+  (cc/transform-lines chicago1 ccsv/csv-parse2 :joinfx (ccsv/stateful-join true "CovidChicagoSevere" ccsv/clean-rec-fields) :initv {}))
+
+(first (:result chicago_defrecs))
+#user.CovidChicagoSevere{:Date "03/29/2020",
+                         :Cases_Total 282,
+                         :Deaths_Total 20,
+                         :Hospitalizations_Total 130,...}
+```
+
 <a name="haystack"/></a>
 ## Haystack Functionality
 Combines (collect-value-frequencies) and (pivot-matrix) to correlate the frequency of specific data schema keys across

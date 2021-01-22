@@ -6,7 +6,7 @@
 ;   the terms of this license.
 ;   You must not remove this notice, or any other, from this software.
 
-(ns clash.tools_test
+(ns clash.tools-test
   (:use [clash.tools]
         [clojure.test])
   (:require [clojure.string :as s]
@@ -472,3 +472,32 @@
       freqs4p freqs4
       freqs5p freqs5
       )))
+
+(deftest test-eval-str
+  (are [x y] (= x y)
+             nil (eval-str nil)
+             2 (eval-str "(inc 1)")
+             nil (eval-str "(inc a)")
+             false (eval-str "(inc a)" false)
+             false (eval-str "(inc 1" false)
+             ) )
+
+(defn- clean-split
+  "Remove trailing newline and whitespace. Replace '-' with '_'"
+  [text]
+  (-> text s/trim (s/replace #"[\-\/]+" "_") (s/replace #"[\s\+]+" "") (s/split #",")))
+
+(def complex1a "Date,Cases - Total,Deaths - Total,Hospitalizations - Total,Cases - Age 0-17,Cases - Age 18-29,Cases - Age 30-39,Cases - Age 40-49,Cases - Age 50-59,Cases - Age 60-69,Cases - Age 70-79,Cases -  Age 80+,Cases - Age Unknown,Cases - Female,Cases - Male,Cases - Unknown Gender,Cases - Latinx,Cases - Asian Non-Latinx,Cases - Black Non-Latinx,Cases - White Non-Latinx,Cases - Other Race Non-Latinx,Cases - Unknown Race/Ethnicity,Deaths - Age 0-17,Deaths - Age 18-29,Deaths - Age 30-39,Deaths - Age 40-49,Deaths - Age 50-59,Deaths - Age 60-69,Deaths - Age 70-79,Deaths - Age 80+,Deaths - Age Unknown,Deaths - Female,Deaths - Male,Deaths - Unknown Gender,Deaths - Latinx,Deaths - Asian Non-Latinx,Deaths - Black Non-Latinx,Deaths - White Non-Latinx,Deaths - Other Race Non-Latinx,Deaths - Unknown Race/Ethnicity,Hospitalizations - Age 0-17,Hospitalizations - Age 18-29,Hospitalizations - Age 30-39,Hospitalizations - Age 40-49,Hospitalizations - Age 50-59,Hospitalizations - Age 60-69,Hospitalizations - Age 70-79,Hospitalizations - Age 80+,Hospitalizations - Age Unknown,Hospitalizations - Female,Hospitalizations - Male,Hospitalizations - Unknown Gender,Hospitalizations - Latinx,Hospitalizations - Asian Non-Latinx,Hospitalizations - Black Non-Latinx,Hospitalizations - White Non-Latinx,Hospitalizations - Other Race Non-Latinx,Hospitalizations - Unknown Race/Ethnicity\n")
+
+(deftest test-create-record
+  (let [csv #(s/split (s/trim %) #",")]
+    (are [x y] (= x y)
+       nil (create-record nil nil)
+       nil (create-record "Foo" nil)
+       "class user.Foo" (str (create-record "Foo" (csv "a,b,c")))
+       "class user.Zippy" (str (create-record "Zippy" (clean-split "a -b,C_ d,e+\n")))
+       "class user.Zap" (str (create-record "Zap" (clean-split complex1a)))
+       )
+    (is (not (nil? (create-record "FooBar" (csv "a,b,c")))))
+    (is (= "class user.FooZoo" (str (create-record "FooZoo" (csv "a,b,c")))))
+    ))

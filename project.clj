@@ -12,6 +12,7 @@
                  [incanter "1.9.3"]
                  [cheshire "5.10.0"]
                  [org.clojure/data.json "1.0.0"]]
+  :profiles {:kaocha {:dependencies [[lambdaisland/kaocha "1.0.700"]]}}
   :plugins [[lein-kibit "0.1.3"]
             [jonase/eastwood "0.2.3"]
             [lein-ancient "0.6.15"]]
@@ -19,16 +20,17 @@
   ;:global-vars {*warn-on-reflection* true}
   :repl-options {:init (do
                          (require '[clojure.spec.alpha :as s])
-                         (use 'clash.shape)
-                         (use 'clash.tools)
-                         (use 'clash.core)
-                         (use 'clash.pivot)
-                         (use 'clash.text_tools)
-                         (use 'clash.command)
-                         (use 'clash.example.web_shop_example)
-                         (use 'clash.example.web_shop_example_test)
-                         (use 'clash.example.covid19_miamiherald)
-                         (use 'clash.example.covid19_worldmeter)
+                         (require '[clash.shape :as cs])
+                         (require '[clash.tools :as ct])
+                         (require '[clash.core :as cc])
+                         (require '[clash.pivot :as cp])
+                         (require '[clash.text_tools :as ctt])
+                         (require '[clash.command :as ccmd])
+                         (require '[clash.csv :as ccsv])
+                         (require '[clash.example.web_shop_example :as clex])
+                         (require '[clash.example.web_shop_example_test :as clext])
+                         ;(use 'clash.example.covid19_miamiherald)
+                         ;(use 'clash.example.covid19_worldmeter)
                          (defn load-local-resource
                            [logfile]
                            (str (System/getProperty "user.dir") logfile))

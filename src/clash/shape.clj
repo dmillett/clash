@@ -8,12 +8,11 @@
 
 (ns clash.shape
   (:require [clojure.spec.alpha :as spec]
-            [clojure.string :as s]
             [clojure.java.io :as io]
             [clojure.xml :as x]
             [cheshire.core :as cc]
-            [clash.tools :as ct])
-  (:use [clojure.java.io :only (reader writer)]))
+            [clash.tools :as ct]
+            [clojure.string :as s]))
 
 (defn sstream
   "Convert a String or text to an input stream for parsing"
@@ -65,17 +64,20 @@
   </C>
   </A>
 
-  produces:
-  {'A.@a' ['a1']
-   'A.B.@b' ['b1']
-   'A.B' ['boo1', 'boo2']
-   'A.C.D ['doo']
+  (flatten-xml <xml-from-above>)
+  {\"A.@a\" [\"a1\"] \"A.B.@b\" [\"b1\"] \"A.B\" [\"boo1\", \"boo2\"] \"A.C.D\" [\"doo\"]}
+
+   ;; Describing the underlying structure using '{}'
+   (flatten-xml \"<A><B><C>c1</C><C>c2</C></B></A>\" true)
+   => {\"A{}.B{}.C\" [\"c1\" \"c2\"]}
 
    This is an easier way to evaluate what 'keypaths' are present in the data and how frequently
    they occur in a dataset.
   "
   ([xml] (if (string? xml) (flatten-xml (xml-parser xml) "" {}) (flatten-xml xml "" {})))
-  ([xmlnode keypath flatd]
+  ([xml describe?] (if (string? xml) (flatten-xml (xml-parser xml) "" {} describe?) (flatten-xml xml "" {} describe?)))
+  ([xmlnode keypath flatd] (flatten-xml xmlnode keypath flatd false))
+  ([xmlnode keypath flatd describe?]
    (let [tag (when-let [node_name (:tag xmlnode)] (name node_name))
          content (:content xmlnode)
          kpath (if (empty? keypath) tag (str keypath "." tag))
@@ -83,23 +85,34 @@
          data (merge-data flatd atts)]
      (cond
        (or (nil? xmlnode) (nil? tag) (empty? content)) data
-       (map? (first content)) (apply merge-data data (for [node content] (flatten-xml node kpath {})))
+       (map? (first content)) (apply merge-data data (for [node content] (flatten-xml node (if describe? (str kpath "{}") kpath) {} describe?)))
        :default (add-keypath-value data kpath (first content))
        ) )
    ) )
+
+(defn to-json
+  "Parse string json form into JSON or just return JSON structure"
+  [json_data]
+  (if (string? json_data)
+    (cc/parse-string json_data)
+    json_data
+    ) )
 
 (defn flatten-json
   "Flatten a parsed JSON object (cheshire or something similar) and flatten the structure
   into a single depth map. For example:
 
    (flatten-json (ch/parse-string {\"a\":1, \"b\":{\"c\":3, \"d\":4}}))
+   => {\"a\" [1], \"b.c\" [3], \"b.d\" [4]}
 
-   {\"a\" [1], \"b.c\" [3], \"b.d\" [4]}
+   ;; Describes 'a.b' as a map structure
+   (flatten-json (ch/parse-string {\"a\":1, \"b\":{\"c\":3, \"d\":4}}) true)
+   => {\"a\" [1], \"b{}.c\" [3], \"b{}.d\" [4]}
    "
   ;; backward compatibility fun -- to include 'describe'?
   ;([json & {:keys [keypath data describe] :or {keypath "" data {} describe false}}])
-  ([json] (if (string? json) (flatten-json (cc/parse-string json) "" {}) (flatten-json json "" {})))
-  ([json describe?] (flatten-json json "" {} describe?))
+  ([json] (flatten-json (to-json json) "" {}))
+  ([json describe?] (flatten-json (to-json json) "" {} describe?))
   ([json keypath data] (flatten-json json keypath data false))
   ([json keypath data describe?]
    {:pre (spec/explain map? json)}
@@ -114,7 +127,7 @@
                   k))
          ]
      (reduce
-       (fn [result current] ; find a way to put '[]' or '{}' here
+       (fn [result current]
          (let [[k v] (if (map-entry? current) current ["" current])]
            (cond
              (vector? v) (merge-data result (flatten-json v (kfx keypath (kfx2 k "[]") ) {} describe?))
@@ -254,9 +267,8 @@
 (defn shape-sort-keypath-count
   "Sort by keypath occurrence frequency in descending order.
 
-  {:foo {:int 1 :decimal 1} :bar {:decimal 3 :text 4}}
-
-  --> {:bar {:decimal 3 :text 4} :foo {:int 1 :decimal 1}}
+  (shape-sort-keypath-count {:foo {:int 1 :decimal 1} :bar {:decimal 3 :text 4}})
+  => {:bar {:decimal 3 :text 4} :foo {:int 1 :decimal 1}}
   "
   [shaped]
   (into
@@ -269,9 +281,8 @@
 (defn shape-sort
   "Sort by keypath frequency and value pattern frequency in descending order.
 
-  {:foo {:int 1 :decimal 2} :bar {:decimal 3 :text 4}}
-
-  --> {:bar {:text 4 :decimal 3} :foo {:decimal 2 :int 1}}
+  (shape-sort {:foo {:int 1 :decimal 2} :bar {:decimal 3 :text 4}})
+  => {:bar {:text 4 :decimal 3} :foo {:decimal 2 :int 1}}
   "
   [shaped]
   (shape-sort-keypath-count (shape-sort-value-pattern shaped)))
@@ -292,6 +303,78 @@
         :default (println "Skipping line:" line)))
     (catch Exception e (println "Error:" e))))
 
+;; todo macro?
+(defn- todo
+  ([text] (todo text nil))
+  ([text fx] (todo text fx nil))
+  ([text fx & args]
+    (println text " args:" args)))
+
+(defn- strip-symbol
+  [text symbol]
+  (s/replace text symbol ""))
+
+(defn- specmap
+  [nspace specname]
+  (fn [required optional]
+    ;(s/def specname :req required :opt optional)
+    ) )
+
+(def specdefs
+  {:map (fn [] (spec/def ::map #(map? %)))
+   :array (spec/def ::array #(vector? %))
+   :attribute (spec/def ::attribute #())
+   })
+
+;; Return a function if for the first two defintions, otherwise the result
+; todo: return functions, similar to transducer intermediates
+(defn foobar
+  ([mp] (fn [req] (foobar mp req nil)))
+  ([mp req] (foobar mp req nil))
+  ([mp req opt]
+
+   ) )
+
+;; A map of keys --> spec definitions
+; key --> s/def
+; todo: should be a transducer-tree structure
+(defn spec-from
+  "Build a Spec from flattened and described data.
+
+  {a{}.b{}.c[] [1 2 3]
+   a{}.b{}.d [true]
+   a{}.b{}.e{}.f[] [4 5 6]}
+
+   {a{} {
+  "
+  [flat_data_shape]
+  (reduce-kv
+    (fn [result k v]
+      (let [paths (s/split k #"\.")]
+        (reduce
+          (fn [r1 path]
+            (cond ;; Figure out what spec type each is
+              (s/includes? path "{}") (todo "map spec" (assoc r1 path (:map specdefs)) path)
+              (s/includes? path "[]") (todo "vector spec" (assoc r1 path (:array specdefs)) path)
+              (s/includes? path "@") (todo "attribute spec (xml only)" (assoc r1 path (:attribute specdefs)) path)
+              :default (todo "N/A (is a key within the encapsulating data structure)" nil path)
+              ))
+          result
+          paths)
+        (todo "Merge/associate with 'result'" #(assoc result k %) k result)
+        ) )
+    {}
+    flat_data_shape))
+
+;;
+; (def data1 (flatten-json "{\"a\":1, \"b\":{\"b1\":[2,3], \"b2\":true}}" true))
+; {a [1], b{}.b1[] [2 3], b{}.b2 [true]}
+; Spec-tree:
+; (s/def ::data1 (s/keys :req ["a" "b"] :opt []))
+;   - (s/def ::a int?)
+;   - (s/def ::b (s/keys :req ["b1"] :opt []))
+;     - (s/def ::b1
+
 ;;
 ; (s/valid? even? 1) --> false
 ; (s/valid? even? 2) --> 2
@@ -305,7 +388,3 @@
 ; (s/def ::last-name string?)
 ; (s/def ::person (s/keys :req [::first-name ::last-name] :opt [::age]))
 ;
-;(defmacro spec-from
-;  "Generate specs for a given data set. "
-;  []
-;  )

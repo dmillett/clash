@@ -291,8 +291,6 @@
   ([c1] (vec c1))
   ([c1 c2] (into c1 c2)))
 
-
-
 (defn collect-with
   "Build a collection/result set of data that satisfy the conditions defined in
   'predicates'. The predicates should be relevant to use the data structure to filter.
@@ -534,7 +532,7 @@
   (partial reduce-vfreqs #(take n (sort-map-by-value % :descending false))))
 
 (defn distinct-by
-  "Collect distinct or unique items accoridng to a function 'eqfx'.
+  "Collect distinct or unique items according to a function 'eqfx'.
   This creates a Map structure where the keys are given by 'eqfx'
   and then returns the values."
   [col eqfx]
@@ -589,7 +587,7 @@
 (defn any?
   "Pass value(s) implicitly and a list of predicates explicitly for evaluation.
   If any predicate returns 'true', then function returns 'true'. Otherwise
-  function returns 'false'. Ex: ((any? number? odd?) 10) --> true. Resembles (some-fn)"
+  function returns 'false'. Ex: ((any? number? even?) 10) --> true. Resembles (some-fn)"
   [& predicates]
   (fn [item]
     (loop [result false
@@ -642,3 +640,34 @@
           )))
     ) )
 
+(defn eval-str
+  "Evaluate a String as a line of Clojure code. For example:
+  (eval-str \"(defrecord X [a b c])\")
+  user.X
+  (eval-str \"(->X 1 2 3)\")
+  userX{:a 1 :b 2 :c 3}
+  "
+  ([code] (eval-str code nil))
+  ([code default]
+   (try
+     (eval (read-string code))
+     (catch Exception _ default) )
+   ) )
+
+(defn create-record
+  "Create a 'defrecord' from a given data set based on the 'kefx' provided.
+  'keyfx' defaults to comma delimited. 'keyfx' should generate a list/vector
+  of values. The 'keys' follow normal name restrictions (don't start with number, etc)
+
+  (create-record \"Foo\" \"a,b,c\")
+  -> user.Foo
+  (->Foo 1 2 3)
+  -> user.Foo{:a 1 :b 2 :c 3}
+
+  ;; todo: allow for the specification of namespace, defaults to 'user'
+  "
+  [recname data]
+  (when (and recname data)
+    (let [kset (into [] (map symbol data))]
+      (eval-str (str "(defrecord " recname " " kset ")")))
+      ) )
