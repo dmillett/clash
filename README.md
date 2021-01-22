@@ -358,6 +358,15 @@ will work for parsing JSON text, but Cheshire seems to be faster so it's the def
 {"a" 4, "b" 1, "c" 3, "b.c" 7, "b.d" 4, "b.d.e" 4, "b.d.f" 1}
 ```
 
+```clojure
+;; Describing sub-structure with flattened keys (todo (spec-from))
+(def json_text "{\"a\":{\"b\":{\"c\":[1,2,3],\"d\":true,\"e\":{\"f\":[4, 5, 6]}}}}")
+(flatten-json (json/read-str json_text) true)
+
+;; a -> map, b -> map, c -> vector, d -> value, e -> map, f -> map
+{"a{}.b{}.c[]" [1 2 3] "a{}.b{}.d" [true] "a{}.b{}.e{}.f[]" [4 5 6]}
+```
+
 #### Regex value matching for large input
 
 Define regular expression patterns that the values might represent. For example: int, decimal, text, boolean, etc by
