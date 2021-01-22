@@ -11,13 +11,14 @@
 
 ;; todo: record with data breaks???
 (deftest test-keyfx
-  (let [header1 (csv-parse1 (clean-rec-fields complex1a))
+  (let [header1 (csv-parse1 (clean-keys complex1a))
         data1 (csv-parse1 complex1b)]
     (are [x y] (= x y)
       nil (keyfx nil)
       nil (keyfx "")
       {"a" 1 "b" 2 "c" 3} ((keyfx ["a" "b" "c"]) [1 2 3])
       {"a" 1 "b" 2 "c" 3} ((keyfx ["a" "b" "c"] :recname nil) [1 2 3])
+      {:a 1 :b 2 :c 3} ((keyfx ["a" "b" "c"] :keywords? true) [1 2 3])
       nil (keyfx nil :recname "Foo")
       nil (keyfx "" :recname "Foo")
       "class user.Foo" (str (type ((keyfx ["a" "b" "c"] :recname "Foo") [4 5 6])))
@@ -44,30 +45,30 @@
      [1.0 "a" -3.1 nil] (csv-parse2 "1.0,a,-3.1,nil")
      ))
 
-(deftest test-clean-rec-fields
+(deftest test-clean-keys
   (are [x y] (= x y)
-    "a,b,c" (clean-rec-fields "a,b,c")
-    "a,_b,c" (clean-rec-fields " a,-b,c+")
+    "a,b,c" (clean-keys "a,b,c")
+    "a,_b,c" (clean-keys " a,-b,c+")
     ))
 
 (deftest test-stateful-join
   (let [tdfx1 (comp identity (map csv-parse1))
         tdfx2 (comp identity (map csv-parse2))
-        td1 (transduce tdfx1 (stateful-join false nil) ["a,b,c" "1,2,3"])
-        td2 (transduce tdfx1 (stateful-join true nil) ["a,b,c" "1,2,3" "4,5,6"])
-        td3 (transduce tdfx1 (stateful-join true nil) ["a,b,c" "1,2" "4,5,6" "7,8,9,10"])
-        td4 (transduce tdfx1 (stateful-join true "Foo") ["a,b,c" "1,2,3" "4,5,6"])
-        td5 (transduce tdfx1 (stateful-join true "Foo") ["a,b,c" "1,2" "4,5,6" "7,8,9,10"])
-        td6 (transduce tdfx2 (stateful-join true "Foo") ["a,b,c" "1,2" "4,5,6" "7,8,9,10"])
-        td7 (transduce tdfx2 (stateful-join true "Chicago" clean-rec-fields) [complex1a complex1b])
-        td8 (transduce tdfx2 (stateful-join true nil clean-rec-fields) [complex1a complex1b])
+        td1 (transduce tdfx1 (stateful-join) ["a,b,c" "1,2,3"])
+        td2 (transduce tdfx1 (stateful-join :header? true) ["a,b,c" "1,2,3" "4,5,6"])
+        td3 (transduce tdfx1 (stateful-join :header? true) ["a,b,c" "1,2" "4,5,6" "7,8,9,10"])
+        td4 (transduce tdfx1 (stateful-join :header? true :recname "Foo1") ["a,b,c" "1,2,3" "4,5,6"])
+        td5 (transduce tdfx1 (stateful-join :header? true :recname "Foo2") ["a,b,c" "1,2" "4,5,6" "7,8,9,10"])
+        td6 (transduce tdfx2 (stateful-join :header? true :recname "Foo3") ["a,b,c" "1,2" "4,5,6" "7,8,9,10"])
+        td7 (transduce tdfx2 (stateful-join :header? true :recname "Chicago" :kclean clean-keys) [complex1a complex1b])
+        td8 (transduce tdfx2 (stateful-join :header? true :kclean clean-keys) [complex1a complex1b])
         ]
     (are [x y] (= x y)
        [["a" "b" "c"] ["1" "2" "3"]] (:result td1)
        [{"a" "1" "b" "2" "c" "3"} {"a" "4" "b" "5" "c" "6"}] (:result td2)
        [{"a" "1" "b" "2"} {"a" "4" "b" "5" "c" "6"} {"a" "7" "b" "8" "c" "9"}] (:result td3)
-       "class user.Foo" (str (type (first (:result td4))))
-       "class user.Foo" (str (type (last (:result td4))))
+       "class user.Foo1" (str (type (first (:result td4))))
+       "class user.Foo1" (str (type (last (:result td4))))
        [["1" "2" nil] ["4" "5" "6"] ["7" "8" "9"]] (map vals (:result td5))
        [[1 2 nil] [4 5 6] [7 8 9]] (map vals (:result td6))
        58 (count (first (:result td7)))

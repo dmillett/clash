@@ -35,6 +35,10 @@
   and converts them to a function with map keys or defrecord fields. Default behavior is a function
   that takes a vector/list of values OR a defrecord function that takes a vector/list of va
 
+  rowdata - a vector of header fields to create map keys or defrecord fields from
+  recname - what the defrecord type should be, if null, then hashmap is created
+  keywords? - if map keys should be strings or keywords, defaults to false (strings), cleanup field names
+
   ;; map
   ((keyfx [a b c]) [1 2 3]) -> {\"a\" 1 \"b\" 2 \"c\" 3}
 
@@ -43,14 +47,14 @@
 
   todo: hashmap keys as :keyword instead of string
   "
-  [rowdata & {:keys [recname] :or {recname nil}}]
+  [rowdata & {:keys [recname keywords?] :or {recname nil keywords? false}}]
   (when (not (empty? rowdata))
     (if recname
       (let [_ (ct/create-record recname rowdata)
             fieldcount (count rowdata)
             recfx (ct/eval-str (str "->" recname))]
-        (fn [values] (apply recfx (ensure-record-row values fieldcount)) ) )
-      (fn [values] (zipmap rowdata values))
+        (fn [values] (apply recfx (ensure-record-row values fieldcount))) )
+      (fn [values] (zipmap (if keywords? (map keyword rowdata) rowdata) values))
       ) ) )
 
 (defn stateful-join
@@ -62,26 +66,27 @@
 
   header? - Whether or not to parse a header from the first row
   recname - (paired with header?) will create a defrecord instead of zipmap
-  recleanfx - cleaning up header fields so they are compatible with Java field syntax requirements
+  key-clean - cleaning up header fields so they are compatible with Java field syntax requirements
+  keywords? - map keys as keywords instead of strings (subject to keyword naming restrictions, use recleanfx)
   "
-  ([header?] (stateful-join header? nil))
-  ([header? recname] (stateful-join header? recname nil))
-  ([header? recname recleanfx]
-    (fn
-      ([] {})
-      ([result] (if result result {}))
-      ([result input]
-        (let [keyfn (:keyfx result)]
-          (try
-            (cond
-              (and keyfn input) (assoc result :result (resultdata result (keyfn input)))
-              (and header? input) (assoc result :keyfx (keyfx (if recleanfx (map recleanfx input) input) :recname recname))
-              input (assoc result :result (resultdata result (if recleanfx (map recleanfx input) input)))
-              :default result
-              )
-           (catch Exception e (println "(stateful-join) error on:" input "\n" e)))
-         ) ) )
-    ) )
+  [& {:keys [header? recname kclean keywords?] :or {header? false recname nil kclean nil keywords? false}}]
+  (fn
+    ([] {})
+    ([result] (if result result {}))
+    ([result input]
+      (let [keyfn (:keyfx result)]
+        (try
+          (cond
+            (and keyfn input) (assoc result :result (resultdata result (keyfn input)))
+            (and header? input) (assoc result :keyfx (keyfx
+                                                       (if kclean (map kclean input) input)
+                                                       :recname recname
+                                                       :keywords? keywords?))
+            input (assoc result :result (resultdata result (if kclean (map kclean input) input)))
+            :default result
+            )
+         (catch Exception e (println "(stateful-join) error on:" input "\n" e)))
+       ) ) ) )
 
 (defn csv-parse1
   "Just a simple string split on ','"
@@ -105,7 +110,7 @@
         values)
       ) ) )
 
-(defn clean-rec-fields
+(defn clean-keys
   "Remove trailing newline and whitespace. Replace '-' with '_'
   todo: this should capture all Java field syntax naming requirements
   "

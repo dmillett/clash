@@ -500,4 +500,5 @@
        )
     (is (not (nil? (create-record "FooBar" (csv "a,b,c")))))
     (is (= "class user.FooZoo" (str (create-record "FooZoo" (csv "a,b,c")))))
+    (is (thrown? RuntimeException (create-record "FooBar" (csv "A-,B+,C/"))))
     ))

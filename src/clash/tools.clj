@@ -657,7 +657,10 @@
 (defn create-record
   "Create a 'defrecord' from a given data set based on the 'kefx' provided.
   'keyfx' defaults to comma delimited. 'keyfx' should generate a list/vector
-  of values. The 'keys' follow normal name restrictions (don't start with number, etc)
+  of values. The 'keys' follow normal name restrictions (don't start with number, etc).
+
+  Since the error messaging isn't clear when creating defrecords from (eval-str), this
+  function will throw an explicit RuntimeException for failing to create the defrecord.
 
   (create-record \"Foo\" \"a,b,c\")
   -> user.Foo
@@ -668,6 +671,10 @@
   "
   [recname data]
   (when (and recname data)
-    (let [kset (into [] (map symbol data))]
-      (eval-str (str "(defrecord " recname " " kset ")")))
+    (let [kset (into [] (map symbol data))
+          rec (eval-str (str "(defrecord " recname " " kset ")"))]
+      (if rec
+        rec
+        (throw (RuntimeException. (str "Check field names: Problem creating defrecord:" recname ", from:" data)) )))
+      ;(eval-str (str "(defrecord " recname " " kset ")")))
       ) )

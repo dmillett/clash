@@ -12,13 +12,14 @@ optimize execution for a target method (sweetspot).
 Try adding **[clash "1.5.1"]** to your project today
 
  * [transformation functions](#core-transformations)
- * [Example: Covid19 (updated on 'covid' branch)](#covid19)
+ * [parsing csvs](#parsing-csvs)  
  * [pivot functionality](#pivot)
  * [haystack functionality](#haystack)
  * [data shape](#data-shape)
  * [utility functions](#utility-functions)
  * [performance & debugging](#performance-debugging)
  * [general performance](#performance)
+ * [Example: Covid19 (updated on 'covid' branch)](#covid19)   
  * [packaged examples](#packaged-examples)
  * [deprecated](#deprecated)
  * [setup](#setup)
@@ -51,12 +52,6 @@ into
 #user.Structure{:time "05042013-13:24:13.005", :action "Search", :name "ZOO", :quantity "25", :unit_price "13.99"}
 ```
 
-<a name="covid19"/></a>
-### Covid19 Example
-
- * [Covid 19](COVID19.md)
- **Covid 19 data updates moved to branch 'covid'** or select 'Branch: covid' from dropdown box under 'Commits' 
-
 <a name="core-transformations"/></a>
 ## Core Transformation Functions
 Load data structures into memory and analyze or build result sets with predicates.
@@ -77,31 +72,50 @@ Load data structures into memory and analyze or build result sets with predicate
 (disect istream ostream :fx (regex-magic))
 ```
 
-### Parsing CSV files into hashmap structure
+<a name="parsing-csvs"/></a>
+### Parsing CSV files into hashmap or defrecord structure
+If the first row in a CSV stream/file is a header with column titles, then clash can
+create a keyset or defrecord and map the rest of the rows into that structure.
+
+**clojure.data.json** has a lot of useful parsing functionality as well
 
 ```clojure
 (require '[clash.csv :as ccsv])
 
+(transduce ccsv/csv-parse2 (ccsv/stateful-join :header? true) {} ["a,b,c" "1,2,3" "4,5,6"])
+{:result [{"a" 1 "b" 2 "c" 3} {"a" 4 "b" 5 "c" 6}]  :keyfx #<function-creating-maps-or-defrecords>}
+
 ;; Parses first CSV row (header) as map keys
 (def chicago "chicago-severe-covid.csv")
-(def chicago_data 
-  (cc/transform-lines chicago ccsv/csv-parse2 :joinfx (ccsv/stateful-join true) :initv {}))
 
-{"Cases - Total" 282, "Hospitalizations - Age 30-39" 12, "Hospitalizations - Age 70-79 24", ...}
+;; Hard to predict what characters will be in the header row
+(def csvjoin-hmaps (ccsv/stateful-join :header? true))
+(def chicago_data (cc/transform-lines chicago ccsv/csv-parse2 :joinfx csvjoin-hmaps :initv {}))
+
+(first (:result chicago_hmaps))
+{"Date" "03/29/2020", "Cases - Total" 282, "Hospitalizations - Age 30-39" 12, "Hospitalizations - Age 70-79 24", ...}
+
+;; To create these map keys as keywords instead of strings, use (:keywords? true :kclean clean-keys)
+(def csvjoin-hmaps-kws (ccsv/stateful-join :header? true :keywords? true :kclean ccsv/clean-keys))
+(def chicago_hmaps_kws (cc/transform-lines chicago ccsv/csv-parse2 :joinfx csvjoin-hmaps-kws :initv {}))
+
+(first (:result chicago_hmaps_kws))
+{:Date "03/29/2020", :Cases_Total 282, :Hospitalizations_Age30_39 12, :Hospitalizations_Age70-79 24, ...}
 ```
 
+**Parse into defrecords instead**
 ```clojure
+(require '[clash.csv :as ccsv])
+
 ;; Parse CSV as a defrecord based on the header row
 ;; Have to clean header row characters to meet Java syntax reqs for field names
 (def chicago "chicago-severe-covid.csv")
-(def chicago_defrecs 
-  (cc/transform-lines chicago1 ccsv/csv-parse2 :joinfx (ccsv/stateful-join true "CovidChicagoSevere" ccsv/clean-rec-fields) :initv {}))
+(def csvjoin-drec (ccsv/stateful-join :header true :recname "CovidChicagoSevere" :kclean ccsv/clean-keys))
+
+(def chicago_defrecs (cc/transform-lines chicago1 ccsv/csv-parse2 :joinfx csvjoin-drec  :initv {}))
 
 (first (:result chicago_defrecs))
-#user.CovidChicagoSevere{:Date "03/29/2020",
-                         :Cases_Total 282,
-                         :Deaths_Total 20,
-                         :Hospitalizations_Total 130,...}
+#user.CovidChicagoSevere{:Date "03/29/2020", :Cases_Total 282, :Deaths_Total 20, :Hospitalizations_Total 130,...}
 ```
 
 <a name="haystack"/></a>
@@ -568,6 +582,12 @@ Time(ns): 1366.4
 (data-to-file solutions "/some/local/directory/solutions")    
 (data-from-file "/some/local/directory/solutions.edn")    
 ```
+<a name="covid19"/></a>
+#### Covid19 Example
+
+* [Covid 19](COVID19.md)
+  **Covid 19 data updates moved to branch 'covid'** or select 'Branch: covid' from dropdown box under 'Commits'
+
 
 #### sample log data (web-shop.log) 
 ```

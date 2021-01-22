@@ -1,4 +1,4 @@
-(defproject clash "1.5.1"
+(defproject clash "1.5.2"
   :description "A clojure library that applies customizable structures to text files
    and quick analysis via filter groups, maps, etc. This is useful for quickly searchin
    or indexing large text files before spending proportionally more effort on Hadoop or
@@ -9,7 +9,7 @@
   :scm {:name "git" :url "https://github.com/dmillett/clash" }
   :dependencies [[org.clojure/clojure "1.10.1"]
                  [org.clojure/math.combinatorics "0.1.6"]
-                 [incanter "1.9.3"]
+                 ;[incanter "1.9.3"]
                  [cheshire "5.10.0"]
                  [org.clojure/data.json "1.0.0"]]
   :profiles {:kaocha {:dependencies [[lambdaisland/kaocha "1.0.700"]]}}
