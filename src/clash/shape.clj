@@ -17,7 +17,7 @@
 (defn sstream
   "Convert a String or text to an input stream for parsing"
   [text]
-  (when-not (nil? text)
+  (when text
     (io/input-stream (.getBytes text))
     ) )
 
@@ -26,9 +26,9 @@
   [xmltext]
   (try
     (when (and (not-empty xmltext) (s/starts-with? xmltext "<"))
-    (if (string? xmltext)
-      (x/parse (sstream xmltext))
-      (x/parse xmltext)))
+      (if (string? xmltext)
+        (x/parse (sstream xmltext))
+        (x/parse xmltext)))
      (catch Exception e (println e)
      ) ) )
 
@@ -303,3 +303,43 @@
         :default (println "Skipping line:" line)))
     (catch Exception e (println "Error:" e))))
 
+(defn- update-multi-state
+  [data input parser]
+  (let [result (if (:result data) data (assoc data :result []))]
+    (-> result
+      (update-in [:result] conj (parser (:rows data)))
+      (assoc :rows (if input [input] nil)))))
+
+(defn stateful-multiline
+  "In cases where streaming input (file, etc) is a multiline format like XML or JSON,
+  then this stateful transducer allows for the merging of multiple lines of text into
+  a bounded structure. It collects lines until it reaches a line where (header? line)
+  returns 'true', then it joins a vector of text lines and applies (parse).
+
+  header? - Determine from text the start of a structure (ex: xml header line)
+  parser - How to parse the composite text list into a structure (or passthrough)
+
+  max - todo: The maximum consecutive lines to form into the data structure
+
+  It maintains a {:lines [] :result []} structure in context
+  "
+  [& {:keys [header parser] :or {header nil parser nil}}]
+  (fn
+    ([]
+      {:result []})
+    ([result]
+      (let [parsed (parser (:rows result))]
+        (cond
+          (and result parsed) (update-multi-state result nil parser)
+          parsed (assoc result :result [parsed])
+          :default result
+          ) ) )
+    ([result input]
+      (let [rows (:rows result)
+            parse? (header input)]
+        (cond
+          (and parse? rows) (update-multi-state result input parser)
+          parse? (assoc result :rows [input])
+          rows (update-in result [:rows] conj input)
+          ) ) )
+    ) )

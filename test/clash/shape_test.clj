@@ -5,9 +5,10 @@
 ;   By using this software in any fashion, you are agreeing to be bound by
 ;   the terms of this license.
 ;   You must not remove this notice, or any other, from this software.
-(ns clash.shape_test
+(ns clash.shape-test
   (:require [clojure.data.json :as json]
-            [clojure.string :as s])
+            [clojure.string :as s]
+            [clash.core :as cc])
   (:use [clojure.test]
         [clash.shape]
         [clash.core]))
@@ -152,6 +153,28 @@
     (is (= shaped {"b.c" {:int 4, :financial 3}, "b.d.e" {:int 4}, "b.d" {:int 3, :decimal 1}, "a" {:int 4}, "c" {:int 3}, "A.E.F.@f" {:int 2}, "A.B.C.@c" {:int 2}, "A.B.C" {:text 2}, "b.d.f" {:boolean 1}, "b" {:decimal 1}, "A.E.F" {:text 1}, "A.D" {:text 1}, "A.@ax" {:int 1}, "A.@a" {:int 1}}))
     ))
 
-(deftest test-data-to-spec
-  ; todo
-  )
+(def xmlheader "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"no\" ?>")
+
+(deftest test-stateful-multiline
+  (let [headerfx #(s/includes? % xmlheader)
+        xparser (try #(xml-parser (apply str %)) (catch Throwable _ (println "error")))
+        smulti (stateful-multiline :header headerfx :parser xparser)
+        data1 (str xmlheader "<A>aaa</A>")
+        result1a ((stateful-multiline :header headerfx :parser xparser) {:rows [data1]})
+        result1b ((stateful-multiline :header headerfx :parser xparser) {:result [] :rows [data1]})
+        data2 [xmlheader "<A a=\"abracadabra\">" "<B>bbb</B>" "</A>"]
+        data3 [xmlheader "<A a=\"abracadabra\">" "<B>bbb</B>" "</A>" xmlheader]
+        tresult1 (transduce (comp identity) smulti data2)
+        tresult2 (transduce (comp identity) smulti data3)
+        xmlfile1 (tresource "multiline.xml")
+        tresult3 (cc/transform-lines xmlfile1 identity :joinfx smulti :initv {})
+        ]
+    (are [x y] (= x y)
+      '({:tag :A, :attrs nil, :content ["aaa"]}) (:result result1a)
+      [{:tag :A, :attrs nil, :content ["aaa"]}] (:result result1b)
+      nil (:rows result1a)
+      [{:tag :A, :attrs {:a "abracadabra"}, :content [{:tag :B, :attrs nil, :content ["bbb"]}]}] (:result tresult1)
+      [{:tag :A, :attrs {:a "abracadabra"}, :content [{:tag :B, :attrs nil, :content ["bbb"]}]}] (:result tresult2)
+      ["<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"no\" ?>"] (:rows tresult2)
+      3 (count (:result tresult3))
+      ) ) )

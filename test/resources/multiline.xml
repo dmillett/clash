@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no" ?>
+<A a="a1" ax="ax1"><B><C c="c1"/><C c="c2">foo</C><C>bar</C></B><D>zoo</D><E><F f="f1">cats</F><F f="f1"/></E></A>
+<?xml version="1.0" encoding="UTF-8" standalone="no" ?>
+<A a="a2" ax="ax2">
+  <B>
+      <C c="c1"/>
+      <C c="c2">zoo</C>
+      <C>zap</C>
+  </B>
+  <D>zing</D>
+  <E>
+      <F f="f1">dogs</F>
+      <F f="f1"/>
+  </E>
+</A>
+<?xml version="1.0" encoding="UTF-8" standalone="no" ?>
+<A a="a3" ax="ax3"><B><C c="c4"/><C c="c3">foo</C><C>bar</C></B><D>zoo</D><E><F f="f3">cats</F><F f="f2"/></E></A>

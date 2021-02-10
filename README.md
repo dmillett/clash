@@ -72,7 +72,7 @@ Load data structures into memory and analyze or build result sets with predicate
 (disect istream ostream :fx (regex-magic))
 ```
 
-<a name="parsing-csvs"/></a>
+<a name="parsing-csv"/></a>
 ### Parsing CSV files into hashmap or defrecord structure
 If the first row in a CSV stream/file is a header with column titles, then clash can
 create a keyset or defrecord and map the rest of the rows into that structure.
@@ -116,6 +116,26 @@ create a keyset or defrecord and map the rest of the rows into that structure.
 
 (first (:result chicago_defrecs))
 #user.CovidChicagoSevere{:Date "03/29/2020", :Cases_Total 282, :Deaths_Total 20, :Hospitalizations_Total 130,...}
+```
+
+### Parsing multiline XML or JSON
+In some cases the data format maybe spread across multiple lines. Parsing XML data like this with Clojure can
+result in errors. This "stateful-join" can collect rows of text until the (header) function return true, 
+then it will pass a list of text to the (parser).
+
+```clojure
+(require [clash.core :as cc] [clash.shape :as cs] [clojure.string :as s])
+
+;; Separate lines of text by this XML header
+(def headerfx #(s/includes? % "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"no\" ?>"))
+(def xparser (try #(cs/xml-parser (apply str %)) (catch Throwable _ (println "error"))))
+(def stateful (stateful-multiline :header headerfx :parser xparser))
+
+;; Use the stateful transducer here to attempt and parse the XML
+(def xmldata (cc/transform-lines xmlfile1 identity :joinfx smulti :initv {}))
+
+;; Hopefully producing a vector of 
+{:result [{parsed-xml1} {parsed-xml2}] :rows ["unparsable" "lines" "of" "text"]}
 ```
 
 <a name="haystack"/></a>
@@ -409,6 +429,10 @@ including an ordered list of `(->ValuePattern :type #"some-pattern" (fx [v] (pre
 {"A.@ax" ["ax1"], "A.@a" ["a1"], "A.B.C.@c" ["c1" "c2"], "A.B.C" ["foo" "bar"], "A.D" ["zoo"], "A.E.F.@f" ["f1" "f1"], "A.E.F" ["cats"]}
 (flatten-data-frequencies xmlflat1)
 {"A.@ax" 1, "A.@a" 1, "A.B.C.@c" 2, "A.B.C" 2, "A.D" 1, "A.E.F.@f" 2, "A.E.F" 1}
+
+;; Merge all of the flattened xml into one structure
+(apply merge-with concat flattened)
+
 ```
 
 ### XML & JSON
