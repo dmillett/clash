@@ -127,12 +127,12 @@ then it will pass a list of text to the (parser).
 (require [clash.core :as cc] [clash.shape :as cs] [clojure.string :as s])
 
 ;; Separate lines of text by this XML header
-(def headerfx #(s/includes? % "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"no\" ?>"))
+(def header #(s/includes? % "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"no\" ?>"))
 (def xparser (try #(cs/xml-parser (apply str %)) (catch Throwable _ (println "error"))))
-(def stateful (stateful-multiline :header headerfx :parser xparser))
+(def stateful (stateful-multiline :header header :parser xparser))
 
 ;; Use the stateful transducer here to attempt and parse the XML
-(def xmldata (cc/transform-lines xmlfile1 identity :joinfx smulti :initv {}))
+(def xmldata (cc/transform-lines xmlfile1 identity :joinfx stateful :initv {}))
 
 ;; Hopefully producing a vector of 
 {:result [{parsed-xml1} {parsed-xml2}] :rows ["unparsable" "lines" "of" "text"]}
