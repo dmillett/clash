@@ -59,6 +59,12 @@
     "a,_b,c" (clean-keys " a,-b,c+")
     ))
 
+
+(def foo ["Timestamp,Transaction Type,Asset,Quantity Transacted,USD Spot Price at Transaction,USD Subtotal,USD Total (inclusive of fees),USD Fees,Notes\n"
+          "2020-12-06T20:02:52Z,Buy,BTC,0.00026156,19150.00,5.01,5.01,0.00,Bought 0.00026156 BTC for $5.01 USD"
+          "2020-12-16T16:01:24Z,Buy,BTC,0.02365302,20828.63,492.66,500.00,7.34,Bought 0.02365302 BTC for $500.00 USD"
+          "2020-12-16T16:02:04Z,Buy,ETH,0.78435942,628.10,492.66,500.00,7.34,Bought 0.78435942 ETH for $500.00 USD"])
+
 (deftest test-stateful-join
   (let [tdfx1 (comp identity (map csv-parse1))
         tdfx2 (comp identity (map csv-parse2))
@@ -70,7 +76,10 @@
         td6 (transduce tdfx2 (stateful-join :header? true :recname "Foo3") ["a,b,c" "1,2" "4,5,6" "7,8,9,10"])
         td7 (transduce tdfx2 (stateful-join :header? true :recname "Chicago" :kclean clean-keys) [complex1a complex1b])
         td8 (transduce tdfx2 (stateful-join :header? true :kclean clean-keys) [complex1a complex1b])
+        td9 (transduce tdfx2 (stateful-join :header? true :kclean clean-keys) foo)
+        td10 (transduce tdfx1 (stateful-join :header? true :recname "Foo" :kclean clean-keys) foo)
         ]
+    (println td10)
     (are [x y] (= x y)
        [["a" "b" "c"] ["1" "2" "3"]] (:result td1)
        [{"a" "1" "b" "2" "c" "3"} {"a" "4" "b" "5" "c" "6"}] (:result td2)

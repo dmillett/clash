@@ -110,7 +110,7 @@ create a keyset or defrecord and map the rest of the rows into that structure.
 ;; Parse CSV as a defrecord based on the header row
 ;; Have to clean header row characters to meet Java syntax reqs for field names
 (def chicago "chicago-severe-covid.csv")
-(def csvjoin-drec (ccsv/stateful-join :header true :recname "CovidChicagoSevere" :kclean ccsv/clean-keys))
+(def csvjoin-drec (ccsv/stateful-join :header? true :recname "CovidChicagoSevere" :kclean ccsv/clean-keys))
 
 (def chicago_defrecs (cc/transform-lines chicago1 ccsv/csv-parse2 :joinfx csvjoin-drec  :initv {}))
 

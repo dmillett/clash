@@ -676,5 +676,4 @@
       (if rec
         rec
         (throw (RuntimeException. (str "Check field names: Problem creating defrecord:" recname ", from:" data)) )))
-      ;(eval-str (str "(defrecord " recname " " kset ")")))
       ) )
