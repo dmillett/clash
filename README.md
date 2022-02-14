@@ -18,6 +18,7 @@ Try adding **[clash "1.5.2"]** to your project today
  * [data shape](#data-shape)
  * [utility functions](#utility-functions)
  * [performance & debugging](#performance-debugging)
+ * [shell commands](#shell-commands)
  * [general performance](#performance)
  * [Example: Covid19 (updated on 'covid' branch)](#covid19)   
  * [packaged examples](#packaged-examples)
@@ -33,15 +34,13 @@ Convert, into memory, millions of lines, from text/csv/json/etc stream or file, 
 using
 ```clojure
 ;; Create a target structure, pattern, and parser/adapter
+;; Parse and transform a single line
+(def sample "05042013-13:24:13.005|sample-server|1.0.0|info|Search,ZOO,25,13.99")
 (defrecord Structure [time action name quantity unit_price])
 (def pattern #"(\d{8}-\d{2}:\d{2}:\d{2}.\d{3})\|.*\|(\w*),(\w*),(\d*),(.*)")
 
 ;; Could use split for each line of CSV or cheshire to read/parse each line of JSON
 (defn parser [line] (if-let [[_ t a n q p] (re-find pattern line)] (->Structure t a n q p)))
-
-;; Parse and transform a single line
-(def sample "05042013-13:24:13.005|sample-server|1.0.0|info|Search,ZOO,25,13.99")
-(parser sample)
 ```
 into
 ```clojure
@@ -707,6 +706,7 @@ a regular expression.
 (regex-groups-into-maps "a,b,c,d" [:a :b] #"(\w),(\w)" [:a])
 ({:a "a"} {:a "c"})
 ```
+<a name="shell commands></a>
 ## Shell Command Interaction
 Applying linux/unix shell commands in conjunction with Clojure to a text file. It's
 generally faster to delegate to the C implementations than iterate through a file
