@@ -17,6 +17,14 @@
   "Define the current test directory."
   (str (System/getProperty "user.dir") "/test/resources"))
 
+;; Works from project directory for commands
+(deftest test-jshell
+  (is (not (empty? (jshell "ls"))))
+  (is (not (empty? (jshell ["ls"]))))
+  (is (= 3 (count (jshell "ls | grep md"))))
+  (is (= 3 (count (jshell ["ls" "|" "grep md"]))))
+  )
+
 (deftest test-pipe
   (is (= 3 (count (pipe "foo|bar"))))
   (is (= 6 (count (pipe "foobar"))))

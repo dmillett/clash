@@ -3,6 +3,9 @@
 ## Next
  * (spec-from) Attempt to create spec structure for sets of data
 
+## 1.5.3
+ * Added (jshell) for command line stream processing with (tlash.core/transform-lines)
+
 ## 1.5.2
 ### features
  * Added CSV parsing for (transform-lines) that creates keys from

@@ -33,7 +33,7 @@
   (build-command [\"ls\" \"|\" \"grep md\"] --> [\"/bin/sh\" \"-c\" \"ls | grep md\"] - typed array
   "
   [args]
-  {pre (spec/valid? #(or (string? %) (coll? %)) args)}
+  ;{pre (spec/valid? #(or (string? %) (coll? %)) args)}
   (cond
     (and (coll? args) (some #{"|"} args)) (into-array (list "/bin/sh" "-c" (apply str (interpose " " args))))
     (coll? args) (apply str (interpose " " args))
@@ -60,14 +60,14 @@
 
   The optional arguments and defaults mirror the underlying (transform-lines).
   "
-  [args & {:keys [max tdfx joinfx initv] :or {max nil tdfx nil joinfx conj initv []}}]
-  (let [instream (jshell-stream args)
+  [args & {:keys [max tdfx joinfx initv] :or {max nil tdfx (filter identity) joinfx conj initv []}}]
+  (let [stream (jshell-stream (build-command args))
         parser (fn [line] (s/trim line))]
-    (cc/transform-lines instream parser :max max :tdfx nil :joinfx joinfx :initv initv)
+    (cc/transform-lines stream parser :max max :tdfx tdfx :joinfx joinfx :initv initv)
     ) )
 
 
-(defn pipe
+(defn ^{:deprecated "1.5.3"} pipe
   "Build a command array for linux, prefixing with the following
   system commands: \"/bin/sh\", \"-c\", 'command'. This will
   enable multiple commands to execute via 'pipe'. "
@@ -77,19 +77,19 @@
     (into-array (list "/bin/sh" "-c" command))
     command) )
 
-(defn ^{:deprecated "1.5.4"} jproc
+(defn ^{:deprecated "1.5.3"} jproc
   "Get a Java Process for a Runtime system execution."
   [command]
   (let [updated (pipe command)]
     (.exec (Runtime/getRuntime) updated)) )
 
-(defn ^{:deprecated "1.5.4"}  jproc-instream
+(defn ^{:deprecated "1.5.3"}  jproc-instream
   "Get the input stream for a Java Process."
   [command]
   (.getInputStream (jproc command)))
 
  
-(defn ^{:deprecated "1.5.4"}  jproc-reader
+(defn ^{:deprecated "1.5.3"}  jproc-reader
   "Get a clojure reader from a java InputStream."
   [command]
   (if-not (nil? command)
@@ -99,7 +99,7 @@
 ;; todo: make this into one method with writer or console dump??
 
 ; It's pretty slow dumping to the console, but useful for testing.
-(defn ^{:deprecated "1.5.4"}  jproc-dump
+(defn ^{:deprecated "1.5.3"}  jproc-dump
   "Execution a shell system command, via java process, and
   dump result to the console (slow). This is handled via
   clojure reader to a line-seq. "
@@ -108,7 +108,7 @@
     (doseq [line (line-seq rdr)]
       (println (str line delim)))) )
   
-(defn ^{:deprecated "1.5.4"}  jproc-write
+(defn ^{:deprecated "1.5.3"}  jproc-write
   "Execute a System command, via java Process, and capture
   the InputStream via clojure reader into a sequenc.e
   Write the resulting output to a file (useful for grep)."
@@ -121,7 +121,7 @@
 
 ;; Explore using map and functions here??
 ;; Explore using multiple functions with @
-(defmacro ^{:deprecated "1.5.4"}  with-jproc
+(defmacro ^{:deprecated "1.5.3"}  with-jproc
   "A macro to combine clojure functions with a result
   from a shell command.
 
@@ -136,7 +136,7 @@
          (.write wrt# (str result# ~delim))))) )
 
 
-(defmacro ^{:deprecated "1.5.4"}  with-jproc-dump
+(defmacro ^{:deprecated "1.5.3"}  with-jproc-dump
   "Execute a sh command like grep and pass the result to
   a function to work with. For example, pass the result
   of a grep to 'last': (last (grep bar \"foobar\")) --> 'r'

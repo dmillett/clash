@@ -90,7 +90,7 @@ create a keyset or defrecord and map the rest of the rows into that structure.
 
 ;; Hard to predict what characters will be in the header row
 (def csvjoin-hmaps (ccsv/stateful-join :header? true))
-(def chicago_data (cc/transform-lines chicago ccsv/csv-parse2 :joinfx csvjoin-hmaps :initv {}))
+(def chicago_hmaps (cc/transform-lines chicago ccsv/csv-parse2 :joinfx csvjoin-hmaps :initv {}))
 
 (first (:result chicago_hmaps))
 {"Date" "03/29/2020", "Cases - Total" 282, "Hospitalizations - Age 30-39" 12, "Hospitalizations - Age 70-79 24", ...}
@@ -711,6 +711,23 @@ a regular expression.
 Applying linux/unix shell commands in conjunction with Clojure to a text file. It's
 generally faster to delegate to the C implementations than iterate through a file
 with the JVM. These are simple, included test files.
+
+This uses a transducer to pass a string command with/without pipe ('|') or a list of commands
+to a Java Runtime.exec() process. 
+
+**preferred**
+```clojure
+(jshell "ls")
+["foo.clj" "bar.clj" "readme.md"]
+
+(jshell "ls | grep md")
+["readme.md"]
+
+(jshell ["ls" "|" "grep md"])
+["readme.md"]
+```
+
+**deprecated**
 ```clojure
 (def command2 (str "grep message " input1 " | cut -d\",\" -f2 " input1))
 (def output2 (str tresource "/output2.txt"))
@@ -727,6 +744,7 @@ with the JVM. These are simple, included test files.
 ;; Writes result to output1 (see test/command.clj)
 (jproc-write command1 output1 "\n")
 ```
+
 #### Shell notes
 A simple performance test comparing '(re-split (re-find))' vs '(jproc-write "grep | cut")' and a
 145 MB file resulted in completed in less than half the time with (jproc-write).
@@ -746,6 +764,14 @@ elapsed time in nano seconds (ns), milliseconds (ms) or seconds(s).
 
 <a name="deprecated"/></a>
 ## Deprecated
+command/pipe
+command/jproc
+command/jproc-instream
+command/jproc-reader
+command/jproc-dump
+command/jproc-write
+command/with-jproc
+command/with-jproc-dump
 
 ### commits
 ```bash
