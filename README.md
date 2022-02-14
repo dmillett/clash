@@ -706,7 +706,9 @@ a regular expression.
 (regex-groups-into-maps "a,b,c,d" [:a :b] #"(\w),(\w)" [:a])
 ({:a "a"} {:a "c"})
 ```
-<a name="shell-commands/></a>
+
+<a name="shell-commands"/></a>
+
 ## Shell Command Interaction
 Applying linux/unix shell commands in conjunction with Clojure to a text file. It's
 generally faster to delegate to the C implementations than iterate through a file
