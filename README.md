@@ -9,10 +9,10 @@ Clash makes it fast and easy to determine how many times a specific value exists
 across millions of rows of data. This includes performance macros to determine approximately when the JVM will
 optimize execution for a target method (sweetspot).
 
-Try adding **[clash "1.5.2"]** to your project today
+Try adding **[clash "1.5.3"]** to your project today
 
  * [transformation functions](#core-transformations)
- * [parsing csvs](#parsing-csvs)  
+ * [parsing csv](#parsing-csv)  
  * [pivot functionality](#pivot)
  * [haystack functionality](#haystack)
  * [data shape](#data-shape)
@@ -28,10 +28,6 @@ Try adding **[clash "1.5.2"]** to your project today
 
 ## Simple Usage
 Convert, into memory, millions of lines, from text/csv/json/etc stream or file, like this:
-```
-05042013-13:24:13.005|sample-server|1.0.0|info|Search,ZOO,25,13.99
-```
-using
 ```clojure
 ;; Create a target structure, pattern, and parser/adapter
 ;; Parse and transform a single line
@@ -81,15 +77,13 @@ create a keyset or defrecord and map the rest of the rows into that structure.
 ```clojure
 (require '[clash.csv :as ccsv])
 
-(transduce ccsv/csv-parse2 (ccsv/stateful-join :header? true) {} ["a,b,c" "1,2,3" "4,5,6"])
-{:result [{"a" 1 "b" 2 "c" 3} {"a" 4 "b" 5 "c" 6}]  :keyfx #<function-creating-maps-or-defrecords>}
-
 ;; Parses first CSV row (header) as map keys
 (def chicago "chicago-severe-covid.csv")
 
 ;; Hard to predict what characters will be in the header row
-(def csvjoin-hmaps (ccsv/stateful-join :header? true))
-(def chicago_hmaps (cc/transform-lines chicago ccsv/csv-parse2 :joinfx csvjoin-hmaps :initv {}))
+(def chicago_hmaps (cc/transform-lines chicago ccsv/csv-parse2 
+                                       :joinfx (ccsv/stateful-join :header? true) 
+                                       :initv {}))
 
 (first (:result chicago_hmaps))
 {"Date" "03/29/2020", "Cases - Total" 282, "Hospitalizations - Age 30-39" 12, "Hospitalizations - Age 70-79 24", ...}
@@ -100,6 +94,10 @@ create a keyset or defrecord and map the rest of the rows into that structure.
 
 (first (:result chicago_hmaps_kws))
 {:Date "03/29/2020", :Cases_Total 282, :Hospitalizations_Age30_39 12, :Hospitalizations_Age70-79 24, ...}
+
+;; Can pass a list of strings to a transducer as well
+(transduce ccsv/csv-parse2 (ccsv/stateful-join :header? true) {} ["a,b,c" "1,2,3" "4,5,6"])
+{:result [{"a" 1 "b" 2 "c" 3} {"a" 4 "b" 5 "c" 6}]  :keyfx #<function-creating-maps-or-defrecords>}
 ```
 
 **Parse into defrecords instead**
@@ -110,8 +108,9 @@ create a keyset or defrecord and map the rest of the rows into that structure.
 ;; Have to clean header row characters to meet Java syntax reqs for field names
 (def chicago "chicago-severe-covid.csv")
 (def csvjoin-drec (ccsv/stateful-join :header? true :recname "CovidChicagoSevere" :kclean ccsv/clean-keys))
-
-(def chicago_defrecs (cc/transform-lines chicago1 ccsv/csv-parse2 :joinfx csvjoin-drec  :initv {}))
+(def chicago_defrecs (cc/transform-lines chicago1 ccsv/csv-parse2 
+                                         :joinfx csvjoin-drec 
+                                         :initv {}))
 
 (first (:result chicago_defrecs))
 #user.CovidChicagoSevere{:Date "03/29/2020", :Cases_Total 282, :Deaths_Total 20, :Hospitalizations_Total 130,...}
