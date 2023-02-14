@@ -98,7 +98,7 @@
 
 (defn csv-parse1
   "Just a simple string split on ','"
-  [textrow]
+  [^String textrow]
   (when textrow
     (s/split (s/trim textrow) #",")))
 
@@ -106,7 +106,7 @@
   "Parse a simple string on ',' and convert numbers and leave
   everything else a string. Uses (re-matches #\"[\\d\\.\\-]+\" text)
   to identify numbers."
-  [textrow]
+  [^String textrow]
   (when textrow
     (let [values (s/split (s/trim textrow) #",")
           numpat #"[\d\.\-]+"]
@@ -122,6 +122,6 @@
   "Remove trailing newline and whitespace. Replace '-' with '_'
   todo: this should capture all Java field syntax naming requirements
   "
-  [text]
+  [^String text]
   (when (not (empty? text))
     (-> text s/trim (s/replace #"[\-\/]+" "_") (s/replace #"[\s\+]+" ""))))

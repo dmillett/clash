@@ -14,11 +14,11 @@
 (defn as-one-line
   "Remove newline characters from a given string and substitue with \"\" (default)
   or some other non empty? delimiter"
-  ([text]
+  ([^String text]
     (if (empty? text)
       text
       (s/replace text "\n" "") ) )
-  ([text delim]
+  ([^String text ^String delim]
     (if (or (empty? text) (empty? delim))
       text
       (s/replace text "\n" delim) )) )
@@ -46,8 +46,8 @@
   "Split a structured text into map and return some/all entries. A specific
   pattern is required. If specific keys exist, then this functions creates
   a sub-map of the original map."
-  ([line pattern structure] (text-structure-to-map line pattern structure []))
-  ([line pattern structure keys]
+  ([^String line pattern structure] (text-structure-to-map line pattern structure []))
+  ([^String line pattern structure keys]
     (when (seq line)
       (let [result (zipmap structure (s/split line pattern))]
         (if (empty? keys)
@@ -58,8 +58,8 @@
   "Parse the first regex match with a specific structure using 're-find' into
   a map. Specify keys to return a subset of the map structure. Empty text or nil
   pattern/structure results in nil."
-  ([text structure pattern] (regex-group-into-map text structure pattern []))
-  ([text structure pattern sub-keys]
+  ([^String text structure pattern] (regex-group-into-map text structure pattern []))
+  ([^String text structure pattern sub-keys]
     (when-not (or (empty? text) (nil? pattern) (nil? structure))
       (let [matches (re-find pattern text)]
         (if-not (and (nil? matches) (< (count matches) 1))
@@ -76,8 +76,8 @@
 
    Example: \"a,b,c,d,e,f\" with pattern (\\w),(\\w),(\\w) and structure [:a :b :c]
             will return ({:a a :b b :c c} {:a d :b e :c f})"
-  ([text structure pattern] (regex-groups-into-maps text structure pattern []))
-  ([text structure pattern sub-keys]
+  ([^String text structure pattern] (regex-groups-into-maps text structure pattern []))
+  ([^String text structure pattern sub-keys]
     (when-not (or (empty? text) (empty? structure) (nil? pattern))
        (let [text_groups (re-seq pattern text)]
          (when (seq text_groups)
@@ -88,7 +88,7 @@
 (defn includes-icase?
   "Check if text includes substring regardless of case. Everything
   is converted to lower-case."
-  [text substr]
+  [^String text ^String substr]
   (if (and text substr)
     (s/includes? (s/lower-case text) (s/lower-case substr))
     false

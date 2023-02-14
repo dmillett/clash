@@ -16,14 +16,14 @@
 
 (defn sstream
   "Convert a String or text to an input stream for parsing"
-  [text]
+  [^String text]
   (when text
     (io/input-stream (.getBytes text))
     ) )
 
 (defn xml-parser
   "Use clojure.xml to parse a string or an input-stream."
-  [xmltext]
+  [^String xmltext]
   (try
     (when (and (not-empty xmltext) (s/starts-with? xmltext "<"))
       (if (string? xmltext)
@@ -74,10 +74,10 @@
    This is an easier way to evaluate what 'keypaths' are present in the data and how frequently
    they occur in a dataset.
   "
-  ([xml] (if (string? xml) (flatten-xml (xml-parser xml) "" {}) (flatten-xml xml "" {})))
-  ([xml describe?] (if (string? xml) (flatten-xml (xml-parser xml) "" {} describe?) (flatten-xml xml "" {} describe?)))
-  ([xmlnode keypath flatd] (flatten-xml xmlnode keypath flatd false))
-  ([xmlnode keypath flatd describe?]
+  ([^String xml] (if (string? xml) (flatten-xml (xml-parser xml) "" {}) (flatten-xml xml "" {})))
+  ([^String xml describe?] (if (string? xml) (flatten-xml (xml-parser xml) "" {} describe?) (flatten-xml xml "" {} describe?)))
+  ([^String xmlnode ^String keypath flatd] (flatten-xml xmlnode keypath flatd false))
+  ([^String xmlnode ^String keypath flatd describe?]
    (let [tag (when-let [node_name (:tag xmlnode)] (name node_name))
          content (:content xmlnode)
          kpath (if (empty? keypath) tag (str keypath "." tag))
@@ -92,7 +92,7 @@
 
 (defn to-json
   "Parse string json form into JSON or just return JSON structure"
-  [json_data]
+  [^String json_data]
   (if (string? json_data)
     (cc/parse-string json_data)
     json_data
@@ -111,10 +111,10 @@
    "
   ;; backward compatibility fun -- to include 'describe'?
   ;([json & {:keys [keypath data describe] :or {keypath "" data {} describe false}}])
-  ([json] (flatten-json (to-json json) "" {}))
-  ([json describe?] (flatten-json (to-json json) "" {} describe?))
-  ([json keypath data] (flatten-json json keypath data false))
-  ([json keypath data describe?]
+  ([^String json] (flatten-json (to-json json) "" {}))
+  ([^String json describe?] (flatten-json (to-json json) "" {} describe?))
+  ([^String json ^String keypath data] (flatten-json json keypath data false))
+  ([^String json ^String keypath data describe?]
    {:pre (spec/explain map? json)}
    (let [kfx (fn [kpath k]
                (cond
@@ -205,7 +205,7 @@
    This is helpful for determining rough/fine data categorization over a larger group of data.
    **NOTE** Specify regex from most to least specific for 'patterns'
    "
-  [value patterns]
+  [^String value patterns]
   (if-let [v (as-string value)]
     (reduce
       (fn [_ tp]
@@ -290,11 +290,11 @@
 (def simple-json-parser
   "A simple JSON parser that skips empty strings and dumps 'Error:' for any poorly formatted JSON.
   The JSON text is curried from context."
-  (fn [line] (try (when (not-empty line) (flatten-json line)) (catch Exception _ (println "Error:" line)))))
+  (fn [^String line] (try (when (not-empty line) (flatten-json line)) (catch Exception _ (println "Error:" line)))))
 
 (defn xml-and-json-parser
   "When the input data (line) is JSON OR XML, this parser will handle both."
-  [line]
+  [^String line]
   (try
     (when (not-empty line)
       (cond
@@ -334,7 +334,7 @@
           parsed (assoc result :result [parsed])
           :default result
           ) ) )
-    ([result input]
+    ([result ^String input]
       (let [rows (:rows result)
             parse? (header input)]
         (cond

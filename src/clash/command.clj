@@ -62,7 +62,7 @@
   "
   [args & {:keys [max tdfx joinfx initv] :or {max nil tdfx (filter identity) joinfx conj initv []}}]
   (let [stream (jshell-stream (build-command args))
-        parser (fn [line] (s/trim line))]
+        parser (fn [^String line] (s/trim line))]
     (cc/transform-lines stream parser :max max :tdfx tdfx :joinfx joinfx :initv initv)
     ) )
 
