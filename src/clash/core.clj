@@ -10,7 +10,7 @@
   ^{:author "dmillett"
     :doc "Atomizing and interacting with oject memory stores from text files (logs, etc)."}
   clash.core
-  (:use [clojure.java.io :only (reader writer)]) )
+  (:require [clojure.java.io :refer [reader writer]]) )
 
 (defn- transform-text
   "A function to transform text from form to another. Example, decode/encode
@@ -162,8 +162,8 @@
   [owrite delim]
   (fn
     ([])
-    ([result])
-    ([result current] (.write owrite (str current delim))) ) )
+    ([_])
+    ([_ current] (.write owrite (str current delim))) ) )
 
 (defn disect
   "Transform input (stream) to output (stream) with a transducer function. This can be used for 'cleaning'

@@ -62,7 +62,7 @@
   ([^String text structure pattern sub-keys]
     (when-not (or (empty? text) (nil? pattern) (nil? structure))
       (let [matches (re-find pattern text)]
-        (if-not (and (nil? matches) (< (count matches) 1))
+        (when-not (and (nil? matches) (< (count matches) 1))
           (let [result (zipmap structure (rest matches))]
             (if (empty? sub-keys)
               result

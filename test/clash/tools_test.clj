@@ -475,12 +475,14 @@
 
 (deftest test-eval-str
   (are [x y] (= x y)
-             nil (eval-str nil)
-             2 (eval-str "(inc 1)")
-             nil (eval-str "(inc a)")
-             false (eval-str "(inc a)" false)
-             false (eval-str "(inc 1" false)
-             ) )
+    nil (eval-str nil)
+    2 (eval-str "(inc 1)")
+    nil (eval-str "(inc a)")
+    false (eval-str "(inc a)" false)
+    false (eval-str "(inc 1" false)
+    )
+  (is (eval-str (str "(defrecord Foo " (into [] (map symbol ["Timestamp" "TransactionType"])) ")")))
+  )
 
 (defn- clean-split
   "Remove trailing newline and whitespace. Replace '-' with '_'"

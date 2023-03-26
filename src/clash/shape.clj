@@ -86,7 +86,7 @@
      (cond
        (or (nil? xmlnode) (nil? tag) (empty? content)) data
        (map? (first content)) (apply merge-data data (for [node content] (flatten-xml node (if describe? (str kpath "{}") kpath) {} describe?)))
-       :default (add-keypath-value data kpath (first content))
+       :else (add-keypath-value data kpath (first content))
        ) )
    ) )
 
@@ -120,7 +120,7 @@
                (cond
                  (empty? kpath) k
                  (empty? k) kpath
-                 :default (str kpath "." k)))
+                 :else (str kpath "." k)))
          kfx2 (fn [k sym]
                 (if (and describe? (not (s/blank? k)))
                   (str k sym)
@@ -132,7 +132,7 @@
            (cond
              (vector? v) (merge-data result (flatten-json v (kfx keypath (kfx2 k "[]") ) {} describe?))
              (map? v) (merge-data result (flatten-json v (kfx keypath (kfx2 k "{}")) {} describe?))
-             :default (add-keypath-value result (kfx keypath k) v)
+             :else (add-keypath-value result (kfx keypath k) v)
              )))
        data
        json)
@@ -243,7 +243,7 @@
   (cond
     (= 1 (count args)) (first args)
     (= 2 (count args)) (update-pattern-freqs patterns (first args) (last args))
-    :default {}
+    :else {}
     ) )
 
 (defn- map-value-total
@@ -300,7 +300,7 @@
       (cond
         (s/starts-with? line "<") (flatten-xml line)
         (s/starts-with? line "{") (flatten-json line)
-        :default (println "Skipping line:" line)))
+        :else (println "Skipping line:" line)))
     (catch Exception e (println "Error:" e))))
 
 (defn- update-multi-state
@@ -332,7 +332,7 @@
         (cond
           (and result parsed) (update-multi-state result nil parser)
           parsed (assoc result :result [parsed])
-          :default result
+          :else result
           ) ) )
     ([result ^String input]
       (let [rows (:rows result)

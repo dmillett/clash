@@ -11,9 +11,7 @@
       :doc "Some potentially useful tools with command.clj or other."}
   clash.tools
   (:require [clojure.core.reducers :as r]
-            [clojure.spec.alpha :as cs]
-            [clojure.string :as s])
-  (:use [clojure.java.io :only (reader)])
+            [clojure.java.io :refer [reader]])
   (:import java.text.SimpleDateFormat))
 
 (defn data-to-file
@@ -672,7 +670,8 @@
   [recname data]
   (when (and recname data)
     (let [kset (into [] (map symbol data))
-          rec (eval-str (str "(defrecord " recname " " kset ")"))]
+          recstring (str "(defrecord " recname " " kset ")")
+          rec (eval-str recstring)]
       (if rec
         rec
         (throw (RuntimeException. (str "Check field names: Problem creating defrecord:" recname ", from:" data)) )))

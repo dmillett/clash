@@ -57,6 +57,7 @@
   (are [x y] (= x y)
     "a,b,c" (clean-keys "a,b,c")
     "a,_b,c" (clean-keys " a,-b,c+")
+    "_a_,_b_,c_" (clean-keys "[a],(-b),c|")
     ))
 
 
@@ -79,7 +80,6 @@
         td9 (transduce tdfx2 (stateful-join :header? true :kclean clean-keys) foo)
         td10 (transduce tdfx1 (stateful-join :header? true :recname "Foo" :kclean clean-keys) foo)
         ]
-    (println td10)
     (are [x y] (= x y)
        [["a" "b" "c"] ["1" "2" "3"]] (:result td1)
        [{"a" "1" "b" "2" "c" "3"} {"a" "4" "b" "5" "c" "6"}] (:result td2)
@@ -92,5 +92,7 @@
        47 (:Cases_Total (first (:result td7)))
        58 (count (first (:result td8)))
        47 (get (first (:result td8)) "Cases_Total")
+       3 (count (:result td9))
+       3 (count (:result td10))
        ) ) )
 

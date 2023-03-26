@@ -10,14 +10,14 @@
   (:require [clojure.string :as s]
             [clash.tools :as ct]))
 
-(defn- record-field-count
-  "How many define fields are in the defrecord definition?"
-  [rec]
-  (when rec
-    (count (filter
-             #(not (s/includes? (str %) "__"))
-             (.getFields rec))
-      ) ) )
+;;(defn- record-field-count
+;;  "How many define fields are in the defrecord definition?"
+;;  [rec]
+;;  (when rec
+;;    (count (filter
+;;             #(not (s/includes? (str %) "__"))
+;;             (.getFields rec))
+;;      ) ) )
 
 ;; todo: return map with {:values, :remainders}
 (defn- ensure-record-row
@@ -28,7 +28,7 @@
     (cond
       (pos? sdiff) (concat values (repeat sdiff fill))
       (neg? sdiff) (take size values)
-      :default values
+      :else values
       )))
 
 (defn- resultdata
@@ -41,7 +41,8 @@
 (defn keyfx
   "Create keyfx from the first row in a CSV stream (or similar). It takes a list of arguments
   and converts them to a function with map keys or defrecord fields. Default behavior is a function
-  that takes a vector/list of values OR a defrecord function that takes a vector/list of va
+  that takes a vector/list of values OR a defrecord function that takes a vector/list of values. When
+  (defrecord), ensure that symbols adhere to JVM field naming standards (no brackets, hyphens, parenthesis, etc).
 
   rowdata - a vector of header fields to create map keys or defrecord fields from
   recname - what the defrecord type should be, if null, then hashmap is created
@@ -56,7 +57,7 @@
   todo: hashmap keys as :keyword instead of string
   "
   [rowdata & {:keys [recname keywords?] :or {recname nil keywords? false}}]
-  (when (not (empty? rowdata))
+  (when (seq rowdata)
     (if recname
       (let [_ (ct/create-record recname rowdata)
             fieldcount (count rowdata)
@@ -87,11 +88,11 @@
           (cond
             (and keyfn input) (assoc result :result (resultdata result (keyfn input)))
             (and header? input) (assoc result :keyfx (keyfx
-                                                       (if kclean (map kclean input) input)
+                                                       (if kclean (into [] (map kclean input)) input)
                                                        :recname recname
                                                        :keywords? keywords?))
             input (assoc result :result (resultdata result (if kclean (map kclean input) input)))
-            :default result
+            :else result
             )
          (catch Exception e (println "(stateful-join) error on:" input "\n" e)))
        ) ) ) )
@@ -123,5 +124,5 @@
   todo: this should capture all Java field syntax naming requirements
   "
   [^String text]
-  (when (not (empty? text))
-    (-> text s/trim (s/replace #"[\-\/]+" "_") (s/replace #"[\s\+]+" ""))))
+  (when (seq text)
+    (-> text s/trim (s/replace #"[\-\/\(\)\[\]\|]+" "_") (s/replace #"[\s\+]+" ""))))

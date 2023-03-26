@@ -12,9 +12,8 @@
     clash.command
   (:require [clojure.string :as s]
             [clojure.spec.alpha :as spec]
-            [clash.core :as cc])
-  (:use [clojure.java.io :only (reader writer)]
-        [clash.text_tools :refer :all]))
+            [clash.core :as cc]
+            [clojure.java.io :refer [reader writer]]))
 
 ;; Linux/Unix "/bin/sh", "-c"
 ;; Mac
@@ -38,7 +37,7 @@
     (and (coll? args) (some #{"|"} args)) (into-array (list "/bin/sh" "-c" (apply str (interpose " " args))))
     (coll? args) (apply str (interpose " " args))
     (s/includes? args "|") (into-array (list "/bin/sh" "-c" args))
-    :default args
+    :else args
     ) )
 
 (defn jshell-stream
@@ -48,7 +47,7 @@
   cmdline - A string or list of command line arguments
   :sh (todo) What type of shell environment (default: /bin/sh)
   "
-  [cmdline & {:keys [sh] :or {sh "/bin/sh"}}]
+  [cmdline]
   {:pre (spec/valid? #(or (string? %) (coll? %)) cmdline)}
   (let [command (build-command cmdline)]
     (.getInputStream (.exec (Runtime/getRuntime) command))) )
