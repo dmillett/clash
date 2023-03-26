@@ -28,6 +28,22 @@ Try adding **[clash "1.5.3"]** to your project today
 
 ## Simple Usage
 Convert, into memory, millions of lines, from text/csv/json/etc stream or file, like this:
+
+```clojure
+;; Using a transducer function, the 'parser' maps a structure onto lines of content (see 'packaged examples' below)
+;; Additional arguments :joinfx (default: conj) and :initv (default: []) are also available. 
+(transform-lines input parser :max xx :tdfx some-xform)
+
+;; Using a reducer function, tracks counts and failed line parsings
+(transform-lines-verbose filename parser :max xx)
+
+;; Transform one million log lines (2 - 3 seconds on macbook)
+(def data (transform-lines "logs.txt" parser :max 1000000))
+
+;; Single line sample
+#user.Structure{:time "05042013-13:24:13.005", :action "Search", :name "ZOO", :quantity "25", :unit_price "13.99"}
+```
+with functions like this:
 ```clojure
 ;; Create a target structure, pattern, and parser/adapter
 ;; Parse and transform a single line
@@ -38,27 +54,12 @@ Convert, into memory, millions of lines, from text/csv/json/etc stream or file, 
 ;; Could use split for each line of CSV or cheshire to read/parse each line of JSON
 (defn parser [line] (if-let [[_ t a n q p] (re-find pattern line)] (->Structure t a n q p)))
 ```
-into
-```clojure
-;; Transform one million log lines (2 - 3 seconds on macbook)
-(def data (transform-lines "logs.txt" parser :max 1000000))
-
-;; Single line sample
-#user.Structure{:time "05042013-13:24:13.005", :action "Search", :name "ZOO", :quantity "25", :unit_price "13.99"}
-```
 
 <a name="core-transformations"/></a>
 ## Core Transformation Functions
 Load data structures into memory and analyze or build result sets with predicates.
 
 ```clojure
-;; Using a transducer function, the 'parser' maps a structure onto lines of content (see 'packaged examples' below)
-;; Additional arguments :joinfx (default: conj) and :initv (default: []) are also available. 
-(transform-lines input parser :max xx :tdfx some-xform)
-
-;; Using a reducer function, tracks counts and failed line parsings
-(transform-lines-verbose filename parser :max xx)
-
 ;; Slower, but atomic loads and useful when encountering errors
 (atomic-list-from-file filename parser)
 
@@ -135,6 +136,98 @@ then it will pass a list of text to the (parser).
 ;; Hopefully producing a vector of 
 {:result [{parsed-xml1} {parsed-xml2}] :rows ["unparsable" "lines" "of" "text"]}
 ```
+
+
+<a name="data-shape"/></a>
+## Data Shape
+When encountering a lot of JSON and/or XML data of unknown structure, it is helpful to flatten each
+structure into a single depth map the captures which structures and values occur the most. Some nested
+fields might occur a few times per thousand records and be prioritized lower.
+
+### JSON
+These four JSON data are similar, but not identical in structure:
+```json
+{"a":1, "b":[{"c":2, "d":3},{"c":4, "d":5},{"c":6, "d":7}]},
+{"a":1, "b":{"c":3, "d":4}}
+{"a":1, "b":[{"c":2, "d":{"e":[8,9]}},{"c":4, "d":{"e":[10,11]}},{"c":6, "d":{"f":true}}]},
+{"a":1, "b":2, "c":[3,4,5]}
+```
+
+The new keys represent the path to the original structure ('.' delimited). Both Cheshire and clojure.data.json
+will work for parsing JSON text, but Cheshire seems to be faster so it's the default.
+
+```clojure
+(def flattened (apply merge-data (map #(flatten-json %) [json1 json2 json3 json4])))
+(pprint flattened)
+{"a" [1 1 1 1], "b" [2], "c" [3 4 5], "b.c" [3 2 4 6 2 4 6], "b.d" [4 3 5 7], "b.d.e" [8 9 10 11], "b.d.f" [true]}
+
+(flat-data-value-counts flattened)
+{"a" 4, "b" 1, "c" 3, "b.c" 7, "b.d" 4, "b.d.e" 4, "b.d.f" 1}
+```
+
+```clojure
+;; Describing sub-structure with flattened keys (todo (spec-from))
+(def json_text "{\"a\":{\"b\":{\"c\":[1,2,3],\"d\":true,\"e\":{\"f\":[4, 5, 6]}}}}")
+(flatten-json (json/read-str json_text) true)
+
+;; a -> map, b -> map, c -> vector, d -> value, e -> map, f -> map
+{"a{}.b{}.c[]" [1 2 3] "a{}.b{}.d" [true] "a{}.b{}.e{}.f[]" [4 5 6]}
+```
+
+#### Regex value matching for large input
+
+Define regular expression patterns that the values might represent. For example: int, decimal, text, boolean, etc by
+including an ordered list of `(->ValuePattern :type #"some-pattern" (fx [v] (pre-process v)))`
+
+```clojure
+;; See (simple-json-parser) and (keypath-frequencies) in clash.shape.clj
+(def flat (transform-lines "<input-file-name>" simple-json-parser :joinfx keypath-frequencies :initv {}))
+
+{"a" 4, "b" 1, "c" 1, "b.c" 3, "b.d" 2, "b.d.e" 1, "b.d.f" 1}
+
+;; See (simple_patterns) and (keypath-value-patterns) in clash.shape.clj 
+(def freqs (transform-lines input simple-json-parser :joinfx (partial keypath-value-patterns simple_patterns) :initv {}))
+(def shaped (shape-sort freqs))
+
+{"b.c" {:int 4, :financial 3}, "b.d.e" {:int 4}, "b.d" {:int 3, :decimal 1}, "a" {:int 4}, "c" {:int 3}, "b.d.f" {:boolean 1}, "b" {:decimal 1}}
+```
+
+### XML
+
+```clojure
+(def xml1 "<A a=\"a1\" ax=\"ax1\"><B><C c=\"c1\"/><C c=\"c2\">foo</C><C>bar</C></B><D>zoo</D><E><F f=\"f1\">cats</F><F f=\"f1\"/></E></A>")
+(flatten-xml xml1)
+
+;; Yields
+{"A.@ax" ["ax1"], "A.@a" ["a1"], "A.B.C.@c" ["c1" "c2"], "A.B.C" ["foo" "bar"], "A.D" ["zoo"], "A.E.F.@f" ["f1" "f1"], "A.E.F" ["cats"]}
+(flatten-data-frequencies xmlflat1)
+{"A.@ax" 1, "A.@a" 1, "A.B.C.@c" 2, "A.B.C" 2, "A.D" 1, "A.E.F.@f" 2, "A.E.F" 1}
+
+;; Merge all of the flattened xml into one structure
+(apply merge-with concat flattened)
+
+```
+
+### XML & JSON
+
+If there is a huge dump of XML and JSON data, create a parser that can handle both. It is possible to create a
+parser hierarchy for any of the data structures that require flattening.
+
+```clojure
+(defn xml-and-json-parser
+  [line]
+  (try
+    (when (not-empty line)
+      (cond
+        (s/starts-with? line "<") (flatten-xml line)
+        (s/starts-with? line "{") (flatten-json line)
+        :default (println "Skipping line:" line)))
+    (catch Exception e (println "Error:" e))))
+
+(transform-lines input xml-and-json-parser :joinfx keypath-frequencies :initv {})
+(transform-lines input xml-and-json-parser :joinfx (partial keypath-value-patterns simple_patterns) :initv {})
+```
+
 
 <a name="haystack"/></a>
 ## Haystack Functionality
@@ -299,17 +392,6 @@ for a data set. The predicate function group may also be used to retrieve that s
 ;; combfx? -> all?, any?, none? (defaults to all?) 
 (pivot-matrix* col msg :basefx? commonpred? :combfx? all? :pivots pivots :plevel 2)
 
-;; Generate predicate groups (where combfx? --> all?) 
-; --> (all? number? even? (divisible-by? 2))
-; --> (all? number? even? (divisible-by? 3))
-; --> (all? number? even? (divisible-by? 4))
-(pivot-matrix* (range 1 100) "r100" :basefx? [number? even?] :pivots [{:f divisible-by? :v (range 2 5}])
-
-;; Where ':function' can be used to retrieve the result set
-{"r1_[2]" {:count 49 :function #object[]}, 
- "r1_[4]" {:count 24 :function #object[]}, 
- "r1_[3]" {:count 16 :function #object[]}}
-
 ;; Generate a cartesian product combination of predicate groups:
 ; --> (all? number? even? (divisible-by? 2) (divisible-by? 6))
 ; --> (all? number? even? (divisible-by? 2) (divisible-by? 7)) 
@@ -361,96 +443,6 @@ Printing, comparing, and retrieving interesting subsets of data from the (pivot-
 
 ;; Find results where key name contains "3"
 (filter-pivots mtrx :kterms ["3"])
-```
-
-<a name="data-shape"/></a>
-## Data Shape
-When encountering a lot of JSON and/or XML data of unknown structure, it is helpful to flatten each
-structure into a single depth map the captures which structures and values occur the most. Some nested
-fields might occur a few times per thousand records and be prioritized lower.
-
-### JSON
-These four JSON data are similar, but not identical in structure:
-```json
-{"a":1, "b":[{"c":2, "d":3},{"c":4, "d":5},{"c":6, "d":7}]},
-{"a":1, "b":{"c":3, "d":4}}
-{"a":1, "b":[{"c":2, "d":{"e":[8,9]}},{"c":4, "d":{"e":[10,11]}},{"c":6, "d":{"f":true}}]},
-{"a":1, "b":2, "c":[3,4,5]}
-```
-
-The new keys represent the path to the original structure ('.' delimited). Both Cheshire and clojure.data.json
-will work for parsing JSON text, but Cheshire seems to be faster so it's the default. 
-
-```clojure
-(def flattened (apply merge-data (map #(flatten-json %) [json1 json2 json3 json4])))
-(pprint flattened)
-{"a" [1 1 1 1], "b" [2], "c" [3 4 5], "b.c" [3 2 4 6 2 4 6], "b.d" [4 3 5 7], "b.d.e" [8 9 10 11], "b.d.f" [true]}
-
-(flat-data-value-counts flattened)
-{"a" 4, "b" 1, "c" 3, "b.c" 7, "b.d" 4, "b.d.e" 4, "b.d.f" 1}
-```
-
-```clojure
-;; Describing sub-structure with flattened keys (todo (spec-from))
-(def json_text "{\"a\":{\"b\":{\"c\":[1,2,3],\"d\":true,\"e\":{\"f\":[4, 5, 6]}}}}")
-(flatten-json (json/read-str json_text) true)
-
-;; a -> map, b -> map, c -> vector, d -> value, e -> map, f -> map
-{"a{}.b{}.c[]" [1 2 3] "a{}.b{}.d" [true] "a{}.b{}.e{}.f[]" [4 5 6]}
-```
-
-#### Regex value matching for large input
-
-Define regular expression patterns that the values might represent. For example: int, decimal, text, boolean, etc by
-including an ordered list of `(->ValuePattern :type #"some-pattern" (fx [v] (pre-process v)))`
-
-```clojure
-;; See (simple-json-parser) and (keypath-frequencies) in clash.shape.clj
-(def flat (transform-lines "<input-file-name>" simple-json-parser :joinfx keypath-frequencies :initv {}))
-
-{"a" 4, "b" 1, "c" 1, "b.c" 3, "b.d" 2, "b.d.e" 1, "b.d.f" 1}
-
-;; See (simple_patterns) and (keypath-value-patterns) in clash.shape.clj 
-(def freqs (transform-lines input simple-json-parser :joinfx (partial keypath-value-patterns simple_patterns) :initv {}))
-(def shaped (shape-sort freqs))
-
-{"b.c" {:int 4, :financial 3}, "b.d.e" {:int 4}, "b.d" {:int 3, :decimal 1}, "a" {:int 4}, "c" {:int 3}, "b.d.f" {:boolean 1}, "b" {:decimal 1}}
-```
-
-### XML
-
-```clojure
-(def xml1 "<A a=\"a1\" ax=\"ax1\"><B><C c=\"c1\"/><C c=\"c2\">foo</C><C>bar</C></B><D>zoo</D><E><F f=\"f1\">cats</F><F f=\"f1\"/></E></A>")
-(flatten-xml xml1)
-
-;; Yields
-{"A.@ax" ["ax1"], "A.@a" ["a1"], "A.B.C.@c" ["c1" "c2"], "A.B.C" ["foo" "bar"], "A.D" ["zoo"], "A.E.F.@f" ["f1" "f1"], "A.E.F" ["cats"]}
-(flatten-data-frequencies xmlflat1)
-{"A.@ax" 1, "A.@a" 1, "A.B.C.@c" 2, "A.B.C" 2, "A.D" 1, "A.E.F.@f" 2, "A.E.F" 1}
-
-;; Merge all of the flattened xml into one structure
-(apply merge-with concat flattened)
-
-```
-
-### XML & JSON
-
-If there is a huge dump of XML and JSON data, create a parser that can handle both. It is possible to create a
-parser hierarchy for any of the data structures that require flattening.
-
-```clojure
-(defn xml-and-json-parser
-  [line]
-  (try
-    (when (not-empty line)
-      (cond
-        (s/starts-with? line "<") (flatten-xml line)
-        (s/starts-with? line "{") (flatten-json line)
-        :default (println "Skipping line:" line)))
-    (catch Exception e (println "Error:" e))))
-
-(transform-lines input xml-and-json-parser :joinfx keypath-frequencies :initv {})
-(transform-lines input xml-and-json-parser :joinfx (partial keypath-value-patterns simple_patterns) :initv {})
 ```
 
 <a name="utility-functions"/></a>

@@ -1,4 +1,4 @@
-(defproject clash "1.5.3"
+(defproject clash "1.5.4"
   :description "A clojure library that applies customizable structures to text files
    and quick analysis via filter groups, maps, etc. This is useful for quickly searchin
    or indexing large text files before spending proportionally more effort on Hadoop or
@@ -30,8 +30,6 @@
                          (require '[clash.csv :as ccsv])
                          (require '[clash.example.web_shop_example :as clex])
                          (require '[clash.example.web_shop_example_test :as clext])
-                         ;(use 'clash.example.covid19_miamiherald)
-                         ;(use 'clash.example.covid19_worldmeter)
                          (defn load-local-resource
                            [logfile]
                            (str (System/getProperty "user.dir") logfile))
