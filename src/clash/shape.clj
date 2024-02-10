@@ -184,9 +184,9 @@
   "A simple example of regular expressions to use with flattened data to provide shape of data values."
   [(->ValuePattern :financial #"[A-Z]{2,3}\s*[\d\.]+" nil)
    (->ValuePattern :datetime #"\d{2,4}\-\d{2}\-\{2,4}[T\d:\.]+" nil)
-   (->ValuePattern :decimal #"\d*\.\d+" nil)
-   (->ValuePattern :boolean #"true|false" (fn [v] (s/lower-case v)))
-   (->ValuePattern :int #"\d+" nil)
+   (->ValuePattern :decimal #"^\d*\.\d+$" nil)
+   (->ValuePattern :boolean #"^true|false$" (fn [v] (s/lower-case v)))
+   (->ValuePattern :int #"^\d+$" nil)
    (->ValuePattern :email #"\s*\w+@\w+\.\w+\s*" nil)
    (->ValuePattern :text #"[\w\s.]+" nil)
    (->ValuePattern :any #".+" nil)

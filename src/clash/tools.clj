@@ -11,7 +11,11 @@
       :doc "Some potentially useful tools with command.clj or other."}
   clash.tools
   (:require [clojure.core.reducers :as r]
-            [clojure.java.io :refer [reader]])
+            [clojure.java.io :refer [reader writer]]
+            [clojure.xml :as x]
+            [cheshire.core :as cc]
+            [clj-yaml.core :as y]
+            )
   (:import java.text.SimpleDateFormat))
 
 (defn data-to-file
@@ -676,3 +680,52 @@
         rec
         (throw (RuntimeException. (str "Check field names: Problem creating defrecord:" recname ", from:" data)) )))
       ) )
+
+;;(defn export-to
+;;  "Export a dictionary representation of data to yaml, other.
+;;
+;;  map -> key set (by keypath)
+;;  list, set -> filter fn (by keypath)
+;;  "
+;;  [data schema & {:keys [format] :or {format :json}}]
+;;  (let [formatfx (cond
+;;                   (= :json format) #(ch)
+;;                   (= :yaml format)
+;;                   (= :xml format)
+;;                   )
+;;        ])
+;;  (reduce
+;;   (fn [result value] (clojure.walk)
+;;     )
+;;   {}
+;;   data))
+
+(defn todo [m] (str "todo: " m))
+
+(defn- twriter
+  "A writer for transducers."
+  [owrite delim]
+  (fn
+    ([])
+    ([_])
+    ([_ current] (.write owrite (str current delim))) ) )
+
+(defn exporter
+  "Export data to an output stream. Supported formats include:
+  :json
+  :edn
+  :yaml
+  "
+  [data fmt output & {:keys [delim] :or {delim "\n"}}]
+  (let [transformfx (cond
+                      (= fmt :edn) #(with-out-str (pr %)) ; by file
+                      (= fmt :json) #(cc/generate-string %) ; by line
+                      ;(= fmt :xml) #(x/emit-str %) ;; requires (element, etc)
+                      (= fmt :yaml) #(y/generate-string %) ; by file
+                      :else data)
+        trfx (comp (map transformfx) (filter identity))
+        ]
+    (with-open [owriter (writer output :append true)]
+      (transduce trfx (twriter owriter delim) data)
+      )
+    ))

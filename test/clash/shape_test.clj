@@ -108,14 +108,14 @@
     ))
 
 (def expected_inclinician
-  {"data.descriptions.stomach" {:empty 3}, "data.spectrometer.device" {:text 3}, "date_time" {:decimal 3},
+  {"data.descriptions.stomach" {:empty 3}, "data.spectrometer.device" {:text 3}, "date_time" {:text 3},
    "data.pulse.value" {:int 3}, "data.oxygen.device" {:text 3}, "data.prescription.dose" {:empty 3},
    "blockchain.contract" {:empty 3}, "age" {:int 3}, "data.descriptions.arms" {:empty 3},
-   "data.descriptions.bowels" {:empty 2, :text 1}, "data.descriptions.hands" {:empty 3}, "blockchain.id" {:int 3},
+   "data.descriptions.bowels" {:empty 2, :text 1}, "data.descriptions.hands" {:empty 3}, "blockchain.id" {:text 3},
    "data.descriptions.lungs" {:empty 1, :text 2}, "data.urinalysis.device" {:text 3}, "data.pulse.device" {:text 3},
    "data.descriptions.legs" {:empty 3}, "gender" {:empty 3}, "data.descriptions.general" {:empty 1, :text 2},
    "data.oxygen.value" {:int 3}, "data.temperature.device" {:text 3}, "data.breathalyzer.device" {:text 3},
-   "data.descriptions.feet" {:empty 3}, "data.stool_analysis.device" {:text 3}, "identity" {:int 3},
+   "data.descriptions.feet" {:empty 3}, "data.stool_analysis.device" {:text 3}, "identity" {:text 3},
    "data.descriptions.skin" {:empty 3}, "data.prescription.time" {:empty 3},
    "data.descriptions.back" {:empty 1, :text 2}, "data.descriptions.throat" {:empty 1, :text 2},
    "data.prescription.form" {:text 3}, "data.ultrasound.location" {:empty 3},
@@ -141,7 +141,9 @@
         freqs (transform-lines input simple-json-parser :joinfx (partial keypath-value-patterns simple_patterns) :initv {})
         shaped (shape-sort freqs)
         ]
-    (is (= shaped {"b.c" {:int 4, :financial 3}, "b.d.e" {:int 4}, "b.d" {:int 3, :decimal 1}, "a" {:int 4}, "c" {:int 3}, "b.d.f" {:boolean 1}, "b" {:decimal 1}} ))
+
+    (is (= shaped {"b.c" {:int 4, :financial 3}, "b.d.e" {:int 4}, "b.d" {:int 3, :decimal 1}, "a" {:int 4},
+                   "c" {:int 3}, "b.d.f" {:boolean 1}, "b" {:decimal 1}} ))
     ))
 
 (deftest test-xml-json-flattener
@@ -149,8 +151,12 @@
         freqs (transform-lines input xml-and-json-parser :joinfx keypath-frequencies :initv {})
         shaped (shape-sort (transform-lines input xml-and-json-parser :joinfx (partial keypath-value-patterns simple_patterns) :initv {}))]
 
-    (is (= freqs {"A.E.F.@f" 1, "b.d.e" 1, "A.@a" 1, "A.E.F" 1, "b.d" 2, "b.c" 3, "a" 4, "b.d.f" 1, "A.@ax" 1, "A.B.C" 1, "A.D" 1, "b" 1, "A.B.C.@c" 1, "c" 1}))
-    (is (= shaped {"b.c" {:int 4, :financial 3}, "b.d.e" {:int 4}, "b.d" {:int 3, :decimal 1}, "a" {:int 4}, "c" {:int 3}, "A.E.F.@f" {:int 2}, "A.B.C.@c" {:int 2}, "A.B.C" {:text 2}, "b.d.f" {:boolean 1}, "b" {:decimal 1}, "A.E.F" {:text 1}, "A.D" {:text 1}, "A.@ax" {:int 1}, "A.@a" {:int 1}}))
+    (is (= freqs {"A.E.F.@f" 1, "b.d.e" 1, "A.@a" 1, "A.E.F" 1, "b.d" 2, "b.c" 3, "a" 4, "b.d.f" 1, "A.@ax" 1,
+                  "A.B.C" 1, "A.D" 1, "b" 1, "A.B.C.@c" 1, "c" 1}))
+
+    (is (= shaped {"b.c" {:int 4, :financial 3}, "b.d.e" {:int 4}, "b.d" {:int 3, :decimal 1}, "a" {:int 4},
+                   "c" {:int 3}, "A.E.F.@f" {:text 2}, "A.B.C.@c" {:text 2}, "A.B.C" {:text 2}, "b.d.f" {:boolean 1},
+                   "b" {:decimal 1}, "A.E.F" {:text 1}, "A.D" {:text 1}, "A.@ax" {:text 1}, "A.@a" {:int 1}}))
     ))
 
 (def xmlheader "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"no\" ?>")

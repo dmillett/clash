@@ -9,11 +9,12 @@
   :scm {:name "git" :url "https://github.com/dmillett/clash" }
   ;;:repositories [["releases" {:url "https://repo.clojars.org" :creds :gpg}]]
   :dependencies [[org.clojure/clojure "1.11.1"]
-                 [org.clojure/math.combinatorics "0.1.6"]
+                 [org.clojure/math.combinatorics "0.2.0"]
                  ;[incanter "1.9.3"]
                  [cheshire "5.11.0"]
-                 [org.clojure/data.json "2.4.0"]]
-  :profiles {:kaocha {:dependencies [[lambdaisland/kaocha "1.77.1236"]]}}
+                 [org.clojure/data.json "2.4.0"]
+                 [clj-commons/clj-yaml "1.0.26"]]
+  :profiles {:kaocha {:dependencies [[lambdaisland/kaocha "1.82.1306"]]}}
   :plugins [[lein-kibit "0.1.3"]
             [jonase/eastwood "0.2.3"]
             [lein-ancient "0.6.15"]]
