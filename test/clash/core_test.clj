@@ -13,9 +13,14 @@
         [clash.command]
         [clash.command_test]
         [clash.tools]
+        [clash.csv]
         [clojure.java.io :only (delete-file)]) )
 
 ;; For more examples, see stock_example_test
+
+(defn local-test-resource
+  [f]
+  (str (System/getProperty "user.dir") "/test/resources/" f))
 
 (def regex_input (str tresource "/regex.txt"))
 (def regex_output (str tresource "/java-regex-output.txt"))
@@ -28,3 +33,19 @@
   (disect regex_input regex_output :fx regex1)
   (with-jproc-dump (str "wc " regex_output " | awk '{print $3}'") " from wc of java-regex-output.txt" str)
   (delete-file regex_output))
+
+(deftest test-transduce-csv
+  (let [csv1 (transform-lines (local-test-resource "simple1.csv") csv-parse1)
+        csv2 (transform-lines (local-test-resource "simple2.csv") csv-parse2
+                              :joinfx (stateful-join :header? true)
+                              :initv {})
+        csv3 (transform-lines (local-test-resource "simple3.csv") csv-parse2
+                              :joinfx (stateful-join :header? true)
+                              :initv {})
+        ]
+    (is (= [["1" "\"true\"" " Some simple word"] ["2.0" "false" " \"Another simple word.\""]] csv1))
+    (is (= [{"Column A" 1, " columnB" " \"true\"", " Column-C" " Some simple word"}
+            {"Column A" 2, " columnB" " false", " Column-C" " \"Another simple word.\""}] (:result csv2)))
+    (is (= [{"hotel" 150495, "txnTim" "\"foo\"", "rateCode" "HYHWCB", "roomCode" "AQSS", "exception" "Rate not found", "count" 348}] (:result csv3)))
+
+    ) )

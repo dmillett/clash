@@ -8,11 +8,13 @@
 
 (ns clash.shape
   (:require [clojure.spec.alpha :as spec]
+            [clojure.set :as set]
             [clojure.java.io :as io]
             [clojure.xml :as x]
-            [cheshire.core :as cc]
+            [cheshire.core :as chc]
             [clash.tools :as ct]
-            [clojure.string :as s]))
+            [clojure.string :as s]
+            [clash.core :as cc]))
 
 (defn sstream
   "Convert a String or text to an input stream for parsing"
@@ -94,7 +96,7 @@
   "Parse string json form into JSON or just return JSON structure"
   [^String json_data]
   (if (string? json_data)
-    (cc/parse-string json_data)
+    (chc/parse-string json_data)
     json_data
     ) )
 
@@ -158,7 +160,9 @@
     flattened_data))
 
 (defn keypath-frequencies
-  "The frequency of keypaths for a large collection of flattened data."
+  "The frequency of keypaths for a large collection of flattened data.
+  This is a join-merge-filter in behavior.
+  "
   ([] {})
   ([freqs] freqs)
   ([freqs flat]
@@ -177,6 +181,7 @@
   (if (and o (string? o)) o (str o)))
 
 ;; Use as an ordered list in (value-pattern)
+;; Consider applying a generative or validating 'fx' placeholder
 (defrecord ValuePattern [type pattern fx])
 
 ;; 2020-03-28T17:07:31.000
@@ -237,7 +242,8 @@
 (defn keypath-value-patterns
   "Use 'shape_patterns' to identify what values are associated with each keypath. For example:
 
-  [\"a\" 1 2.0 true \"b\" \"USD 2.50\"] --> {:small_text 2, :int 1, :decimal 1, :boolean 1, :financial 1}
+  [\"a\" 1 2.0 true \"b\" \"USD 2.50\"] -->
+  {:small_text 2, :int 1, :decimal 1, :boolean 1, :financial 1}
   "
   [patterns & args]
   (cond
@@ -294,21 +300,26 @@
 
 (defn xml-and-json-parser
   "When the input data (line) is JSON OR XML, this parser will handle both."
-  [^String line]
-  (try
-    (when (not-empty line)
-      (cond
-        (s/starts-with? line "<") (flatten-xml line)
-        (s/starts-with? line "{") (flatten-json line)
-        :else (println "Skipping line:" line)))
-    (catch Exception e (println "Error:" e))))
+  ([^String line] (xml-and-json-parser line false))
+  ([^String line describe?]
+    (try
+      (when (not-empty line)
+        (cond
+          (s/starts-with? line "<") (flatten-xml line describe?)
+          (s/starts-with? line "{") (flatten-json line describe?)
+          :else (println "Skipping line:" line)))
+      (catch Exception e (println "Error:" e)))) )
+
 
 (defn- update-multi-state
+  "Internal function to associate or update state typically associated
+  with multiline parsing."
   [data input parser]
   (let [result (if (:result data) data (assoc data :result []))]
     (-> result
       (update-in [:result] conj (parser (:rows data)))
       (assoc :rows (if input [input] nil)))))
+
 
 (defn stateful-multiline
   "In cases where streaming input (file, etc) is a multiline format like XML or JSON,
@@ -343,3 +354,93 @@
           rows (update-in result [:rows] conj input)
           ) ) )
     ) )
+
+;;(defn- schema
+;;  "Create a schema placeholder for values when constituting a map from flattened context.
+;;  It can include:
+;;  type: text, boolean, int, double, datetime, etc
+;;  meta: meta data
+;;  value: value place holder, generated or real
+;;  fx: Generates or validates the value therein
+;;  "
+;;  [args]
+;;  {:type nil :meta nil :value nil :fx nil})
+;;
+;;;; Send in keypaths and/or keypaths + value types
+;;;; Transform into something like Onyx?
+;;(defn keypaths-to-map
+;;  "Convert a group of keypaths (all/some) into a Map for generating json, xml, yaml, etc."
+;;  ([keypaths] (keypaths-to-map keypaths :json))
+;;  ([keypaths output]
+;;   (let [fx-exists (fn [m kp])]
+;;     (reduce
+;;      (fn [md keypath]
+;;        (let [kps (s/split keypath #"\.")] ; check from right to left (narrow to wide)
+;;
+;;          ))
+;;      {}
+;;      keypaths)
+;;     ) ) )
+
+(defn jmf-shape-values
+  "Filter flattened keypaths according to the regular expression of their values.
+  This uses (re-find) for any regex passed in and is part of a transducer 'join' function.
+
+  The nested anonymous function(s) handle a transducer join, while expecting flattened
+  formats into a dot-delimited keypath: {x.y.z [23], x.foo [true]}
+
+  (join-shape-value-filter #\"\\d+\") -> {x.y.z [23]}
+  "
+  [regex]
+  (fn
+    ([] {})
+    ([results] results)
+    ([results flat]
+     (reduce-kv
+       (fn [r k v]
+         (if (re-find regex (first v))
+           (merge-with concat r {k v})
+           r
+           ) )
+       results
+       flat)
+     ) ) )
+
+(defn- setify
+  "Create a set from 'x' collection if it's not already a set."
+  [x] (if (set? x) x (set x)))
+
+(defn jmf-keypaths
+  "Collects, as a join-merge-filter, all of the keypaths found in the data set
+  as specified in the collection of keypaths.
+
+  "
+  ([keypaths]
+   (fn
+    ([] {})
+    ([results] results)
+    ([results flat]
+     (let [v (if (empty? keypaths) flat (select-keys flat keypaths))]
+       (merge-with
+         (fn [v1 v2] (set/union (setify v1) (setify v2)))
+         results v) ) )
+     ) ) )
+
+
+; parser
+; filter-joiner
+; initial value
+(defn shape-and-filter
+  "As the shape is built, grab all of the values for specific field names. This
+  will determine the shape & actual values for a collection of those field names.
+  Use caution for larger data sets.
+
+  ; Flattens the structure, uses regex to identify value patterns (and counts)
+  (shape-and-filter input xml-and-json-parser (partial keypath=value-patterns simple_patterns))
+
+  ;
+
+  "
+  [input parser jmf & {:keys [initv max] :or {initv {} max nil}}]
+  (cc/transform-lines input parser :joinfx jmf :initv initv :max max)
+)
