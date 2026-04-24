@@ -16,6 +16,7 @@ Try adding **[clash "1.5.3"]** to your project today
  * [pivot functionality](#pivot)
  * [haystack functionality](#haystack)
  * [data shape](#data-shape)
+ * [data regex]()
  * [utility functions](#utility-functions)
  * [performance & debugging](#performance-debugging)
  * [shell commands](#shell-commands)
@@ -228,6 +229,54 @@ parser hierarchy for any of the data structures that require flattening.
 (transform-lines input xml-and-json-parser :joinfx (partial keypath-value-patterns simple_patterns) :initv {})
 ```
 
+<a name="jmf"/></a>
+## Transducer stateful join-merge filters
+Join merge filters have also been added for transducers to maintain minimal state during
+transducer processing. For example, flatten JSON/XML and then capture all the value combinations
+for each flattened keypath. Or, determine the word frequency for a text stream.
+
+```clojure
+;; Count the words in a text stream
+(clash.core/transform-lines text_input identity :initv {} :joinfx (clash.jmf/jmf-word-count))
+
+;; Filter by data key or value when processing streaming data
+(cc/transform-lines kv_data cs/xml-and-json-parser :initv {} :joinfx (jmf-merge-kv-filter kfilter vfilter))
+```
+
+<a name="regex-fu"/></a>
+## Determine Regex 
+In some cases it might be useful to determine what a regular expression might represent
+values for data that is part of a known schema (json, xml, etc). 
+
+```clojure
+;; Letters and numbers are combined to \w
+(clash.regex/build-regex "A 42? Perhaps 67?")
+
+-> "\\w\\s\\d{2}\\?\\s\\w{7}\\s\\d{2}\\?"
+
+;; Just pattern match the first 6 characters, everything else a wildcard
+(build-regex "A 42? Perhaps 67?" :max 6)
+
+-> "\\w\\s\\d{2}\\?\\s.{11}"
+```
+
+Use build regex with a large set of JSON/XML/etc data to find pattern occurrence
+```clojure
+(let [input1 (test-resource "data-sample.json")
+      jmf    (jmf-value-regex crx/build-regex)]
+
+  (clash.core/transform-lines input1 cs/xml-and-json-parser :initv {} :joinfx jmf)
+
+->   {"a" {"\\d" 4}
+      "b" {"\\d\\.\\d" 1}
+      "c" {"\\d" 3}
+      "b.c" {"\\w{3}\\s\\d{2}\\.\\d{2}" 2, "\\w{3}\\s\\d\\.\\d{2}" 1, "\\d" 4}
+      "b.d" {"\\d" 3, "\\d\\.\\d" 1}
+      "b.d.e" {"\\d" 2, "\\d{2}" 2}
+      "b.d.f" {"\\w{4}" 1}})
+```
+There is more work (future versions), for strategies to combine the regex patterns in
+a more generic way. For example, combing the patterns for "b.c" -> {"[\w\s]{1,6}\.*\d+" 7}
 
 <a name="haystack"/></a>
 ## Haystack Functionality
