@@ -76,6 +76,7 @@
   header? - Whether or not to parse a header from the first row
   recname - (paired with header?) will create a defrecord instead of zipmap
   key-clean - cleaning up header fields so they are compatible with Java field syntax requirements
+  val-clean - Wrapping non-continuous alphanumeric values with a string to avoid errors with defrecords
   keywords? - map keys as keywords instead of strings (subject to keyword naming restrictions, use recleanfx)
   "
   [& {:keys [header? recname kclean keywords?] :or {header? false recname nil kclean nil keywords? false}}]

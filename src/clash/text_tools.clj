@@ -9,7 +9,7 @@
 (ns ^{:author "David Millett"
       :doc "Some useful text tools."}
   clash.text_tools
-  (:require [clojure.string :as s]))
+  (:require [clojure.string :as cls]))
 
 (defn as-one-line
   "Remove newline characters from a given string and substitue with \"\" (default)
@@ -17,11 +17,11 @@
   ([^String text]
     (if (empty? text)
       text
-      (s/replace text "\n" "") ) )
+      (cls/replace text "\n" "") ) )
   ([^String text ^String delim]
     (if (or (empty? text) (empty? delim))
       text
-      (s/replace text "\n" delim) )) )
+      (cls/replace text "\n" delim) )) )
 
 (defn count-tokens
   "Count the number of tokens in a string (text) for
@@ -40,7 +40,7 @@
         cut (str "cut -d" \" delim \" " -f")]
     (if (empty? indices)
       (str cut "1-" (count structure))
-      (str cut (s/join "," indices)) )) )
+      (str cut (cls/join "," indices)) )) )
 
 (defn text-structure-to-map
   "Split a structured text into map and return some/all entries. A specific
@@ -49,7 +49,7 @@
   ([^String line pattern structure] (text-structure-to-map line pattern structure []))
   ([^String line pattern structure keys]
     (when (seq line)
-      (let [result (zipmap structure (s/split line pattern))]
+      (let [result (zipmap structure (cls/split line pattern))]
         (if (empty? keys)
           result
           (select-keys result keys)) ))) )
@@ -90,6 +90,33 @@
   is converted to lower-case."
   [^String text ^String substr]
   (if (and text substr)
-    (s/includes? (s/lower-case text) (s/lower-case substr))
+    (cls/includes? (cls/lower-case text) (cls/lower-case substr))
     false
     ))
+
+;; Make a String so regex will work on it.
+(defn to-text
+  "Creates a string, if necessary, for 'x'"
+  [x] (if (string? x) x (str x)))
+
+
+;; The filter must take data into account and handle splitting it
+;; into key : value pairs or leave alone?
+(def punctuation-basic
+  {:eclaim #"\w\!" :comma #"\w\," :question #"\w\?"
+   :period #"\w\." :semicolon #"\w;" :colon #"\w:"})
+
+(defn word-count
+  "Count words in text according to the regular expression passed
+  in. Returns nil for empty strings, otherwise a collection.
+
+  regex - What word patterns to find (default: #\"[a-zA-Z']+\")
+  lcase? - To lower case all the words? (default: false)
+  "
+  [text & {:keys [regex lcase?] :or {regex #"[a-zA-Z']+" lcase? false}}]
+  (when (not-empty text)
+    (let [words (re-seq regex text)]
+      (if lcase?
+        (frequencies (map #(cls/lower-case %) words))
+        (frequencies words))
+      ) ) )

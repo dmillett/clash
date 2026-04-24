@@ -59,3 +59,20 @@ cd")
      false (includes-icase? "foo" "b")
      true (includes-icase? "foo" "o")
      ))
+
+(deftest test-to-text
+  (are [x y] (= x y)
+    "1" (to-text "1")
+    "1" (to-text 1)
+    "" (to-text nil)
+    ) )
+
+(deftest test-word-count
+  (are [x y] (= x y)
+    nil (word-count nil)
+    nil (word-count "")
+    {"This" 1 "is" 1 "it" 1} (word-count "This is it!")
+    {"this" 1 "is" 1 "it" 1} (word-count "This is it!" :lcase? true)
+    {"This" 1 "is" 1 "it" 2 "isn't" 1} (word-count "This is it isn't it?")
+    {"This" 1 "is" 1 "it" 2 "isn" 1 "t" 1} (word-count "This is it isn't it?" :regex #"\w+")
+    ) )
