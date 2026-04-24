@@ -29,6 +29,8 @@
                          (require '[clash.text_tools :as ctt])
                          (require '[clash.command :as ccmd])
                          (require '[clash.csv :as ccsv])
+                         (require '[clash.regex :as crx])
+                         (require '[clash.jmf :as cjmf])
                          (require '[clash.example.web_shop_example :as clex])
                          (require '[clash.example.web_shop_example_test :as clext])
                          (defn load-local-resource

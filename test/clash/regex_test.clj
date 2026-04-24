@@ -42,4 +42,5 @@
     "\\w\\s\\d.{14}" (build-regex "A 42? Perhaps 67?" :mergex nil :max 3)
     "\\w\\s\\d{2}\\?\\s[\\w\\d]{9}\\?" (build-regex "A 42? Perhaps67?")
     "\\w\\s\\d{2}\\?\\s[\\w\\d]{8}.{2}" (build-regex "A 42? Perhaps67?" :max 14)
+    "\\w\\s\\d{2}\\?\\s[\\w\\d]{8}.{2}" (str (build-regex "A 42? Perhaps67?" :max 14 :test? true :as_text? false))
     ) )

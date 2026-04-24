@@ -6,7 +6,8 @@
 ;   the terms of this license.
 ;   You must not remove this notice, or any other, from this software.
 
-(ns clash.regex)
+(ns clash.regex
+  (:require [clash.text_tools :as ctt]))
 
 (def char_literals
   "A map of character Sets that defines groups of character literals. These
@@ -96,18 +97,18 @@
 (defn build-regex
   "Create a regular expression that represents the 'text' passed in.
 
-  test? - test the generated regex with (re-find)
   as_text? - return the pattern or text representation of the pattern
   max - The maximum number of characters to create a regex for, add .{n} for the remaining
   mergex - Group these character classes together or by identity
   "
-  [text & {:keys [test? as_text? max mergex] :or {test? false as_text? true max 100
-                                                  mergex (:basic_alphanum char_literals)}}]
+  [^String text & {:keys [as_text? max mergex] :or {as_text? true max 100
+                                            mergex (:basic_alphanum char_literals)}}]
   (when text
     (let [delta (- max (count text))
           trailer (if (pos? delta) "" (str ".{" (Math/abs delta) "}"))
           full_regex (reduce (fn [r ch] (conj r (map-regex ch))) [] (take max text))
+          regex (pattern-rex (conj (simplify-regex full_regex :mergex mergex) trailer) as_text?)
           ]
       (tap> full_regex)
-      (pattern-rex (conj (simplify-regex full_regex :mergex mergex) trailer) as_text?)
+      regex
     ) ) )
