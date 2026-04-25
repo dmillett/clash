@@ -1,7 +1,11 @@
 # Change Log
 
-## Next
- * (spec-from) Attempt to create spec structure for sets of data
+## 1.6.0
+ * Generate regular expressions from text values: **clash.regex**
+   * Ex: `(build-regex "A 42? Perhaps 67?" :max 6) -> "\\w\\s\\d{2}\\?\\s.{11}"`
+   * Use with transducers for streaming data
+ * Templates for minimal state capture in transducers: **clash.jmf**
+   * Ex: word counts, key:value filters & regex generation (see README)
 
 ## 1.5.3
  * Added (jshell) for command line stream processing with (tlash.core/transform-lines)
