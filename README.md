@@ -16,7 +16,8 @@ Try adding **[clash "1.5.3"]** to your project today
  * [pivot functionality](#pivot)
  * [haystack functionality](#haystack)
  * [data shape](#data-shape)
- * [data regex]()
+ * [transducer stateful joins](#jmf)
+ * [data regex](#regex)
  * [utility functions](#utility-functions)
  * [performance & debugging](#performance-debugging)
  * [shell commands](#shell-commands)
@@ -243,7 +244,7 @@ for each flattened keypath. Or, determine the word frequency for a text stream.
 (cc/transform-lines kv_data cs/xml-and-json-parser :initv {} :joinfx (jmf-merge-kv-filter kfilter vfilter))
 ```
 
-<a name="regex-fu"/></a>
+<a name="regex"/></a>
 ## Determine Regex 
 In some cases it might be useful to determine what a regular expression might represent
 values for data that is part of a known schema (json, xml, etc). 
