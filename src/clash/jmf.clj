@@ -51,7 +51,7 @@
     ([results data]
       (reduce-kv
         (fn [r k v]
-          (assoc r k (regex (apply str v)))
+          (assoc r k (merge-with + (get r k) (regex (apply str v))))
           )
         results
         (select-keys data keypaths))

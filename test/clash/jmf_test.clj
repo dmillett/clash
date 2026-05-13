@@ -77,5 +77,5 @@
         vr1 (cc/transform-lines input1 cs/xml-and-json-parser :initv {} :joinfx (jmf-kv-regex-count ["b.c" "b.d.f"] ctt/word-count))
         ]
     (are [x y] (= x y)
-      {"b.c" {"EUR" 1} "b.d.f" {"true" 1}} vr1
+      {"b.c" {"USD" 2 "EUR" 1} "b.d.f" {"true" 1}} vr1
       ) ) )
